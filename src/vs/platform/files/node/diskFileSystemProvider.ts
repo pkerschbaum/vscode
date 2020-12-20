@@ -424,7 +424,7 @@ export class DiskFileSystemProvider extends Disposable implements
 		}
 	}
 
-	async rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
+	async rename(from: URI, to: URI, opts: FileOverwriteOptions, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void> {
 		const fromFilePath = this.toFilePath(from);
 		const toFilePath = this.toFilePath(to);
 
@@ -438,7 +438,7 @@ export class DiskFileSystemProvider extends Disposable implements
 			await this.validateTargetDeleted(from, to, 'move', opts.overwrite);
 
 			// Move
-			await move(fromFilePath, toFilePath);
+			await move(fromFilePath, toFilePath, progressCb);
 		} catch (error) {
 
 			// rewrite some typical errors that can happen especially around symlinks
@@ -451,7 +451,7 @@ export class DiskFileSystemProvider extends Disposable implements
 		}
 	}
 
-	async copy(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
+	async copy(from: URI, to: URI, opts: FileOverwriteOptions, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void> {
 		const fromFilePath = this.toFilePath(from);
 		const toFilePath = this.toFilePath(to);
 
@@ -465,7 +465,7 @@ export class DiskFileSystemProvider extends Disposable implements
 			await this.validateTargetDeleted(from, to, 'copy', opts.overwrite);
 
 			// Copy
-			await copy(fromFilePath, toFilePath, { preserveSymlinks: true });
+			await copy(fromFilePath, toFilePath, { preserveSymlinks: true }, progressCb);
 		} catch (error) {
 
 			// rewrite some typical errors that can happen especially around symlinks

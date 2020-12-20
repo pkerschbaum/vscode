@@ -112,7 +112,7 @@ const tasks = compilations.map(function (tsconfigFile) {
 
 		const pipeline = function () {
 			const input = es.through();
-			const tsFilter = filter(['**/*.ts', '!**/lib/lib*.d.ts', '!**/node_modules/**'], { restore: true });
+			const tsFilter = filter(['**/*.ts', '**/*.tsx', '!**/lib/lib*.d.ts', '!**/node_modules/**'], { restore: true });
 			const output = input
 				.pipe(plumber({
 					errorHandler: function (err) {

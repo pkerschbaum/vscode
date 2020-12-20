@@ -8,10 +8,14 @@
 		"allowUnreachableCode": false,
 		"strict": true,
 		"forceConsistentCasingInFileNames": true,
+		"jsx": "react",
 		"baseUrl": ".",
 		"paths": {
 			"vs/*": [
 				"./vs/*"
+			],
+			"nex/*": [
+				"./nex/*"
 			]
 		},
 		"lib": [

@@ -51,7 +51,7 @@ function createCompile(src: string, build: boolean, emitError?: boolean) {
 		const bom = require('gulp-bom') as typeof import('gulp-bom');
 
 		const utf8Filter = util.filter(data => /(\/|\\)test(\/|\\).*utf8/.test(data.path));
-		const tsFilter = util.filter(data => /\.ts$/.test(data.path));
+		const tsFilter = util.filter(data => /\.tsx?$/.test(data.path));
 		const noDeclarationsFilter = util.filter(data => !(/\.d\.ts$/.test(data.path)));
 
 		const input = es.through();

@@ -124,7 +124,7 @@ export interface IFileService {
 	 *
 	 * The optional parameter overwrite can be set to replace an existing file at the location.
 	 */
-	move(source: URI, target: URI, overwrite?: boolean): Promise<IFileStatWithMetadata>;
+	move(source: URI, target: URI, overwrite?: boolean, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<IFileStatWithMetadata>;
 
 	/**
 	 * Find out if a move operation is possible given the arguments. No changes on disk will
@@ -137,7 +137,7 @@ export interface IFileService {
 	 *
 	 * The optional parameter overwrite can be set to replace an existing file at the location.
 	 */
-	copy(source: URI, target: URI, overwrite?: boolean): Promise<IFileStatWithMetadata>;
+	copy(source: URI, target: URI, overwrite?: boolean, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<IFileStatWithMetadata>;
 
 	/**
 	 * Find out if a copy operation is possible given the arguments. No changes on disk will
@@ -288,8 +288,8 @@ export interface IFileSystemProvider {
 	readdir(resource: URI): Promise<[string, FileType][]>;
 	delete(resource: URI, opts: FileDeleteOptions): Promise<void>;
 
-	rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void>;
-	copy?(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void>;
+	rename(from: URI, to: URI, opts: FileOverwriteOptions, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void>;
+	copy?(from: URI, to: URI, opts: FileOverwriteOptions, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void>;
 
 	readFile?(resource: URI): Promise<Uint8Array>;
 	writeFile?(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void>;
@@ -312,7 +312,7 @@ export function hasReadWriteCapability(provider: IFileSystemProvider): provider 
 }
 
 export interface IFileSystemProviderWithFileFolderCopyCapability extends IFileSystemProvider {
-	copy(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void>;
+	copy(from: URI, to: URI, opts: FileOverwriteOptions, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void>;
 }
 
 export function hasFileFolderCopyCapability(provider: IFileSystemProvider): provider is IFileSystemProviderWithFileFolderCopyCapability {

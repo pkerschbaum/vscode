@@ -12,6 +12,7 @@ import { Event } from 'vs/base/common/event';
 import { isEqualOrParent, isRootOrDriveLetter } from 'vs/base/common/extpath';
 import { generateUuid } from 'vs/base/common/uuid';
 import { normalizeNFC } from 'vs/base/common/normalization';
+import { URI } from 'vs/base/common/uri';
 
 //#region Constants
 
@@ -516,7 +517,7 @@ function ensureWriteOptions(options?: IWriteFileOptions): IEnsuredWriteFileOptio
  * - updates the `mtime` of the `source` after the operation
  * - allows to move across multiple disks
  */
-export async function move(source: string, target: string): Promise<void> {
+export async function move(source: string, target: string, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void> {
 	if (source === target) {
 		return;  // simulate node.js behaviour here and do a no-op if paths match
 	}
@@ -583,7 +584,8 @@ interface ICopyPayload {
  * links should be handled when encountered. Set to
  * `false` to not preserve them and `true` otherwise.
  */
-export async function copy(source: string, target: string, options: { preserveSymlinks: boolean }): Promise<void> {
+export async function copy(source: string, target: string, options: { preserveSymlinks: boolean }, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void> {
+	// TODO Nex-App: how to track progress on byte-level per file?
 	return doCopy(source, target, { root: { source, target }, options, handledSourcePaths: new Set<string>() });
 }
 
@@ -645,7 +647,7 @@ async function doCopyDirectory(source: string, target: string, mode: number, pay
 	}
 }
 
-async function doCopyFile(source: string, target: string, mode: number): Promise<void> {
+async function doCopyFile(source: string, target: string, mode: number, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void> {
 
 	// Copy file
 	await fs.promises.copyFile(source, target);

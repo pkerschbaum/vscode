@@ -146,7 +146,7 @@ export function createESMSourcesAndResources2(options: IOptions2): void {
 		if (dest === 'tsconfig.json') {
 			return path.join(OUT_FOLDER, `tsconfig.json`);
 		}
-		if (/\.ts$/.test(dest)) {
+		if (/\.tsx?$/.test(dest)) {
 			return path.join(OUT_FOLDER, dest);
 		}
 		return path.join(OUT_RESOURCES_FOLDER, dest);
@@ -173,7 +173,7 @@ export function createESMSourcesAndResources2(options: IOptions2): void {
 			continue;
 		}
 
-		if (/\.ts$/.test(file)) {
+		if (/\.tsx?$/.test(file)) {
 			// Transform the .ts file
 			let fileContents = fs.readFileSync(path.join(SRC_FOLDER, file)).toString();
 
@@ -247,7 +247,7 @@ export function createESMSourcesAndResources2(options: IOptions2): void {
 	}
 
 	function write(absoluteFilePath: string, contents: string | Buffer): void {
-		if (/(\.ts$)|(\.js$)/.test(absoluteFilePath)) {
+		if (/(\.tsx?$)|(\.js$)/.test(absoluteFilePath)) {
 			contents = toggleComments(contents.toString());
 		}
 		writeFile(absoluteFilePath, contents);

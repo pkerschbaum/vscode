@@ -124,7 +124,7 @@ function createESMSourcesAndResources2(options) {
         if (dest === 'tsconfig.json') {
             return path.join(OUT_FOLDER, `tsconfig.json`);
         }
-        if (/\.ts$/.test(dest)) {
+        if (/\.tsx?$/.test(dest)) {
             return path.join(OUT_FOLDER, dest);
         }
         return path.join(OUT_RESOURCES_FOLDER, dest);
@@ -146,7 +146,7 @@ function createESMSourcesAndResources2(options) {
             write(getDestAbsoluteFilePath(file), fs.readFileSync(path.join(SRC_FOLDER, file)));
             continue;
         }
-        if (/\.ts$/.test(file)) {
+        if (/\.tsx?$/.test(file)) {
             // Transform the .ts file
             let fileContents = fs.readFileSync(path.join(SRC_FOLDER, file)).toString();
             const info = ts.preProcessFile(fileContents);
@@ -211,7 +211,7 @@ function createESMSourcesAndResources2(options) {
         }
     }
     function write(absoluteFilePath, contents) {
-        if (/(\.ts$)|(\.js$)/.test(absoluteFilePath)) {
+        if (/(\.tsx?$)|(\.js$)/.test(absoluteFilePath)) {
             contents = toggleComments(contents.toString());
         }
         writeFile(absoluteFilePath, contents);

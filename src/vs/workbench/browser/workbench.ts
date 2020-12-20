@@ -40,6 +40,8 @@ import { InstantiationService } from 'vs/platform/instantiation/common/instantia
 import { Layout } from 'vs/workbench/browser/layout';
 import { IHostService } from 'vs/workbench/services/host/browser/host';
 
+import { NexApp } from 'nex/nexApp';
+
 export class Workbench extends Layout {
 
 	private readonly _onBeforeShutdown = this._register(new Emitter<BeforeShutdownEvent>());
@@ -155,6 +157,9 @@ export class Workbench extends Layout {
 
 				// Layout
 				this.layout();
+
+				// Nex-App: remove monaco-grid-view of the VS code workbench
+				this.container.removeChild(document.getElementsByClassName('monaco-grid-view')[0]);
 
 				// Restore
 				try {
@@ -359,6 +364,16 @@ export class Workbench extends Layout {
 
 		// Add Workbench to DOM
 		this.parent.appendChild(this.container);
+
+		// Add another part for the "Nex" micro-app
+		const nexPart = this.createPart('root-nex', 'main-nex', ['nex-class']);
+		nexPart.style.height = '100%';
+		nexPart.style.width = '100%';
+		this.container.insertBefore(nexPart, this.container.lastChild);
+
+		// create "Nex" micro-app and render it in the container
+		const nexApp = instantiationService.createInstance(NexApp);
+		nexApp.renderApp(nexPart);
 	}
 
 	private createPart(id: string, role: string, classes: string[]): HTMLElement {
