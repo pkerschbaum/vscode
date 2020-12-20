@@ -7,10 +7,10 @@ import { URI } from 'vs/base/common/uri';
 import { isLinux } from 'vs/base/common/platform';
 import { Constants } from 'vs/base/common/uint';
 import { IFileStat, IFileStatWithMetadata } from 'vs/platform/files/common/files';
-import { uriHelper } from 'nex/base/utils/uri-helper';
-import { logger } from 'nex/base/logger/logger';
-import { ResourceScheme, FileProviderState } from 'nex/platform/file-types';
-import { NexFileSystem } from 'nex/platform/logic/file-system';
+import { uriHelper } from 'vs/nex/base/utils/uri-helper';
+import { logger } from 'vs/nex/base/logger/logger';
+import { ResourceScheme, FileProviderState } from 'vs/nex/platform/file-types';
+import { NexFileSystem } from 'vs/nex/platform/logic/file-system';
 import {
 	changeCwd,
 	updateStatsOfFiles,
@@ -19,8 +19,8 @@ import {
 	addPasteProcess,
 	updatePasteProcess,
 	finishPasteProcess,
-} from 'nex/platform/store/file-provider/actions';
-import { DispatchType } from 'nex/platform/store/store';
+} from 'vs/nex/platform/store/file-provider/actions';
+import { DispatchType } from 'vs/nex/platform/store/store';
 
 const UPDATE_INTERVAL_MS = 300;
 

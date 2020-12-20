@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import { colorNeutral, colorNeutralFocus } from 'nex/views/constants/colors';
+import { colorNeutral, colorNeutralFocus } from 'vs/nex/views/constants/colors';
 
 const Button = styled.button`
 	background: ${colorNeutral};

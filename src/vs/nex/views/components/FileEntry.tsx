@@ -4,12 +4,12 @@ const { useRef, useEffect } = React;
 import styled from 'styled-components';
 import relativeDate = require('tiny-relative-date');
 
-import { FileType } from 'nex/platform/file-types';
+import { FileType } from 'vs/nex/platform/file-types';
 
-import { File } from 'nex/views/components/Explorer';
-import { dimensionPaddingVerticalLarge } from 'nex/views/constants/dimensions';
-import { colorSupporting } from 'nex/views/constants/colors';
-import { commonShadowTransform, commonShadowFocus } from 'nex/views/constants/style-elements';
+import { File } from 'vs/nex/views/components/Explorer';
+import { dimensionPaddingVerticalLarge } from 'vs/nex/views/constants/dimensions';
+import { colorSupporting } from 'vs/nex/views/constants/colors';
+import { commonShadowTransform, commonShadowFocus } from 'vs/nex/views/constants/style-elements';
 
 export const COLUMN_WIDTH_ICON = 60;
 export const COLUMN_WIDTH_NAME = 300;

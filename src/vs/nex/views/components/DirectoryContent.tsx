@@ -2,23 +2,23 @@ import * as React from 'react';
 const { useRef, useLayoutEffect } = React;
 import styled from 'styled-components';
 
-import { mergeSort } from 'nex/base/utils/arrays';
-import { FileType } from 'nex/platform/file-types';
+import { mergeSort } from 'vs/nex/base/utils/arrays';
+import { FileType } from 'vs/nex/platform/file-types';
 
-import { File } from 'nex/views/components/Explorer';
+import { File } from 'vs/nex/views/components/Explorer';
 import FileEntry, {
 	COLUMN_WIDTH_ICON,
 	COLUMN_WIDTH_NAME,
 	COLUMN_WIDTH_TYPE,
 	COLUMN_WIDTH_SIZE,
 	COLUMN_WIDTH_LAST_MODIFIED,
-} from 'nex/views/components/FileEntry';
+} from 'vs/nex/views/components/FileEntry';
 import {
 	dimensionMarginMedium,
 	dimensionPaddingVerticalMedium,
-} from 'nex/views/constants/dimensions';
-import { colorGrey } from 'nex/views/constants/colors';
-import { commonShadow } from 'nex/views/constants/style-elements';
+} from 'vs/nex/views/constants/dimensions';
+import { colorGrey } from 'vs/nex/views/constants/colors';
+import { commonShadow } from 'vs/nex/views/constants/style-elements';
 
 const Div = styled.div`
 	display: flex;

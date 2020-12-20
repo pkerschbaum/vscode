@@ -1,6 +1,6 @@
 import { combineReducers } from 'redux';
 
-import { fileProviderReducer } from 'nex/platform/store/file-provider/reducers';
+import { fileProviderReducer } from 'vs/nex/platform/store/file-provider/reducers';
 
 const rootReducer = combineReducers({ fileProvider: fileProviderReducer });
 

@@ -1,7 +1,7 @@
 import { IModeService } from 'vs/editor/common/services/modeService';
 import { IModelService } from 'vs/editor/common/services/modelService';
-import { createApp } from 'nex/index';
-import { NexFileSystem } from 'nex/platform/logic/file-system';
+import { createApp } from 'vs/nex/index';
+import { NexFileSystem } from 'vs/nex/platform/logic/file-system';
 
 export class NexApp {
 	private app: ReturnType<typeof createApp>;

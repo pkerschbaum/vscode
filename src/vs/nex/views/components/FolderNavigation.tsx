@@ -2,18 +2,18 @@ import * as React from 'react';
 const { useState, useEffect, useCallback } = React;
 import styled from 'styled-components';
 
-import { logger } from 'nex/base/logger/logger';
+import { logger } from 'vs/nex/base/logger/logger';
 
-import { FolderInput, PATHPART_INPUT_WORKAROUND_OFFSET } from 'nex/views/components/FolderInput';
-import Button from 'nex/views/elements/Button';
+import { FolderInput, PATHPART_INPUT_WORKAROUND_OFFSET } from 'vs/nex/views/components/FolderInput';
+import Button from 'vs/nex/views/elements/Button';
 import {
 	dimensionMarginMedium,
 	dimensionPaddingVerticalSmall,
 	dimensionPaddingHorizontalMedium,
 	dimensionBorderRadius,
-} from 'nex/views/constants/dimensions';
-import { colorNeutral, colorNeutralFocus, colorUnimportant } from 'nex/views/constants/colors';
-import { commonShadowTransform } from 'nex/views/constants/style-elements';
+} from 'vs/nex/views/constants/dimensions';
+import { colorNeutral, colorNeutralFocus, colorUnimportant } from 'vs/nex/views/constants/colors';
+import { commonShadowTransform } from 'vs/nex/views/constants/style-elements';
 
 const PATH_SEPARATOR = '/';
 

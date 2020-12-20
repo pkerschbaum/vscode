@@ -2,11 +2,11 @@ import * as React from 'react';
 const { useState, useEffect } = React;
 
 import { URI } from 'vs/base/common/uri';
-import { FileType } from 'nex/platform/file-types';
+import { FileType } from 'vs/nex/platform/file-types';
 
-import Actions, { ActionsProps } from 'nex/views/components/Actions';
-import DirectoryContent from 'nex/views/components/DirectoryContent';
-import FolderNavigation, { FolderNavigationProps } from 'nex/views/components/FolderNavigation';
+import Actions, { ActionsProps } from 'vs/nex/views/components/Actions';
+import DirectoryContent from 'vs/nex/views/components/DirectoryContent';
+import FolderNavigation, { FolderNavigationProps } from 'vs/nex/views/components/FolderNavigation';
 
 export type ExplorerProps = FolderNavigationProps &
 	ExplorerOwnProps &

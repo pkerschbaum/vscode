@@ -4,9 +4,9 @@ import { DeepWritable } from 'ts-essentials';
 import * as resources from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
 import { IFileStat } from 'vs/platform/files/common/files';
-import { File, FileProviderActionTypes, FileType, ResourceScheme, FileProviderState, PasteStatus } from 'nex/platform/file-types';
-import { FileProviderActions } from 'nex/platform/store/file-provider/actions';
-import { logger } from 'nex/base/logger/logger';
+import { File, FileProviderActionTypes, FileType, ResourceScheme, FileProviderState, PasteStatus } from 'vs/nex/platform/file-types';
+import { FileProviderActions } from 'vs/nex/platform/store/file-provider/actions';
+import { logger } from 'vs/nex/base/logger/logger';
 
 const initialState: FileProviderState = {
 	scheme: ResourceScheme.FileSystem,

@@ -7,16 +7,16 @@ import { URI } from 'vs/base/common/uri';
 import { IModeService } from 'vs/editor/common/services/modeService';
 import { IModelService } from 'vs/editor/common/services/modelService';
 import { getIconClasses } from 'vs/editor/common/services/getIconClasses';
-import { propsToArray } from 'nex/base/utils/objects';
-import { FileMap, FileType, mapFileTypeToFileKind } from 'nex/platform/file-types';
-import { NexFileSystem } from 'nex/platform/logic/file-system';
-import store from 'nex/platform/store/store';
-import { AppState } from 'nex/platform/store/reducers';
-import createFileProviderActions from 'nex/platform/store/file-provider/operations';
+import { propsToArray } from 'vs/nex/base/utils/objects';
+import { FileMap, FileType, mapFileTypeToFileKind } from 'vs/nex/platform/file-types';
+import { NexFileSystem } from 'vs/nex/platform/logic/file-system';
+import store from 'vs/nex/platform/store/store';
+import { AppState } from 'vs/nex/platform/store/reducers';
+import createFileProviderActions from 'vs/nex/platform/store/file-provider/operations';
 
-import Explorer, { ExplorerProps } from 'nex/views/components/Explorer';
-import ProgressBar from 'nex/views/components/ProgressBar';
-import GlobalStyle from 'nex/global.styles';
+import Explorer, { ExplorerProps } from 'vs/nex/views/components/Explorer';
+import ProgressBar from 'vs/nex/views/components/ProgressBar';
+import GlobalStyle from 'vs/nex/global.styles';
 
 const Div = styled.div`
 	height: 100vh;

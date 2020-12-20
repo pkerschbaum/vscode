@@ -2,8 +2,8 @@ import * as React from 'react';
 const { useEffect, useLayoutEffect, useRef, useState } = React;
 import styled from 'styled-components';
 
-import { colorIndicateValid, colorIndicateInvalid } from 'nex/views/constants/colors';
-import { commonValidityTransform } from 'nex/views/constants/style-elements';
+import { colorIndicateValid, colorIndicateInvalid } from 'vs/nex/views/constants/colors';
+import { commonValidityTransform } from 'vs/nex/views/constants/style-elements';
 
 export const PATHPART_INPUT_WORKAROUND_OFFSET = 10;
 export const PATHPART_INPUT_MIN_WIDTH = 2.5;

@@ -2,14 +2,14 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { useSelector } from 'react-redux';
 
-import { AppState } from 'nex/platform/store/reducers';
+import { AppState } from 'vs/nex/platform/store/reducers';
 
 import {
 	dimensionPaddingVerticalMedium,
 	dimensionMarginMedium,
-} from 'nex/views/constants/dimensions';
-import { colorGrey } from 'nex/views/constants/colors';
-import { commonShadow } from 'nex/views/constants/style-elements';
+} from 'vs/nex/views/constants/dimensions';
+import { colorGrey } from 'vs/nex/views/constants/colors';
+import { commonShadow } from 'vs/nex/views/constants/style-elements';
 
 const Container = styled.div`
 	display: flex;

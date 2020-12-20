@@ -1,5 +1,5 @@
 import { URI } from 'vs/base/common/uri';
-import { ResourceScheme } from 'nex/platform/file-types';
+import { ResourceScheme } from 'vs/nex/platform/file-types';
 
 export const uriHelper = {
 	parseUri(scheme: ResourceScheme, uri: string): URI | undefined {

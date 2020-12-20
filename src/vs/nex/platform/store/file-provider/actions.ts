@@ -1,6 +1,6 @@
 import { URI } from 'vs/base/common/uri';
 import { IFileStat } from 'vs/platform/files/common/files';
-import { FileProviderActionTypes } from 'nex/platform/file-types';
+import { FileProviderActionTypes } from 'vs/nex/platform/file-types';
 
 export type FileProviderActions = ReturnType<typeof changeCwd>
 	| ReturnType<typeof updateStatsOfFiles>

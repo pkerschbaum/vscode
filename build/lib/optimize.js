@@ -20,94 +20,93 @@ const stats_1 = require("./stats");
 const util = require("./util");
 const REPO_ROOT_PATH = path.join(__dirname, '../..');
 function log(prefix, message) {
-	fancyLog(ansiColors.cyan('[' + prefix + ']'), message);
+    fancyLog(ansiColors.cyan('[' + prefix + ']'), message);
 }
 function loaderConfig() {
-	const result = {
-		paths: {
-			'vs': 'out-build/vs',
-			'vscode': 'empty:',
-			'nex': 'out-build/nex'
-		},
-		amdModulesPattern: /^vs\//
-	};
-	result['vs/css'] = { inlineResources: true };
-	return result;
+    const result = {
+        paths: {
+            'vs': 'out-build/vs',
+            'vscode': 'empty:',
+        },
+        amdModulesPattern: /^vs\//
+    };
+    result['vs/css'] = { inlineResources: true };
+    return result;
 }
 exports.loaderConfig = loaderConfig;
 const IS_OUR_COPYRIGHT_REGEXP = /Copyright \(C\) Microsoft Corporation/i;
 function loader(src, bundledFileHeader, bundleLoader) {
-	let sources = [
-		`${src}/vs/loader.js`
-	];
-	if (bundleLoader) {
-		sources = sources.concat([
-			`${src}/vs/css.js`,
-			`${src}/vs/nls.js`
-		]);
-	}
-	let isFirst = true;
-	return (gulp
-		.src(sources, { base: `${src}` })
-		.pipe(es.through(function (data) {
-			if (isFirst) {
-				isFirst = false;
-				this.emit('data', new VinylFile({
-					path: 'fake',
-					base: '.',
-					contents: Buffer.from(bundledFileHeader)
-				}));
-				this.emit('data', data);
-			}
-			else {
-				this.emit('data', data);
-			}
-		}))
-		.pipe(concat('vs/loader.js')));
+    let sources = [
+        `${src}/vs/loader.js`
+    ];
+    if (bundleLoader) {
+        sources = sources.concat([
+            `${src}/vs/css.js`,
+            `${src}/vs/nls.js`
+        ]);
+    }
+    let isFirst = true;
+    return (gulp
+        .src(sources, { base: `${src}` })
+        .pipe(es.through(function (data) {
+        if (isFirst) {
+            isFirst = false;
+            this.emit('data', new VinylFile({
+                path: 'fake',
+                base: '.',
+                contents: Buffer.from(bundledFileHeader)
+            }));
+            this.emit('data', data);
+        }
+        else {
+            this.emit('data', data);
+        }
+    }))
+        .pipe(concat('vs/loader.js')));
 }
 function toConcatStream(src, bundledFileHeader, sources, dest, fileContentMapper) {
-	const useSourcemaps = /\.js$/.test(dest) && !/\.nls\.js$/.test(dest);
-	// If a bundle ends up including in any of the sources our copyright, then
-	// insert a fake source at the beginning of each bundle with our copyright
-	let containsOurCopyright = false;
-	for (let i = 0, len = sources.length; i < len; i++) {
-		const fileContents = sources[i].contents;
-		if (IS_OUR_COPYRIGHT_REGEXP.test(fileContents)) {
-			containsOurCopyright = true;
-			break;
-		}
-	}
-	if (containsOurCopyright) {
-		sources.unshift({
-			path: null,
-			contents: bundledFileHeader
-		});
-	}
-	const treatedSources = sources.map(function (source) {
-		const root = source.path ? REPO_ROOT_PATH.replace(/\\/g, '/') : '';
-		const base = source.path ? root + `/${src}` : '.';
-		const path = source.path ? root + '/' + source.path.replace(/\\/g, '/') : 'fake';
-		const contents = source.path ? fileContentMapper(source.contents, path) : source.contents;
-		return new VinylFile({
-			path: path,
-			base: base,
-			contents: Buffer.from(contents)
-		});
-	});
-	return es.readArray(treatedSources)
-		.pipe(useSourcemaps ? util.loadSourcemaps() : es.through())
-		.pipe(concat(dest))
-		.pipe(stats_1.createStatsStream(dest));
+    const useSourcemaps = /\.js$/.test(dest) && !/\.nls\.js$/.test(dest);
+    // If a bundle ends up including in any of the sources our copyright, then
+    // insert a fake source at the beginning of each bundle with our copyright
+    let containsOurCopyright = false;
+    for (let i = 0, len = sources.length; i < len; i++) {
+        const fileContents = sources[i].contents;
+        if (IS_OUR_COPYRIGHT_REGEXP.test(fileContents)) {
+            containsOurCopyright = true;
+            break;
+        }
+    }
+    if (containsOurCopyright) {
+        sources.unshift({
+            path: null,
+            contents: bundledFileHeader
+        });
+    }
+    const treatedSources = sources.map(function (source) {
+        const root = source.path ? REPO_ROOT_PATH.replace(/\\/g, '/') : '';
+        const base = source.path ? root + `/${src}` : '.';
+        const path = source.path ? root + '/' + source.path.replace(/\\/g, '/') : 'fake';
+        const contents = source.path ? fileContentMapper(source.contents, path) : source.contents;
+        return new VinylFile({
+            path: path,
+            base: base,
+            contents: Buffer.from(contents)
+        });
+    });
+    return es.readArray(treatedSources)
+        .pipe(useSourcemaps ? util.loadSourcemaps() : es.through())
+        .pipe(concat(dest))
+        .pipe(stats_1.createStatsStream(dest));
 }
 function toBundleStream(src, bundledFileHeader, bundles, fileContentMapper) {
-	return es.merge(bundles.map(function (bundle) {
-		return toConcatStream(src, bundledFileHeader, bundle.sources, bundle.dest, fileContentMapper);
-	}));
+    return es.merge(bundles.map(function (bundle) {
+        return toConcatStream(src, bundledFileHeader, bundle.sources, bundle.dest, fileContentMapper);
+    }));
 }
 const DEFAULT_FILE_HEADER = [
-	'/*!--------------------------------------------------------',
-	' * Copyright (C) Microsoft Corporation. All rights reserved.',
-	' *--------------------------------------------------------*/'
+    '/*!--------------------------------------------------------',
+    ' * Copyright (C) Microsoft Corporation. All rights reserved.',
+    ' *--------------------------------------------------------*/'
 ].join('\n');
 function optimizeTask(opts) {
     const src = opts.src;

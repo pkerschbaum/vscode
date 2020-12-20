@@ -30,7 +30,6 @@ export function loaderConfig() {
 		paths: {
 			'vs': 'out-build/vs',
 			'vscode': 'empty:',
-			'nex': 'out-build/nex'
 		},
 		amdModulesPattern: /^vs\//
 	};

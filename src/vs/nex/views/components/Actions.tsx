@@ -1,8 +1,8 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
-import Button from 'nex/views/elements/Button';
-import { dimensionMarginMedium } from 'nex/views/constants/dimensions';
+import Button from 'vs/nex/views/elements/Button';
+import { dimensionMarginMedium } from 'vs/nex/views/constants/dimensions';
 
 const Div = styled.div`
 	display: flex;

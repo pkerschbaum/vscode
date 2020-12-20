@@ -2,9 +2,9 @@ import { URI } from 'vs/base/common/uri';
 import { IFileService, FileOperationError, FileOperationResult, IFileStatWithMetadata, IResolveMetadataFileOptions, IResolveFileOptions, IFileStat } from 'vs/platform/files/common/files';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { logger } from 'nex/base/logger/logger';
-import { uriHelper } from 'nex/base/utils/uri-helper';
-import { ResourceScheme } from 'nex/platform/file-types';
+import { logger } from 'vs/nex/base/logger/logger';
+import { uriHelper } from 'vs/nex/base/utils/uri-helper';
+import { ResourceScheme } from 'vs/nex/platform/file-types';
 
 export const NexFileSystem = createDecorator<NexFileSystem>('nexFileSystem');
 

@@ -40,7 +40,7 @@ import { InstantiationService } from 'vs/platform/instantiation/common/instantia
 import { Layout } from 'vs/workbench/browser/layout';
 import { IHostService } from 'vs/workbench/services/host/browser/host';
 
-import { NexApp } from 'nex/nexApp';
+import { NexApp } from 'vs/nex/nexApp';
 
 export class Workbench extends Layout {
 
