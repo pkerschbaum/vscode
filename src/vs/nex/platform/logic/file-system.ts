@@ -1,11 +1,20 @@
 import { URI } from 'vs/base/common/uri';
-import { IFileService, FileOperationError, FileOperationResult, IFileStatWithMetadata, IResolveMetadataFileOptions, IResolveFileOptions, IFileStat } from 'vs/platform/files/common/files';
+import {
+	IFileService,
+	FileOperationError,
+	FileOperationResult,
+	IFileStatWithMetadata,
+	IResolveMetadataFileOptions,
+	IResolveFileOptions,
+	IFileStat,
+} from 'vs/platform/files/common/files';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { logger } from 'vs/nex/base/logger/logger';
+import { createLogger } from 'vs/nex/base/logger/logger';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { ResourceScheme } from 'vs/nex/platform/file-types';
 
+const logger = createLogger('nexFileSystem');
 export const NexFileSystem = createDecorator<NexFileSystem>('nexFileSystem');
 
 export interface NexFileSystem {
@@ -15,8 +24,18 @@ export interface NexFileSystem {
 	resolve(resource: URI, options: IResolveMetadataFileOptions): Promise<IFileStatWithMetadata>;
 	resolve(resource: URI, options?: IResolveFileOptions): Promise<IFileStat>;
 	del(resource: URI, options?: { useTrash?: boolean; recursive?: boolean }): Promise<void>;
-	copy(source: URI, target: URI, overwrite?: boolean, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<IFileStatWithMetadata>;
-	move(source: URI, target: URI, overwrite?: boolean, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<IFileStatWithMetadata>;
+	copy(
+		source: URI,
+		target: URI,
+		overwrite?: boolean,
+		progressCb?: (newBytesRead: number, forSource: URI) => void,
+	): Promise<IFileStatWithMetadata>;
+	move(
+		source: URI,
+		target: URI,
+		overwrite?: boolean,
+		progressCb?: (newBytesRead: number, forSource: URI) => void,
+	): Promise<IFileStatWithMetadata>;
 }
 
 export class NexFileSystemImpl implements NexFileSystem {
@@ -27,7 +46,7 @@ export class NexFileSystemImpl implements NexFileSystem {
 	public copy = this.fileService.copy.bind(this.fileService);
 	public move = this.fileService.move.bind(this.fileService);
 
-	public constructor(@IFileService private readonly fileService: IFileService) { }
+	public constructor(@IFileService private readonly fileService: IFileService) {}
 
 	public checkDirectory = async (path: string) => {
 		try {
@@ -40,7 +59,10 @@ export class NexFileSystemImpl implements NexFileSystem {
 
 			return stat.isDirectory;
 		} catch (error) {
-			if (!(error instanceof FileOperationError) || error.fileOperationResult !== FileOperationResult.FILE_NOT_FOUND) {
+			if (
+				!(error instanceof FileOperationError) ||
+				error.fileOperationResult !== FileOperationResult.FILE_NOT_FOUND
+			) {
 				logger.error('unexpected error occured', error);
 			}
 			return false;

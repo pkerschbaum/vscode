@@ -1,13 +1,16 @@
-import { createStore } from 'redux';
-import { devToolsEnhancer } from 'redux-devtools-extension';
+import { configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
+import { createSelectorHook } from 'react-redux';
 
+import loggerMiddleware from 'vs/nex/platform/store/logger.middleware';
 import rootReducer from 'vs/nex/platform/store/reducers';
 
-const store = createStore(
-	rootReducer,
-	devToolsEnhancer({}),
-);
-export type GetStateType = typeof store.getState;
-export type DispatchType = typeof store.dispatch;
+export const store = configureStore({
+	reducer: rootReducer,
+	middleware: [loggerMiddleware, ...getDefaultMiddleware()],
+});
 
-export default store;
+export type RootState = ReturnType<typeof rootReducer>;
+export type RootStore = typeof store;
+export type AppDispatch = RootStore['dispatch'];
+
+export const useSelector = createSelectorHook<RootState>();

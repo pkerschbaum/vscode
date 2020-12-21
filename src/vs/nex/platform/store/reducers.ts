@@ -1,10 +1,7 @@
-import { combineReducers } from 'redux';
+import { combineReducers } from '@reduxjs/toolkit';
 
-import { fileProviderReducer } from 'vs/nex/platform/store/file-provider/reducers';
+import { reducer as fileProviderReducer } from 'vs/nex/platform/store/file-provider/file-provider.slice';
 
 const rootReducer = combineReducers({ fileProvider: fileProviderReducer });
 
 export default rootReducer;
-
-// infer and export shape of the application state
-export type AppState = ReturnType<typeof rootReducer>;

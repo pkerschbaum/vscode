@@ -1,38 +1,23 @@
 import * as React from 'react';
 import { render } from 'react-dom';
-import styled from 'styled-components';
-import { Provider, useSelector } from 'react-redux';
+import { Provider } from 'react-redux';
 
 import { URI } from 'vs/base/common/uri';
 import { IModeService } from 'vs/editor/common/services/modeService';
 import { IModelService } from 'vs/editor/common/services/modelService';
 import { getIconClasses } from 'vs/editor/common/services/getIconClasses';
-import { propsToArray } from 'vs/nex/base/utils/objects';
 import { FileMap, FileType, mapFileTypeToFileKind } from 'vs/nex/platform/file-types';
 import { NexFileSystem } from 'vs/nex/platform/logic/file-system';
-import store from 'vs/nex/platform/store/store';
-import { AppState } from 'vs/nex/platform/store/reducers';
+import { store, useSelector } from 'vs/nex/platform/store/store';
 import createFileProviderActions from 'vs/nex/platform/store/file-provider/operations';
 
-import Explorer, { ExplorerProps } from 'vs/nex/views/components/Explorer';
-import ProgressBar from 'vs/nex/views/components/ProgressBar';
-import GlobalStyle from 'vs/nex/global.styles';
-
-const Div = styled.div`
-	height: 100vh;
-	width: 100vw;
-	font-size: 1rem;
-
-	display: grid;
-	align-items: stretch;
-	grid-template-rows: min-content min-content auto min-content;
-`;
-
-const createMapStateToProps = (modeService: IModeService, modelService: IModelService) => (
+const mapStateToProps = (
+	modeService: IModeService,
+	modelService: IModelService,
 	fileMap: FileMap,
 	cwd: URI,
 ) => {
-	const files = propsToArray(fileMap).map((file) => {
+	const files = Object.values(fileMap).map((file) => {
 		const baseName = extractBaseName(file.uri.path);
 		const { fileName, extension } = extractNameAndExtension(baseName, file.fileType);
 		const fileType = mapFileTypeToFileKind(file.fileType);
@@ -93,33 +78,21 @@ function extractNameAndExtension(
 
 const App = ({
 	FileSystem,
-	mapStateToProps,
+	modeService,
+	modelService,
 	fileProviderActions,
 }: {
 	FileSystem: NexFileSystem;
-	mapStateToProps: (fileMap: FileMap, cwd: URI) => Pick<ExplorerProps, 'cwd' | 'files'>;
+	modeService: IModeService;
+	modelService: IModelService;
 	fileProviderActions: ReturnType<typeof createFileProviderActions>;
 }) => {
-	const cwd = useSelector((state: AppState) => state.fileProvider.cwd);
-	const fileMap = useSelector((state: AppState) => state.fileProvider.files);
-	const explorerProps = mapStateToProps(fileMap, cwd);
+	const cwd = useSelector((state) => state.fileProvider.cwd);
+	const fileMap = useSelector((state) => state.fileProvider.files);
+	const explorerProps = mapStateToProps(modeService, modelService, fileMap, cwd);
+	console.dir(explorerProps);
 
-	return (
-		<Div>
-			<GlobalStyle />
-			<Explorer
-				checkDirectory={FileSystem.checkDirectory}
-				changeDirectory={fileProviderActions.changeDirectory}
-				changeDirectoryById={fileProviderActions.changeDirectoryById}
-				moveFilesToTrash={fileProviderActions.moveFilesToTrash}
-				openFile={fileProviderActions.openFile}
-				cutOrCopyFiles={fileProviderActions.cutOrCopyFiles}
-				pasteAction={fileProviderActions.pasteFiles}
-				{...explorerProps}
-			/>
-			<ProgressBar />
-		</Div>
-	);
+	return <div>Implement me!</div>;
 };
 
 export function createApp(
@@ -127,13 +100,12 @@ export function createApp(
 	modelService: IModelService,
 	FileSystem: NexFileSystem,
 ) {
-	const mapStateToProps = createMapStateToProps(modeService, modelService);
 	const fileProviderActions = createFileProviderActions(
 		() => store.getState().fileProvider,
 		store.dispatch,
 		FileSystem,
 	);
-	fileProviderActions.changeDirectory('C:/data/Drive/Project File Explorer/test-folder');
+	fileProviderActions.changeDirectory('/home/pkerschbaum');
 
 	return {
 		renderApp(targetContainer: HTMLElement) {
@@ -145,7 +117,8 @@ export function createApp(
 					<Provider store={store}>
 						<App
 							FileSystem={FileSystem}
-							mapStateToProps={mapStateToProps}
+							modeService={modeService}
+							modelService={modelService}
 							fileProviderActions={fileProviderActions}
 						/>
 					</Provider>
