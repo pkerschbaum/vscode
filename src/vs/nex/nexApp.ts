@@ -9,7 +9,7 @@ export class NexApp {
 	public constructor(
 		@IModeService modeService: IModeService,
 		@IModelService modelService: IModelService,
-		@NexFileSystem fileSystem: NexFileSystem
+		@NexFileSystem fileSystem: NexFileSystem,
 	) {
 		this.app = createApp(modeService, modelService, fileSystem);
 	}
