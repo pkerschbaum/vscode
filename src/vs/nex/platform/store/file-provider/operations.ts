@@ -17,65 +17,11 @@ import { AppDispatch } from 'vs/nex/platform/store/store';
 const UPDATE_INTERVAL_MS = 300;
 const logger = createLogger('file-provider.operations');
 
-function findValidPasteFileTarget(
-	targetFolder: IFileStat,
-	fileToPaste: { resource: URI; isDirectory?: boolean; allowOverwrite: boolean },
-): URI {
-	let name = resources.basenameOrAuthority(fileToPaste.resource);
-	let candidate = resources.joinPath(targetFolder.resource, name);
-
-	if (fileToPaste.allowOverwrite || !targetFolder.children || targetFolder.children.length === 0) {
-		return candidate;
-	}
-
-	const cmpFunction = (child: IFileStat) => child.resource.toString() === candidate.toString();
-
-	while (true) {
-		const conflict = targetFolder.children.find(cmpFunction);
-		if (!conflict) {
-			break;
-		}
-
-		name = incrementFileName(name, !!fileToPaste.isDirectory);
-		candidate = resources.joinPath(targetFolder.resource, name);
-	}
-
-	return candidate;
-}
-
-function incrementFileName(name: string, isFolder: boolean): string {
-	let namePrefix = name;
-	let extSuffix = '';
-	if (!isFolder) {
-		extSuffix = extname(name);
-		namePrefix = basename(name, extSuffix);
-	}
-
-	// name copy 5(.txt) => name copy 6(.txt)
-	// name copy(.txt) => name copy 2(.txt)
-	const suffixRegex = /^(.+ copy)( \d+)?$/;
-	if (suffixRegex.test(namePrefix)) {
-		return (
-			namePrefix.replace(suffixRegex, (match, g1?, g2?) => {
-				const number = g2 ? parseInt(g2) : 1;
-				return number === 0
-					? `${g1}`
-					: number < Constants.MAX_SAFE_SMALL_INTEGER
-					? `${g1} ${number + 1}`
-					: `${g1}${g2} copy`;
-			}) + extSuffix
-		);
-	}
-
-	// name(.txt) => name copy(.txt)
-	return `${namePrefix} copy${extSuffix}`;
-}
-
 interface FileStatMap {
 	[uri: string]: IFileStatWithMetadata;
 }
 
-function createActions(
+export function createThunks(
 	getFileProviderState: () => FileProviderState,
 	dispatch: AppDispatch,
 	fileSystem: NexFileSystem,
@@ -114,47 +60,48 @@ function createActions(
 		}
 	}
 
-	const actions = {
-		changeDirectory: async (newDir: string) => {
-			const parsedUri = uriHelper.parseUri(ResourceScheme.FileSystem, newDir);
+	async function changeDirectory(newDir: string) {
+		const parsedUri = uriHelper.parseUri(ResourceScheme.FileSystem, newDir);
 
-			// check if the directory is a valid directory (i.e., is a URI-parsable string)
-			if (!parsedUri) {
-				throw Error(
-					`could not change directory, reason: path is not a valid directory. path: ${newDir}`,
-				);
-			}
+		// check if the directory is a valid directory (i.e., is a URI-parsable string)
+		if (!parsedUri) {
+			throw Error(
+				`could not change directory, reason: path is not a valid directory. path: ${newDir}`,
+			);
+		}
 
-			// if newDir is the current working directory, no action is necessary
-			const { cwd } = getFileProviderState();
+		// if newDir is the current working directory, no action is necessary
+		const { cwd } = getFileProviderState();
 
-			const cwdTrailingSepRemoved = resources.removeTrailingPathSeparator(cwd);
-			const parsedUriTrailingSepRemoved = resources.removeTrailingPathSeparator(parsedUri);
+		const cwdTrailingSepRemoved = resources.removeTrailingPathSeparator(cwd);
+		const parsedUriTrailingSepRemoved = resources.removeTrailingPathSeparator(parsedUri);
 
-			if (resources.isEqual(cwdTrailingSepRemoved, parsedUriTrailingSepRemoved)) {
-				return;
-			}
+		if (resources.isEqual(cwdTrailingSepRemoved, parsedUriTrailingSepRemoved)) {
+			return;
+		}
 
-			// check if the directory is a valid directory (i.e., the directory is accessible)
-			const stats = await fileSystem.resolve(parsedUri);
-			if (!stats.isDirectory) {
-				throw Error(
-					`could not change directory, reason: uri is not a valid directory. uri: ${parsedUri}`,
-				);
-			}
+		// check if the directory is a valid directory (i.e., the directory is accessible)
+		const stats = await fileSystem.resolve(parsedUri);
+		if (!stats.isDirectory) {
+			throw Error(
+				`could not change directory, reason: uri is not a valid directory. uri: ${parsedUri}`,
+			);
+		}
 
-			// if newDir is not the current working directory, and is a valid directory => change to the new directory
+		// if newDir is not the current working directory, and is a valid directory => change to the new directory
+		// first, dispatch files without metadata
+		dispatch(fileProviderActions.changeCwd({ newDir: parsedUri, files: stats.children ?? [] }));
 
-			// dispatch files without metadata
-			dispatch(fileProviderActions.changeCwd({ newDir: parsedUri, files: stats.children ?? [] }));
+		// then, resolve and dispatch files with metadata
+		return updateFilesOfCwd();
+	}
 
-			// resolve and dispatch files with metadata
-			return updateFilesOfCwd();
-		},
+	return {
+		changeDirectory,
 
 		// since 'path' of the URI is currently used as ID, we can simply call changeDirectory, but before doing so we must
 		// remove the leading slash (e.g., '/d:/TEMP' gets changed to 'd:/TEMP')
-		changeDirectoryById: async (id: string) => actions.changeDirectory(id.substring(1, id.length)),
+		changeDirectoryById: async (id: string) => changeDirectory(id.substring(1, id.length)),
 
 		moveFilesToTrash: async (uris: URI[]) => {
 			// move all files to trash (in parallel)
@@ -163,7 +110,7 @@ function createActions(
 					try {
 						await fileSystem.del(uri, { useTrash: true, recursive: true });
 					} catch (err) {
-						logger.error(`could not move file to trash, error: ${err.toString()}`);
+						logger.error(`could not move file to trash`, err);
 					}
 				}),
 			);
@@ -204,8 +151,11 @@ function createActions(
 					let fileToPasteStat;
 					try {
 						fileToPasteStat = await fileSystem.resolve(fileToPaste, { resolveMetadata: true });
-					} catch {
-						logger.error('File to paste was deleted or moved meanwhile');
+					} catch (err: unknown) {
+						logger.error(
+							'error during file paste process, file to paste was probably deleted or moved meanwhile',
+							err,
+						);
 						return;
 					}
 
@@ -228,8 +178,7 @@ function createActions(
 						statusPerFile: {},
 					};
 
-					Object.entries(fileStatMap).forEach((entry) => {
-						const [key, fileStat] = entry;
+					Object.entries(fileStatMap).forEach(([key, fileStat]) => {
 						pasteStatus.totalSize += fileStat.size;
 						pasteStatus.statusPerFile[key] = { stat: fileStat, bytesProcessed: 0 };
 					});
@@ -284,8 +233,58 @@ function createActions(
 			return updateFilesOfCwd();
 		},
 	};
-
-	return actions;
 }
 
-export default createActions;
+function findValidPasteFileTarget(
+	targetFolder: IFileStat,
+	fileToPaste: { resource: URI; isDirectory?: boolean; allowOverwrite: boolean },
+): URI {
+	let name = resources.basenameOrAuthority(fileToPaste.resource);
+	let candidate = resources.joinPath(targetFolder.resource, name);
+
+	if (fileToPaste.allowOverwrite || !targetFolder.children || targetFolder.children.length === 0) {
+		return candidate;
+	}
+
+	const cmpFunction = (child: IFileStat) => child.resource.toString() === candidate.toString();
+
+	while (true) {
+		const conflict = targetFolder.children.find(cmpFunction);
+		if (!conflict) {
+			break;
+		}
+
+		name = incrementFileName(name, !!fileToPaste.isDirectory);
+		candidate = resources.joinPath(targetFolder.resource, name);
+	}
+
+	return candidate;
+}
+
+function incrementFileName(name: string, isFolder: boolean): string {
+	let namePrefix = name;
+	let extSuffix = '';
+	if (!isFolder) {
+		extSuffix = extname(name);
+		namePrefix = basename(name, extSuffix);
+	}
+
+	// name copy 5(.txt) => name copy 6(.txt)
+	// name copy(.txt) => name copy 2(.txt)
+	const suffixRegex = /^(.+ copy)( \d+)?$/;
+	if (suffixRegex.test(namePrefix)) {
+		return (
+			namePrefix.replace(suffixRegex, (match, g1?, g2?) => {
+				const number = g2 ? parseInt(g2) : 1;
+				return number === 0
+					? `${g1}`
+					: number < Constants.MAX_SAFE_SMALL_INTEGER
+					? `${g1} ${number + 1}`
+					: `${g1}${g2} copy`;
+			}) + extSuffix
+		);
+	}
+
+	// name(.txt) => name copy(.txt)
+	return `${namePrefix} copy${extSuffix}`;
+}

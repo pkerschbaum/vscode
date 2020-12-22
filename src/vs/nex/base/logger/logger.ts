@@ -5,14 +5,22 @@ import { CustomError } from 'vs/nex/base/custom-error';
 import { JsonObject } from 'vs/nex/base/utils/types.util';
 import { objects } from 'vs/nex/base/utils/objects.util';
 
-export const createLogger = (context: string) => {
-	const logWithContext = (
-		logFn: (data: {
-			message: string;
-			logPayload?: JsonObject;
-			verboseLogPayload?: JsonObject;
-		}) => void,
-	) => (message: string, logPayload?: JsonObject, verboseLogPayload?: JsonObject) => {
+type Logger = {
+	debug: (message: string, logPayload?: JsonObject, verboseLogPayload?: JsonObject) => void;
+	info: (message: string, logPayload?: JsonObject, verboseLogPayload?: JsonObject) => void;
+	warn: (message: string, logPayload?: JsonObject, verboseLogPayload?: JsonObject) => void;
+	error: (
+		message: string,
+		error?: any,
+		logPayload?: JsonObject,
+		verboseLogPayload?: JsonObject,
+	) => void;
+	group: (groupName: string) => void;
+	groupEnd: () => void;
+};
+
+export function createLogger(context: string): Logger {
+	function extendLog(message: string, logPayload?: JsonObject, verboseLogPayload?: JsonObject) {
 		// if CustomErrors get passed in a payload, extract the data prop of the error and
 		// append it to the payload
 		let customLogPayload = objects.shallowCopy(logPayload);
@@ -32,55 +40,68 @@ export const createLogger = (context: string) => {
 			}
 		}
 
-		return logFn({
+		return {
 			message: `[${context}] ${message}`,
 			logPayload: customLogPayload,
 			verboseLogPayload: customVerboseLogPayload,
-		});
-	};
+		};
+	}
 
 	return {
-		debug: logWithContext(({ message, logPayload, verboseLogPayload }) => {
+		debug: (...args) => {
+			const extendedLog = extendLog(...args);
+
 			const additionalParams: any[] = [];
-			if (logPayload !== undefined) {
-				additionalParams.push(logPayload);
+			if (extendedLog.logPayload !== undefined) {
+				additionalParams.push(extendedLog.logPayload);
 			}
-			if (verboseLogPayload !== undefined) {
-				additionalParams.push(verboseLogPayload);
+			if (extendedLog.verboseLogPayload !== undefined) {
+				additionalParams.push(extendedLog.verboseLogPayload);
 			}
-			console.debug(message, ...additionalParams);
-		}),
-		info: logWithContext(({ message, logPayload, verboseLogPayload }) => {
+			console.debug(extendedLog.message, ...additionalParams);
+		},
+		info: (...args) => {
+			const extendedLog = extendLog(...args);
+
 			const additionalParams: any[] = [];
-			if (logPayload !== undefined) {
-				additionalParams.push(logPayload);
+			if (extendedLog.logPayload !== undefined) {
+				additionalParams.push(extendedLog.logPayload);
 			}
-			if (verboseLogPayload !== undefined) {
-				additionalParams.push(verboseLogPayload);
+			if (extendedLog.verboseLogPayload !== undefined) {
+				additionalParams.push(extendedLog.verboseLogPayload);
 			}
-			console.info(message, ...additionalParams);
-		}),
-		warn: logWithContext(({ message, logPayload, verboseLogPayload }) => {
+			console.info(extendedLog.message, ...additionalParams);
+		},
+		warn: (...args) => {
+			const extendedLog = extendLog(...args);
+
 			const additionalParams: any[] = [];
-			if (logPayload !== undefined) {
-				additionalParams.push(logPayload);
+			if (extendedLog.logPayload !== undefined) {
+				additionalParams.push(extendedLog.logPayload);
 			}
-			if (verboseLogPayload !== undefined) {
-				additionalParams.push(verboseLogPayload);
+			if (extendedLog.verboseLogPayload !== undefined) {
+				additionalParams.push(extendedLog.verboseLogPayload);
 			}
-			console.warn(message, ...additionalParams);
-		}),
-		error: logWithContext(({ message, logPayload, verboseLogPayload }) => {
+			console.warn(extendedLog.message, ...additionalParams);
+		},
+		error: (
+			message: string,
+			error?: any,
+			logPayload?: JsonObject,
+			verboseLogPayload?: JsonObject,
+		) => {
+			const extendedLog = extendLog(message, logPayload, verboseLogPayload);
+
 			const additionalParams: any[] = [];
-			if (logPayload !== undefined) {
-				additionalParams.push(logPayload);
+			if (extendedLog.logPayload !== undefined) {
+				additionalParams.push(extendedLog.logPayload);
 			}
-			if (verboseLogPayload !== undefined) {
-				additionalParams.push(verboseLogPayload);
+			if (extendedLog.verboseLogPayload !== undefined) {
+				additionalParams.push(extendedLog.verboseLogPayload);
 			}
-			console.error(message, ...additionalParams);
-		}),
+			console.error(extendedLog.message, error, ...additionalParams);
+		},
 		group: console.group,
 		groupEnd: console.groupEnd,
 	};
-};
+}

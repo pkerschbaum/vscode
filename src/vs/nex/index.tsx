@@ -14,7 +14,7 @@ import { NexFileSystem } from 'vs/nex/platform/logic/file-system';
 import { createTheme } from 'vs/nex/theme';
 import { ThemeProvider } from 'vs/nex/ThemeProvider';
 import { store, useSelector } from 'vs/nex/platform/store/store';
-import createFileProviderActions from 'vs/nex/platform/store/file-provider/operations';
+import { createThunks as createFileProviderThunks } from 'vs/nex/platform/store/file-provider/operations';
 
 const theme = createTheme(enUS);
 
@@ -23,7 +23,7 @@ export function createApp(
 	modelService: IModelService,
 	FileSystem: NexFileSystem,
 ) {
-	const fileProviderActions = createFileProviderActions(
+	const fileProviderThunks = createFileProviderThunks(
 		() => store.getState().fileProvider,
 		store.dispatch,
 		FileSystem,
@@ -43,7 +43,7 @@ export function createApp(
 									FileSystem={FileSystem}
 									modeService={modeService}
 									modelService={modelService}
-									fileProviderActions={fileProviderActions}
+									fileProviderThunks={fileProviderThunks}
 								/>
 							</ScopedCssBaseline>
 						</Provider>
@@ -59,19 +59,19 @@ const App: React.FC<{
 	FileSystem: NexFileSystem;
 	modeService: IModeService;
 	modelService: IModelService;
-	fileProviderActions: ReturnType<typeof createFileProviderActions>;
-}> = ({ FileSystem, modeService, modelService, fileProviderActions }) => {
+	fileProviderThunks: ReturnType<typeof createFileProviderThunks>;
+}> = ({ FileSystem, modeService, modelService, fileProviderThunks }) => {
 	const cwd = useSelector((state) => state.fileProvider.cwd);
 	const fileMap = useSelector((state) => state.fileProvider.files);
 	const explorerProps = mapStateToProps(modeService, modelService, fileMap, cwd);
 	console.dir(explorerProps);
 
-	return <Content fileProviderActions={fileProviderActions} />;
+	return <Content fileProviderThunks={fileProviderThunks} />;
 };
 
 const Content: React.FC<{
-	fileProviderActions: ReturnType<typeof createFileProviderActions>;
-}> = ({ fileProviderActions }) => {
+	fileProviderThunks: ReturnType<typeof createFileProviderThunks>;
+}> = ({ fileProviderThunks }) => {
 	const [input, setInput] = React.useState('/home/pkerschbaum');
 
 	return (
@@ -82,7 +82,7 @@ const Content: React.FC<{
 				value={input}
 				onChange={(e) => setInput(e.target.value)}
 			/>
-			<Button onClick={() => fileProviderActions.changeDirectory(input)}>Change CWD</Button>
+			<Button onClick={() => fileProviderThunks.changeDirectory(input)}>Change CWD</Button>
 		</>
 	);
 };
