@@ -14,6 +14,7 @@ import { createTheme } from 'vs/nex/theme';
 import { ThemeProvider } from 'vs/nex/ThemeProvider';
 import { store, useSelector } from 'vs/nex/platform/store/store';
 import { createThunks as createFileProviderThunks } from 'vs/nex/platform/store/file-provider/file-provider.thunks';
+import { objects } from 'vs/nex/base/utils/objects.util';
 
 const theme = createTheme(enUS);
 
@@ -85,24 +86,26 @@ function mapStateToProps(
 	fileMap: FileMap,
 	cwd: UriComponents,
 ) {
-	const files = Object.values(fileMap).map((file) => {
-		const baseName = extractBaseName(file.uri.path);
-		const { fileName, extension } = extractNameAndExtension(baseName, file.fileType);
-		const fileType = mapFileTypeToFileKind(file.fileType);
+	const files = Object.values(fileMap)
+		.filter(objects.isNotNullish)
+		.map((file) => {
+			const baseName = extractBaseName(file.uri.path);
+			const { fileName, extension } = extractNameAndExtension(baseName, file.fileType);
+			const fileType = mapFileTypeToFileKind(file.fileType);
 
-		const iconClasses = getIconClasses(modelService, modeService, URI.from(file.uri), fileType);
+			const iconClasses = getIconClasses(modelService, modeService, URI.from(file.uri), fileType);
 
-		return {
-			id: file.id,
-			uri: file.uri,
-			type: file.fileType,
-			extension,
-			iconClasses,
-			name: fileName,
-			size: file.size,
-			lastChangedAt: file.lastChangedAt,
-		};
-	});
+			return {
+				id: file.id,
+				uri: file.uri,
+				type: file.fileType,
+				extension,
+				iconClasses,
+				name: fileName,
+				size: file.size,
+				lastChangedAt: file.lastChangedAt,
+			};
+		});
 
 	return {
 		/* TODO: class "URI" does not have a property suitable to display a "windows-like" full path, the best option is to

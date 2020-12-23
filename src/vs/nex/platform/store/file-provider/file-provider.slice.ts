@@ -4,23 +4,28 @@ import * as resources from 'vs/base/common/resources';
 import { URI, UriComponents } from 'vs/base/common/uri';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
-import {
-	File,
-	FileType,
-	FileProviderState,
-	ResourceScheme,
-	PasteStatus,
-	FileMap,
-} from 'vs/nex/platform/file-types';
-import { IFileStat } from 'vs/platform/files/common/files';
+import { File, ResourceScheme, PasteStatus, FileMap } from 'vs/nex/platform/file-types';
+
+export type FileProviderState = {
+	cwd: UriComponents;
+	files: FileMap;
+	filesToPaste: UriComponents[];
+	pasteShouldMove: boolean;
+	pasteProcesses: Array<{
+		id: string;
+		status: PasteStatus;
+		totalSize: number;
+		bytesProcessed: number;
+	}>;
+};
 
 type ChangeCwdPayload = {
 	newDir: UriComponents;
-	files: IFileStat[];
+	files: File[];
 };
 
 type UpdateStatsOfFilesPayload = {
-	files: IFileStat[];
+	files: File[];
 };
 
 type CutOrCopyFilesPayload = {
@@ -43,7 +48,7 @@ type FinishPasteProcessPayload = {
 };
 
 const INITIAL_STATE: FileProviderState = {
-	cwd: uriHelper.parseUri(ResourceScheme.FileSystem, '/home/pkerschbaum').toJSON(),
+	cwd: uriHelper.parseUri(ResourceScheme.FileSystem, '/').toJSON(),
 	files: {},
 	filesToPaste: [],
 	pasteShouldMove: false,
@@ -77,12 +82,9 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 
 			const dirContents = action.payload.files;
 			const files: FileMap = {};
-			dirContents.forEach((dirContent) => {
-				const fileToAdd = mapFileStatToFile(dirContent);
-				if (fileToAdd) {
-					files[dirContent.resource.toString()] = fileToAdd;
-				}
-			});
+			for (const dirContent of dirContents) {
+				files[URI.from(dirContent.uri).toString()] = dirContent;
+			}
 
 			state.files = files;
 		})
@@ -90,27 +92,15 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			const { files } = action.payload;
 
 			// update existing files, add new files
-			files.forEach((statOfFile) => {
-				let affectedFile = state.files[statOfFile.resource.path];
-				if (!affectedFile) {
-					// new file
-					const newFile = mapFileStatToFile(statOfFile);
-					if (!newFile) {
-						return;
-					}
-					affectedFile = newFile;
-				}
-				affectedFile.size = statOfFile.size;
-				affectedFile.lastChangedAt = statOfFile.mtime;
-
-				state.files[affectedFile.uri.path] = affectedFile;
-			});
+			for (const statOfFile of files) {
+				state.files[URI.from(statOfFile.uri).toString()] = statOfFile;
+			}
 
 			// remove files which are not present anymore
-			Object.keys(state.files).forEach((id) => {
-				const foundElement = files.find((file) => file.resource.path === id);
+			Object.keys(state.files).forEach((stringifiedUri) => {
+				const foundElement = files.find((file) => URI.from(file.uri).toString() === stringifiedUri);
 				if (!foundElement) {
-					delete state.files[id];
+					delete state.files[stringifiedUri];
 				}
 			});
 		})
@@ -152,17 +142,3 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			state.pasteShouldMove = false;
 		}),
 );
-
-function mapFileStatToFile(dirContent: IFileStat): File | undefined {
-	if (dirContent.isSymbolicLink) {
-		// TODO: what to do with symbolic links?
-		return;
-	}
-
-	const fileType = dirContent.isDirectory
-		? FileType.Directory
-		: !dirContent.isSymbolicLink
-		? FileType.File
-		: FileType.Unknown;
-	return { id: dirContent.resource.toString(), fileType, uri: dirContent.resource };
-}

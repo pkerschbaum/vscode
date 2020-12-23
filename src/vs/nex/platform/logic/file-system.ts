@@ -12,7 +12,7 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
-import { ResourceScheme } from 'vs/nex/platform/file-types';
+import { File, FileType, ResourceScheme } from 'vs/nex/platform/file-types';
 
 const logger = createLogger('nexFileSystem');
 export const NexFileSystem = createDecorator<NexFileSystem>('nexFileSystem');
@@ -71,3 +71,14 @@ export class NexFileSystemImpl implements NexFileSystem {
 }
 
 registerSingleton(NexFileSystem, NexFileSystemImpl);
+
+export function mapFileStatToFile(dirContent: IFileStat): File {
+	const fileType = dirContent.isDirectory
+		? FileType.Directory
+		: dirContent.isSymbolicLink
+		? FileType.SymbolicLink
+		: dirContent.isFile
+		? FileType.File
+		: FileType.Unknown;
+	return { id: dirContent.resource.toString(), fileType, uri: dirContent.resource.toJSON() };
+}

@@ -1,5 +1,3 @@
-import { DeepReadonly } from 'ts-essentials';
-
 import { UriComponents } from 'vs/base/common/uri';
 import { FileKind } from 'vs/platform/files/common/files';
 
@@ -30,32 +28,17 @@ export enum PasteStatus {
 	FINISHED,
 }
 
-export type FileProviderState = DeepReadonly<FileProviderStateBase>;
+export type FileMap = {
+	[stringifiedUri: string]: File | undefined;
+};
 
-interface FileProviderStateBase {
-	cwd: UriComponents;
-	files: FileMap;
-	filesToPaste: UriComponents[];
-	pasteShouldMove: boolean;
-	pasteProcesses: Array<{
-		id: string;
-		status: PasteStatus;
-		totalSize: number;
-		bytesProcessed: number;
-	}>;
-}
-
-export interface FileMap {
-	[stringifiedUri: string]: File;
-}
-
-export interface File {
+export type File = {
 	id: string;
 	fileType: FileType;
 	uri: UriComponents;
 	size?: number;
 	lastChangedAt?: number;
-}
+};
 
 export function mapFileTypeToFileKind(fileType: FileType): FileKind {
 	if (fileType === FileType.File) {

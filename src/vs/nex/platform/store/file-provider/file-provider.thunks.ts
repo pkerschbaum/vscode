@@ -9,17 +9,20 @@ import { Constants } from 'vs/base/common/uint';
 import { IFileStat, IFileStatWithMetadata } from 'vs/platform/files/common/files';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { createLogger } from 'vs/nex/base/logger/logger';
-import { ResourceScheme, FileProviderState } from 'vs/nex/platform/file-types';
-import { NexFileSystem } from 'vs/nex/platform/logic/file-system';
-import { actions as fileProviderActions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
+import { ResourceScheme } from 'vs/nex/platform/file-types';
+import { mapFileStatToFile, NexFileSystem } from 'vs/nex/platform/logic/file-system';
+import {
+	actions as fileProviderActions,
+	FileProviderState,
+} from 'vs/nex/platform/store/file-provider/file-provider.slice';
 import { AppDispatch } from 'vs/nex/platform/store/store';
 
 const UPDATE_INTERVAL_MS = 300;
 const logger = createLogger('file-provider.operations');
 
-interface FileStatMap {
+type FileStatMap = {
 	[uri: string]: IFileStatWithMetadata;
-}
+};
 
 export function createThunks(
 	getFileProviderState: () => FileProviderState,
@@ -32,7 +35,11 @@ export function createThunks(
 			resolveMetadata: true,
 		});
 		if (statsWithMetadata.children) {
-			dispatch(fileProviderActions.updateStatsOfFiles({ files: statsWithMetadata.children }));
+			dispatch(
+				fileProviderActions.updateStatsOfFiles({
+					files: statsWithMetadata.children.map(mapFileStatToFile),
+				}),
+			);
 		}
 	}
 
@@ -90,7 +97,13 @@ export function createThunks(
 
 		// if newDir is not the current working directory, and is a valid directory => change to the new directory
 		// first, dispatch files without metadata
-		dispatch(fileProviderActions.changeCwd({ newDir: parsedUri, files: stats.children ?? [] }));
+		const children = stats.children ?? [];
+		dispatch(
+			fileProviderActions.changeCwd({
+				newDir: parsedUri.toJSON(),
+				files: children.map(mapFileStatToFile),
+			}),
+		);
 
 		// then, resolve and dispatch files with metadata
 		return updateFilesOfCwd();
