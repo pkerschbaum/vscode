@@ -26,7 +26,7 @@ function loaderConfig() {
     const result = {
         paths: {
             'vs': 'out-build/vs',
-            'vscode': 'empty:',
+            'vscode': 'empty:'
         },
         amdModulesPattern: /^vs\//
     };
