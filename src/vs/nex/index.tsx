@@ -14,7 +14,7 @@ import { NexFileSystem } from 'vs/nex/platform/logic/file-system';
 import { createTheme } from 'vs/nex/theme';
 import { ThemeProvider } from 'vs/nex/ThemeProvider';
 import { store, useSelector } from 'vs/nex/platform/store/store';
-import { createThunks as createFileProviderThunks } from 'vs/nex/platform/store/file-provider/operations';
+import { createThunks as createFileProviderThunks } from 'vs/nex/platform/store/file-provider/file-provider.thunks';
 
 const theme = createTheme(enUS);
 
