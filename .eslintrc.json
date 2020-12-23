@@ -967,7 +967,9 @@
 			}
 		},
 		{
-			"files": ["src/vs/nex/**/*.{ts,tsx}"],
+			"files": [
+				"src/vs/nex/**/*.{ts,tsx}"
+			],
 			"rules": {
 				"code-no-unexternalized-strings": "off"
 			}
