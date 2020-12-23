@@ -1,8 +1,7 @@
 import * as React from 'react';
 import { render } from 'react-dom';
 import { Provider } from 'react-redux';
-import ScopedCssBaseline from '@material-ui/core/ScopedCssBaseline';
-import { Button, TextField } from '@material-ui/core';
+import { Button, TextField, ScopedCssBaseline } from '@material-ui/core';
 import { enUS } from '@material-ui/core/locale';
 
 import { URI } from 'vs/base/common/uri';
@@ -31,9 +30,6 @@ export function createApp(
 
 	return {
 		renderApp: function (targetContainer: HTMLElement) {
-			targetContainer.style.height = '100%';
-			targetContainer.style.width = '100%';
-
 			render(
 				<React.StrictMode>
 					<ThemeProvider theme={theme}>
@@ -63,8 +59,9 @@ const App: React.FC<{
 }> = ({ FileSystem, modeService, modelService, fileProviderThunks }) => {
 	const cwd = useSelector((state) => state.fileProvider.cwd);
 	const fileMap = useSelector((state) => state.fileProvider.files);
+	// TODO remove ts-ignore
+	// @ts-ignore
 	const explorerProps = mapStateToProps(modeService, modelService, fileMap, cwd);
-	console.dir(explorerProps);
 
 	return <Content fileProviderThunks={fileProviderThunks} />;
 };
@@ -76,12 +73,7 @@ const Content: React.FC<{
 
 	return (
 		<>
-			<TextField
-				size="small"
-				label="cwd"
-				value={input}
-				onChange={(e) => setInput(e.target.value)}
-			/>
+			<TextField label="cwd" value={input} onChange={(e) => setInput(e.target.value)} />
 			<Button onClick={() => fileProviderThunks.changeDirectory(input)}>Change CWD</Button>
 		</>
 	);

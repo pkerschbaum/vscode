@@ -265,15 +265,6 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 			}
 
 			this._lastFocusTime = Date.now(); // since we show directly, we need to set the last focus time too
-
-			// Nex-App: install devtools extensions (React, Redux)
-			// TODO@Patrick: install only in development environment
-			// BrowserWindow.addDevToolsExtension(
-			// 	path.join(os.homedir(), 'AppData/Local/Google/Chrome/User Data/Default/Extensions/fmkadmapgofadopljbjfkapdkoienihi/4.1.2_0')
-			// );
-			// BrowserWindow.addDevToolsExtension(
-			// 	path.join(os.homedir(), 'AppData/Local/Google/Chrome/User Data/Default/Extensions/lmhkpmbekcpmknklioeibfkpmmfibljd/2.17.0_0')
-			// );
 		}
 		//#endregion
 

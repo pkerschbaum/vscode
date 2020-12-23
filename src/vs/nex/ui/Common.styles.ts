@@ -2,64 +2,64 @@ import { css, Theme } from '@emotion/react';
 
 export const commonStyles = {
 	grid: {
-		entireRow: css({
-			gridColumn: '1 / -1',
-		}),
+		entireRow: css`
+			grid-column: 1 / -1;
+		`,
 
-		entireRowExceptLastColumn: css({
-			gridColumn: '1 / -2',
-		}),
+		entireRowExceptLastColumn: css`
+			grid-column: 1 / -2;
+		`,
 
-		stickToStart: css({
-			justifySelf: 'start',
-		}),
+		stickToStart: css`
+			justify-self: start;
+		`,
 
-		stickToEnd: css({
-			justifySelf: 'end',
-		}),
+		stickToEnd: css`
+			justify-self: end;
+		`,
 
-		horizontalCenter: css({
-			justifySelf: 'center',
-		}),
+		horizontalCenter: css`
+			justify-self: center;
+		`,
 
-		verticalCenter: css({
-			alignSelf: 'center',
-		}),
+		verticalCenter: css`
+			align-self: center;
+		`,
 	},
 
 	flex: {
-		shrinkAndFitHorizontal: css({
-			minWidth: 0,
-			flexBasis: 0,
-			flexShrink: 1,
-			flexGrow: 1,
-		}),
+		shrinkAndFitHorizontal: css`
+			min-width: 0;
+			flex-basis: 0;
+			flex-shrink: 1;
+			flex-grow: 1;
+		`,
 
-		shrinkAndFitVertical: css({
-			minHeight: 0,
-			flexBasis: 0,
-			flexShrink: 1,
-			flexGrow: 1,
-		}),
+		shrinkAndFitVertical: css`
+			min-height: 0;
+			flex-basis: 0;
+			flex-shrink: 1;
+			flex-grow: 1;
+		`,
 
-		shrinkContainer: css({
-			width: 'min-content',
-		}),
+		shrinkContainer: css`
+			width: min-content;
+		`,
 	},
 
 	text: {
-		stickToStart: css({
-			textAlign: 'start',
-		}),
+		stickToStart: css`
+			text-align: start;
+		`,
 
-		stickToEnd: css({
-			textAlign: 'end',
-		}),
+		stickToEnd: css`
+			text-align: end;
+		`,
 
 		colorPrimary: (theme: Theme) =>
-			css({
-				color: theme.palette.text.primary,
-			}),
+			css`
+				color: ${theme.palette.text.primary};
+			`,
 
 		noTransform: css`
 			text-transform: none;
@@ -76,64 +76,64 @@ export const commonStyles = {
 		box-sizing: border-box;
 	`,
 
-	fullHeight: css({
-		height: '100%',
-	}),
+	fullHeight: css`
+		height: 100%;
+	`,
 
-	fullWidth: css({
-		width: '100%',
-	}),
+	fullWidth: css`
+		width: 100%;
+	`,
 
-	maxContainerHeight: css({
-		maxHeight: '100%',
-	}),
+	maxContainerHeight: css`
+		max-height: 100%;
+	`,
 
-	maxContainerWidth: css({
-		maxWidth: '100%',
-	}),
+	maxContainerWidth: css`
+		max-width: 100%;
+	`,
 
-	horizontalCenter: css({
-		justifySelf: 'center',
-		textAlign: 'center',
-	}),
+	horizontalCenter: css`
+		justify-self: center;
+		text-align: center;
+	`,
 
-	uppercase: css({
-		textTransform: 'uppercase',
-	}),
+	uppercase: css`
+		text-transform: uppercase;
+	`,
 
-	preserveNewlines: css({
-		whiteSpace: 'pre-wrap',
-	}),
+	preserveNewlines: css`
+		white-space: pre-wrap;
+	`,
 
-	noNewLines: css({
-		whiteSpace: 'nowrap',
-	}),
+	noNewLines: css`
+		white-space: nowrap;
+	`,
 
-	transparent: css({
-		opacity: 0,
-	}),
+	transparent: css`
+		opacity: 0;
+	`,
 
-	hidden: css({
-		display: 'none',
-	}),
+	hidden: css`
+		display: none;
+	`,
 
-	overlayContainer: css({
-		display: 'grid',
-		justifyItems: 'center',
-	}),
+	overlayContainer: css`
+		display: grid;
+		justify-items: center;
+	`,
 
-	overlayChild: css({
-		gridColumn: '1',
-		gridRow: '1',
-	}),
+	overlayChild: css`
+		grid-column: 1;
+		grid-row: 1;
+	`,
 
-	transparentBackground: css({
-		backgroundColor: 'transparent',
-	}),
+	transparentBackground: css`
+		background-color: transparent;
+	`,
 
-	cursorPointer: css({
-		cursor: 'pointer',
-	}),
+	cursorPointer: css`
+		cursor: pointer;
+	`,
 
 	noUserSelectionAllowed: css`
 		user-select: none;
