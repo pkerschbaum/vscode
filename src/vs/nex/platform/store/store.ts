@@ -1,5 +1,5 @@
 import { configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
-import { createSelectorHook } from 'react-redux';
+import { createSelectorHook, useDispatch as useReduxDispatch } from 'react-redux';
 
 import loggerMiddleware from 'vs/nex/platform/store/logger.middleware';
 import rootReducer from 'vs/nex/platform/store/reducers';
@@ -14,3 +14,5 @@ export type RootStore = typeof store;
 export type AppDispatch = RootStore['dispatch'];
 
 export const useSelector = createSelectorHook<RootState>();
+export const useDispatch = () => useReduxDispatch<AppDispatch>();
+export const dispatch = store.dispatch;

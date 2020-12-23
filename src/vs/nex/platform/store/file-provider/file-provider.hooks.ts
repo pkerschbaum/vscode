@@ -3,40 +3,116 @@ import { shell } from 'electron';
 import * as resources from 'vs/base/common/resources';
 import * as uuid from 'vs/base/common/uuid';
 import { extname, basename } from 'vs/base/common/path';
-import { URI } from 'vs/base/common/uri';
-import { isLinux } from 'vs/base/common/platform';
 import { Constants } from 'vs/base/common/uint';
-import { IFileStat, IFileStatWithMetadata } from 'vs/platform/files/common/files';
+import { isLinux } from 'vs/base/common/platform';
+import { URI, UriComponents } from 'vs/base/common/uri';
+import { FileKind, IFileStat, IFileStatWithMetadata } from 'vs/platform/files/common/files';
+import { getIconClasses } from 'vs/editor/common/services/getIconClasses';
+
+import { actions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
+import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
+import { useModelService } from 'vs/nex/ui/ModelService.provider';
+import { useModeService } from 'vs/nex/ui/ModeService.provider';
+import { useNexFileSystem } from 'vs/nex/ui/NexFileSystem.provider';
+import { useDispatch, useSelector } from 'vs/nex/platform/store/store';
+import { FileType, ResourceScheme, FileStatMap } from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { createLogger } from 'vs/nex/base/logger/logger';
-import { ResourceScheme } from 'vs/nex/platform/file-types';
-import { mapFileStatToFile, NexFileSystem } from 'vs/nex/platform/logic/file-system';
-import {
-	actions as fileProviderActions,
-	FileProviderState,
-} from 'vs/nex/platform/store/file-provider/file-provider.slice';
-import { AppDispatch } from 'vs/nex/platform/store/store';
+import { objects } from 'vs/nex/base/utils/objects.util';
 
 const UPDATE_INTERVAL_MS = 300;
-const logger = createLogger('file-provider.operations');
+const logger = createLogger('file-provider.hooks');
 
-type FileStatMap = {
-	[uri: string]: IFileStatWithMetadata;
-};
+export function useFileProviderState() {
+	const modelService = useModelService();
+	const modeService = useModeService();
 
-export function createThunks(
-	getFileProviderState: () => FileProviderState,
-	dispatch: AppDispatch,
-	fileSystem: NexFileSystem,
-) {
-	async function updateFilesOfCwd() {
+	return useSelector((state) => {
+		return {
+			...state.fileProvider,
+			files: Object.values(state.fileProvider.files)
+				.filter(objects.isNotNullish)
+				.map((file) => {
+					const baseName = extractBaseName(file.uri.path);
+					const { fileName, extension } = extractNameAndExtension(baseName, file.fileType);
+					const fileType = mapFileTypeToFileKind(file.fileType);
+
+					const iconClasses = getIconClasses(
+						modelService,
+						modeService,
+						URI.from(file.uri),
+						fileType,
+					);
+
+					return {
+						id: file.id,
+						uri: file.uri,
+						type: file.fileType,
+						extension,
+						iconClasses,
+						name: fileName,
+						size: file.size,
+						lastChangedAt: file.lastChangedAt,
+					};
+				}),
+		};
+	});
+}
+
+function extractBaseName(filePath: string): string {
+	const extractFilename = /[^/]+$/g.exec(filePath);
+	if (!extractFilename) {
+		throw new Error(`could not extract file name from file path. path: ${filePath}`);
+	}
+
+	return extractFilename[0];
+}
+
+function extractNameAndExtension(
+	baseName: string,
+	fileType: FileType,
+): { fileName: string; extension?: string } {
+	let fileName;
+	let extension;
+
+	if (fileType === FileType.Directory) {
+		fileName = baseName;
+	} else {
+		const nameParts = baseName.split(/\.(?=[^.]*$)/g);
+		if (nameParts[0] === '') {
+			// e.g. baseName was ".backup"
+			fileName = `.${nameParts[1]}`; // ".backup"
+		} else {
+			[fileName, extension] = nameParts;
+		}
+	}
+
+	return { fileName, extension };
+}
+
+function mapFileTypeToFileKind(fileType: FileType): FileKind {
+	if (fileType === FileType.File) {
+		return FileKind.FILE;
+	} else if (fileType === FileType.Directory) {
+		return FileKind.FOLDER;
+	} else {
+		throw new Error(`could not map FileType to FileKind, FileType is: ${fileType}`);
+	}
+}
+
+export const useFileProviderThunks = () => {
+	const fileSystem = useNexFileSystem();
+	const dispatch = useDispatch();
+	const { cwd, filesToPaste, pasteShouldMove } = useFileProviderState();
+
+	async function updateFilesOfCwd(cwd: UriComponents) {
 		// resolve and dispatch files with metadata
-		const statsWithMetadata = await fileSystem.resolve(URI.from(getFileProviderState().cwd), {
+		const statsWithMetadata = await fileSystem.resolve(URI.from(cwd), {
 			resolveMetadata: true,
 		});
 		if (statsWithMetadata.children) {
 			dispatch(
-				fileProviderActions.updateStatsOfFiles({
+				actions.updateStatsOfFiles({
 					files: statsWithMetadata.children.map(mapFileStatToFile),
 				}),
 			);
@@ -78,8 +154,6 @@ export function createThunks(
 		}
 
 		// if newDir is the current working directory, no action is necessary
-		const { cwd } = getFileProviderState();
-
 		const cwdTrailingSepRemoved = resources.removeTrailingPathSeparator(URI.from(cwd));
 		const parsedUriTrailingSepRemoved = resources.removeTrailingPathSeparator(parsedUri);
 
@@ -97,16 +171,17 @@ export function createThunks(
 
 		// if newDir is not the current working directory, and is a valid directory => change to the new directory
 		// first, dispatch files without metadata
+		const newCmd = parsedUri.toJSON();
 		const children = stats.children ?? [];
 		dispatch(
-			fileProviderActions.changeCwd({
-				newDir: parsedUri.toJSON(),
+			actions.changeCwd({
+				newDir: newCmd,
 				files: children.map(mapFileStatToFile),
 			}),
 		);
 
 		// then, resolve and dispatch files with metadata
-		return updateFilesOfCwd();
+		return updateFilesOfCwd(newCmd);
 	}
 
 	return {
@@ -129,7 +204,7 @@ export function createThunks(
 			);
 
 			// update cwd content
-			return updateFilesOfCwd();
+			return updateFilesOfCwd(cwd);
 		},
 
 		openFile: async (uri: URI) => {
@@ -142,10 +217,9 @@ export function createThunks(
 		},
 
 		cutOrCopyFiles: (files: URI[], cut: boolean) =>
-			dispatch(fileProviderActions.cutOrCopyFiles({ files, cut })),
+			dispatch(actions.cutOrCopyFiles({ files, cut })),
 
 		pasteFiles: async () => {
-			const { cwd, filesToPaste, pasteShouldMove } = getFileProviderState();
 			const targetFolder = URI.from(cwd);
 			if (filesToPaste.length === 0) {
 				return;
@@ -199,7 +273,7 @@ export function createThunks(
 					});
 
 					dispatch(
-						fileProviderActions.addPasteProcess({
+						actions.addPasteProcess({
 							id: pasteStatus.id,
 							totalSize: pasteStatus.totalSize,
 						}),
@@ -207,7 +281,7 @@ export function createThunks(
 
 					const intervalId = setInterval(function dispatchProgress() {
 						dispatch(
-							fileProviderActions.updatePasteProcess({
+							actions.updatePasteProcess({
 								id: pasteStatus.id,
 								bytesProcessed: pasteStatus.bytesProcessed,
 							}),
@@ -232,7 +306,7 @@ export function createThunks(
 							: fileSystem.copy(fileToPasteURI, targetFile, undefined, progressCb);
 						await operation;
 
-						dispatch(fileProviderActions.finishPasteProcess({ id: pasteStatus.id }));
+						dispatch(actions.finishPasteProcess({ id: pasteStatus.id }));
 					} finally {
 						clearInterval(intervalId);
 					}
@@ -241,14 +315,14 @@ export function createThunks(
 
 			if (pasteShouldMove) {
 				// Cut is done
-				dispatch(fileProviderActions.resetPasteState());
+				dispatch(actions.resetPasteState());
 			}
 
 			// update cwd content
-			return updateFilesOfCwd();
+			return updateFilesOfCwd(cwd);
 		},
 	};
-}
+};
 
 function findValidPasteFileTarget(
 	targetFolder: IFileStat,

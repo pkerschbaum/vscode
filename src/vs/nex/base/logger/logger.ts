@@ -6,28 +6,44 @@ import { JsonObject } from 'vs/nex/base/utils/types.util';
 import { objects } from 'vs/nex/base/utils/objects.util';
 
 type Logger = {
-	debug: (message: string, logPayload?: JsonObject, verboseLogPayload?: JsonObject) => void;
-	info: (message: string, logPayload?: JsonObject, verboseLogPayload?: JsonObject) => void;
-	warn: (message: string, logPayload?: JsonObject, verboseLogPayload?: JsonObject) => void;
-	error: (
+	debug: <A, B>(
+		message: string,
+		logPayload?: JsonObject<A>,
+		verboseLogPayload?: JsonObject<B>,
+	) => void;
+	info: <A, B>(
+		message: string,
+		logPayload?: JsonObject<A>,
+		verboseLogPayload?: JsonObject<B>,
+	) => void;
+	warn: <A, B>(
+		message: string,
+		logPayload?: JsonObject<A>,
+		verboseLogPayload?: JsonObject<B>,
+	) => void;
+	error: <A, B>(
 		message: string,
 		error?: any,
-		logPayload?: JsonObject,
-		verboseLogPayload?: JsonObject,
+		logPayload?: JsonObject<A>,
+		verboseLogPayload?: JsonObject<B>,
 	) => void;
 	group: (groupName: string) => void;
 	groupEnd: () => void;
 };
 
 export function createLogger(context: string): Logger {
-	function extendLog(message: string, logPayload?: JsonObject, verboseLogPayload?: JsonObject) {
+	function extendLog<A, B>(
+		message: string,
+		logPayload?: JsonObject<A>,
+		verboseLogPayload?: JsonObject<B>,
+	) {
 		// if CustomErrors get passed in a payload, extract the data prop of the error and
 		// append it to the payload
 		let customLogPayload = objects.shallowCopy(logPayload);
 		if (customLogPayload !== undefined) {
 			for (const [prop, value] of Object.entries(customLogPayload)) {
 				if (value instanceof CustomError) {
-					customLogPayload[`${prop}_errorData`] = value.data;
+					customLogPayload[`${prop}_errorData`] = value.data as any;
 				}
 			}
 		}
@@ -35,7 +51,7 @@ export function createLogger(context: string): Logger {
 		if (customVerboseLogPayload !== undefined) {
 			for (const [prop, value] of Object.entries(customVerboseLogPayload)) {
 				if (value instanceof CustomError) {
-					customVerboseLogPayload[`${prop}_errorData`] = value.data;
+					customVerboseLogPayload[`${prop}_errorData`] = value.data as any;
 				}
 			}
 		}
@@ -84,11 +100,11 @@ export function createLogger(context: string): Logger {
 			}
 			console.warn(extendedLog.message, ...additionalParams);
 		},
-		error: (
+		error: <A, B>(
 			message: string,
 			error?: any,
-			logPayload?: JsonObject,
-			verboseLogPayload?: JsonObject,
+			logPayload?: JsonObject<A>,
+			verboseLogPayload?: JsonObject<B>,
 		) => {
 			const extendedLog = extendLog(message, logPayload, verboseLogPayload);
 
