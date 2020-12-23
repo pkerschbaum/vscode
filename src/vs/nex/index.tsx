@@ -4,7 +4,7 @@ import { Provider } from 'react-redux';
 import { Button, TextField, ScopedCssBaseline } from '@material-ui/core';
 import { enUS } from '@material-ui/core/locale';
 
-import { URI } from 'vs/base/common/uri';
+import { URI, UriComponents } from 'vs/base/common/uri';
 import { IModeService } from 'vs/editor/common/services/modeService';
 import { IModelService } from 'vs/editor/common/services/modelService';
 import { getIconClasses } from 'vs/editor/common/services/getIconClasses';
@@ -83,14 +83,14 @@ function mapStateToProps(
 	modeService: IModeService,
 	modelService: IModelService,
 	fileMap: FileMap,
-	cwd: URI,
+	cwd: UriComponents,
 ) {
 	const files = Object.values(fileMap).map((file) => {
 		const baseName = extractBaseName(file.uri.path);
 		const { fileName, extension } = extractNameAndExtension(baseName, file.fileType);
 		const fileType = mapFileTypeToFileKind(file.fileType);
 
-		const iconClasses = getIconClasses(modelService, modeService, file.uri, fileType);
+		const iconClasses = getIconClasses(modelService, modeService, URI.from(file.uri), fileType);
 
 		return {
 			id: file.id,
@@ -108,7 +108,7 @@ function mapStateToProps(
 		/* TODO: class "URI" does not have a property suitable to display a "windows-like" full path, the best option is to
 		 * use "path" and cut the leading slash. maybe inappropriate for other operating systems or URI schemes (like FTP)
 		 */
-		cwd: cwd.path.substr(1, cwd.path.length - 1),
+		cwd: URI.from(cwd).path.substr(1, cwd.path.length - 1),
 		files,
 	};
 }

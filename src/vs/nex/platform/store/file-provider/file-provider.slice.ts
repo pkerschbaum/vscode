@@ -1,19 +1,21 @@
 import { createAction, createReducer } from '@reduxjs/toolkit';
 
 import * as resources from 'vs/base/common/resources';
-import { URI } from 'vs/base/common/uri';
+import { URI, UriComponents } from 'vs/base/common/uri';
 import { createLogger } from 'vs/nex/base/logger/logger';
+import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import {
 	File,
 	FileType,
 	FileProviderState,
 	ResourceScheme,
 	PasteStatus,
+	FileMap,
 } from 'vs/nex/platform/file-types';
 import { IFileStat } from 'vs/platform/files/common/files';
 
 type ChangeCwdPayload = {
-	newDir: URI;
+	newDir: UriComponents;
 	files: IFileStat[];
 };
 
@@ -22,7 +24,7 @@ type UpdateStatsOfFilesPayload = {
 };
 
 type CutOrCopyFilesPayload = {
-	files: URI[];
+	files: UriComponents[];
 	cut: boolean;
 };
 
@@ -41,24 +43,8 @@ type FinishPasteProcessPayload = {
 };
 
 const INITIAL_STATE: FileProviderState = {
-	scheme: ResourceScheme.FileSystem,
-	cwd: URI.file('/C:/'),
-	files: {
-		[URI.file('/C:/foo.txt').path]: {
-			id: URI.file('/C:/foo.txt').path,
-			fileType: FileType.File,
-			uri: URI.file('/C:/foo.txt'),
-			size: 0,
-			lastChangedAt: 0,
-		},
-		[URI.file('/C:/bar.docx').path]: {
-			id: URI.file('/C:/bar.docx').path,
-			fileType: FileType.File,
-			uri: URI.file('/C:/bar.docx'),
-			size: 0,
-			lastChangedAt: 0,
-		},
-	},
+	cwd: uriHelper.parseUri(ResourceScheme.FileSystem, '/home/pkerschbaum').toJSON(),
+	files: {},
 	filesToPaste: [],
 	pasteShouldMove: false,
 	pasteProcesses: [],
@@ -78,19 +64,23 @@ export const actions = {
 export const reducer = createReducer(INITIAL_STATE, (builder) =>
 	builder
 		.addCase(actions.changeCwd, (state, action) => {
-			const currentCwdTrailingSepRemoved = resources.removeTrailingPathSeparator(state.cwd);
-			const newCwdTrailingSepRemoved = resources.removeTrailingPathSeparator(action.payload.newDir);
+			const currentCwdTrailingSepRemoved = resources.removeTrailingPathSeparator(
+				URI.from(state.cwd),
+			);
+			const newCwdTrailingSepRemoved = resources.removeTrailingPathSeparator(
+				URI.from(action.payload.newDir),
+			);
 
 			if (!resources.isEqual(currentCwdTrailingSepRemoved, newCwdTrailingSepRemoved)) {
 				state.cwd = action.payload.newDir;
 			}
 
 			const dirContents = action.payload.files;
-			const files: { [key: string]: File } = {};
+			const files: FileMap = {};
 			dirContents.forEach((dirContent) => {
 				const fileToAdd = mapFileStatToFile(dirContent);
 				if (fileToAdd) {
-					files[dirContent.resource.path] = fileToAdd;
+					files[dirContent.resource.toString()] = fileToAdd;
 				}
 			});
 
@@ -174,5 +164,5 @@ function mapFileStatToFile(dirContent: IFileStat): File | undefined {
 		: !dirContent.isSymbolicLink
 		? FileType.File
 		: FileType.Unknown;
-	return { id: dirContent.resource.path, fileType, uri: dirContent.resource };
+	return { id: dirContent.resource.toString(), fileType, uri: dirContent.resource };
 }

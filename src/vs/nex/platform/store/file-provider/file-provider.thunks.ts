@@ -28,7 +28,7 @@ export function createThunks(
 ) {
 	async function updateFilesOfCwd() {
 		// resolve and dispatch files with metadata
-		const statsWithMetadata = await fileSystem.resolve(getFileProviderState().cwd, {
+		const statsWithMetadata = await fileSystem.resolve(URI.from(getFileProviderState().cwd), {
 			resolveMetadata: true,
 		});
 		if (statsWithMetadata.children) {
@@ -73,7 +73,7 @@ export function createThunks(
 		// if newDir is the current working directory, no action is necessary
 		const { cwd } = getFileProviderState();
 
-		const cwdTrailingSepRemoved = resources.removeTrailingPathSeparator(cwd);
+		const cwdTrailingSepRemoved = resources.removeTrailingPathSeparator(URI.from(cwd));
 		const parsedUriTrailingSepRemoved = resources.removeTrailingPathSeparator(parsedUri);
 
 		if (resources.isEqual(cwdTrailingSepRemoved, parsedUriTrailingSepRemoved)) {
@@ -132,7 +132,8 @@ export function createThunks(
 			dispatch(fileProviderActions.cutOrCopyFiles({ files, cut })),
 
 		pasteFiles: async () => {
-			const { cwd: targetFolder, filesToPaste, pasteShouldMove } = getFileProviderState();
+			const { cwd, filesToPaste, pasteShouldMove } = getFileProviderState();
+			const targetFolder = URI.from(cwd);
 			if (filesToPaste.length === 0) {
 				return;
 			}
@@ -140,17 +141,18 @@ export function createThunks(
 			const targetFolderStat = await fileSystem.resolve(targetFolder);
 			await Promise.all(
 				filesToPaste.map(async (fileToPaste) => {
+					const fileToPasteURI = URI.from(fileToPaste);
 					// Check if target is ancestor of pasted folder
 					if (
-						targetFolder.toString() !== fileToPaste.toString() &&
-						resources.isEqualOrParent(targetFolder, fileToPaste, !isLinux /* ignorecase */)
+						targetFolder.toString() !== fileToPasteURI.toString() &&
+						resources.isEqualOrParent(targetFolder, fileToPasteURI, !isLinux /* ignorecase */)
 					) {
 						throw new Error('File to paste is an ancestor of the destination folder');
 					}
 
 					let fileToPasteStat;
 					try {
-						fileToPasteStat = await fileSystem.resolve(fileToPaste, { resolveMetadata: true });
+						fileToPasteStat = await fileSystem.resolve(fileToPasteURI, { resolveMetadata: true });
 					} catch (err: unknown) {
 						logger.error(
 							'error during file paste process, file to paste was probably deleted or moved meanwhile',
@@ -159,7 +161,7 @@ export function createThunks(
 						return;
 					}
 
-					const fileStatMap = await resolveDeep(fileToPaste, fileToPasteStat);
+					const fileStatMap = await resolveDeep(fileToPasteURI, fileToPasteStat);
 
 					const pasteStatus: {
 						id: string;
@@ -201,7 +203,7 @@ export function createThunks(
 
 					try {
 						const targetFile = findValidPasteFileTarget(targetFolderStat, {
-							resource: fileToPaste,
+							resource: fileToPasteURI,
 							isDirectory: fileToPasteStat.isDirectory,
 							allowOverwrite: pasteShouldMove,
 						});
@@ -213,8 +215,8 @@ export function createThunks(
 
 						// Move/Copy File
 						const operation = pasteShouldMove
-							? fileSystem.move(fileToPaste, targetFile, undefined, progressCb)
-							: fileSystem.copy(fileToPaste, targetFile, undefined, progressCb);
+							? fileSystem.move(fileToPasteURI, targetFile, undefined, progressCb)
+							: fileSystem.copy(fileToPasteURI, targetFile, undefined, progressCb);
 						await operation;
 
 						dispatch(fileProviderActions.finishPasteProcess({ id: pasteStatus.id }));
