@@ -52,12 +52,6 @@ export abstract class Part extends Component implements ISerializableView {
 		layoutService.registerPart(this);
 	}
 
-	hide(): void {
-		if (this.parent !== undefined) {
-			this.parent.style.display = 'none';
-		}
-	}
-
 	protected onThemeChange(theme: IColorTheme): void {
 
 		// only call if our create() method has been called
