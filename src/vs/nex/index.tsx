@@ -77,8 +77,8 @@ const Content: React.FC<{
 	return (
 		<>
 			<TextField
-				size='small'
-				label='cwd'
+				size="small"
+				label="cwd"
 				value={input}
 				onChange={(e) => setInput(e.target.value)}
 			/>

@@ -967,6 +967,12 @@
 			}
 		},
 		{
+			"files": ["src/vs/nex/**/*.{ts,tsx}"],
+			"rules": {
+				"code-no-unexternalized-strings": "off"
+			}
+		},
+		{
 			"files": [
 				"**/vscode.d.ts",
 				"**/vscode.proposed.d.ts"

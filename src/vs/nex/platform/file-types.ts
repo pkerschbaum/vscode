@@ -15,7 +15,10 @@ export enum FileProviderActionTypes {
 }
 
 export enum FileType {
-	File, Directory, SymbolicLink, Unknown,
+	File,
+	Directory,
+	SymbolicLink,
+	Unknown,
 }
 
 export enum ResourceScheme {
@@ -35,7 +38,12 @@ interface FileProviderStateBase {
 	files: FileMap;
 	filesToPaste: URI[];
 	pasteShouldMove: boolean;
-	pasteProcesses: Array<{ id: string; status: PasteStatus; totalSize: number; bytesProcessed: number }>;
+	pasteProcesses: Array<{
+		id: string;
+		status: PasteStatus;
+		totalSize: number;
+		bytesProcessed: number;
+	}>;
 }
 
 export interface FileMap {
