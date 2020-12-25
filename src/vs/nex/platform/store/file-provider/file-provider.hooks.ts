@@ -27,36 +27,29 @@ export function useFileProviderState() {
 	const modelService = useModelService();
 	const modeService = useModeService();
 
-	return useSelector((state) => {
-		return {
-			...state.fileProvider,
-			files: Object.values(state.fileProvider.files)
-				.filter(objects.isNotNullish)
-				.map((file) => {
-					const baseName = extractBaseName(file.uri.path);
-					const { fileName, extension } = extractNameAndExtension(baseName, file.fileType);
-					const fileType = mapFileTypeToFileKind(file.fileType);
+	return useSelector((state) => ({
+		...state.fileProvider,
+		files: Object.values(state.fileProvider.files)
+			.filter(objects.isNotNullish)
+			.map((file) => {
+				const baseName = extractBaseName(file.uri.path);
+				const { fileName, extension } = extractNameAndExtension(baseName, file.fileType);
+				const fileType = mapFileTypeToFileKind(file.fileType);
 
-					const iconClasses = getIconClasses(
-						modelService,
-						modeService,
-						URI.from(file.uri),
-						fileType,
-					);
+				const iconClasses = getIconClasses(modelService, modeService, URI.from(file.uri), fileType);
 
-					return {
-						id: file.id,
-						uri: file.uri,
-						type: file.fileType,
-						extension,
-						iconClasses,
-						name: fileName,
-						size: file.size,
-						lastChangedAt: file.lastChangedAt,
-					};
-				}),
-		};
-	});
+				return {
+					id: file.id,
+					uri: file.uri,
+					type: file.fileType,
+					extension,
+					iconClasses,
+					name: fileName,
+					size: file.size,
+					lastChangedAt: file.lastChangedAt,
+				};
+			}),
+	}));
 }
 
 function extractBaseName(filePath: string): string {

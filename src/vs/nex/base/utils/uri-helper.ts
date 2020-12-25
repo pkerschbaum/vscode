@@ -6,14 +6,9 @@ export const uriHelper = {
 		if (path === '') {
 			throw new Error(`empty uri is not allowed`);
 		}
-		if (path.substr(path.length - 1, 1) === ':') {
-			path = `${path}/`;
-		}
 
 		// use Uri.file to handle specifics of fs paths, see
 		// https://github.com/Microsoft/vscode-uri/blob/42f608bc8c934d066127b849081a5eeb7614bb30/src/index.ts#L682-L700
-		return scheme === ResourceScheme.FileSystem
-			? URI.file(`/${path}`)
-			: URI.parse(`${scheme}/${path}`);
+		return scheme === ResourceScheme.FileSystem ? URI.file(path) : URI.parse(`${scheme}${path}`);
 	},
 };

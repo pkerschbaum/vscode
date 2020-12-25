@@ -7,7 +7,6 @@ import { commonStyles } from 'vs/nex/ui/Common.styles';
 
 type StackProps = {
 	direction?: 'row' | 'column' | 'row-reverse' | 'column-reverse';
-	disableContainerStretch?: boolean;
 	justifyContent?: Property.JustifyContent;
 	alignItems?: Property.AlignItems;
 	wrap?: true | 'nowrap' | 'wrap-reverse';
@@ -15,16 +14,16 @@ type StackProps = {
 	shrinkItems?: boolean;
 	itemsBasis?: Property.FlexBasis<string | 0>;
 	spacing?: number;
+	stretchContainer?: boolean;
 	children: React.ReactNode;
 	className?: string;
 	boxProps?: BoxProps;
 };
 
-const Stack = React.forwardRef<HTMLElement, StackProps>(
+export const Stack = React.forwardRef<HTMLElement, StackProps>(
 	(
 		{
 			direction = 'row',
-			disableContainerStretch = false,
 			justifyContent,
 			alignItems,
 			wrap,
@@ -32,6 +31,7 @@ const Stack = React.forwardRef<HTMLElement, StackProps>(
 			shrinkItems,
 			itemsBasis,
 			spacing,
+			stretchContainer = false,
 			children,
 			boxProps,
 			...rest
@@ -53,7 +53,7 @@ const Stack = React.forwardRef<HTMLElement, StackProps>(
 			<Box
 				css={(theme) => [
 					stackStyle(theme),
-					!disableContainerStretch &&
+					stretchContainer &&
 						(direction === 'column' ? commonStyles.fullWidth : commonStyles.fullHeight),
 				]}
 				ref={ref}
@@ -68,5 +68,3 @@ const Stack = React.forwardRef<HTMLElement, StackProps>(
 		);
 	},
 );
-
-export default Stack;
