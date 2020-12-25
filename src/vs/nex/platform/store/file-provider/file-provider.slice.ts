@@ -1,6 +1,5 @@
 import { createAction, createReducer } from '@reduxjs/toolkit';
 
-import * as resources from 'vs/base/common/resources';
 import { URI, UriComponents } from 'vs/base/common/uri';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
@@ -69,31 +68,21 @@ export const actions = {
 export const reducer = createReducer(INITIAL_STATE, (builder) =>
 	builder
 		.addCase(actions.changeCwd, (state, action) => {
-			const currentCwdTrailingSepRemoved = resources.removeTrailingPathSeparator(
-				URI.from(state.cwd),
-			);
-			const newCwdTrailingSepRemoved = resources.removeTrailingPathSeparator(
-				URI.from(action.payload.newDir),
-			);
+			const { newDir, files } = action.payload;
 
-			if (!resources.isEqual(currentCwdTrailingSepRemoved, newCwdTrailingSepRemoved)) {
-				state.cwd = action.payload.newDir;
+			state.cwd = newDir;
+
+			state.files = {};
+			for (const file of files) {
+				state.files[URI.from(file.uri).toString()] = file;
 			}
-
-			const dirContents = action.payload.files;
-			const files: FileMap = {};
-			for (const dirContent of dirContents) {
-				files[URI.from(dirContent.uri).toString()] = dirContent;
-			}
-
-			state.files = files;
 		})
 		.addCase(actions.updateStatsOfFiles, (state, action) => {
 			const { files } = action.payload;
 
 			// update existing files, add new files
-			for (const statOfFile of files) {
-				state.files[URI.from(statOfFile.uri).toString()] = statOfFile;
+			for (const file of files) {
+				state.files[URI.from(file.uri).toString()] = file;
 			}
 
 			// remove files which are not present anymore

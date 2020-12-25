@@ -10,6 +10,7 @@ import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { DataTable } from 'vs/nex/ui/elements/DataTable';
 import { useSelector } from 'vs/nex/platform/store/store';
 import {
+	FileForUI,
 	useFileProviderState,
 	useFileProviderThunks,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
@@ -31,9 +32,9 @@ export const App: React.FC<{}> = () => {
 		return 0;
 	});
 	sortedFiles = arrays.mergeSort(files, (a, b) => {
-		if (a.type === FileType.Directory && b.type === FileType.File) {
+		if (a.fileType === FileType.Directory && b.fileType === FileType.File) {
 			return -1;
-		} else if (a.type === FileType.File && b.type === FileType.Directory) {
+		} else if (a.fileType === FileType.File && b.fileType === FileType.Directory) {
 			return 1;
 		}
 		return 0;
@@ -55,11 +56,11 @@ export const App: React.FC<{}> = () => {
 							label: 'Name',
 							format: (row) => (
 								<Stack
-									css={styles.dirContentIcon}
+									css={styles.fileIcon}
 									className={row.iconClasses.join(' ')}
 									alignItems="center"
 								>
-									{row.name}
+									{formatFileName(row)}
 								</Stack>
 							),
 						},
@@ -93,8 +94,21 @@ const Actions: React.FC<{}> = () => {
 
 	return (
 		<Stack>
-			<TextField label="cwd" value={input} onChange={(e) => setInput(e.target.value)} />
+			<TextField
+				size="small"
+				label="Current Directory"
+				value={input}
+				onChange={(e) => setInput(e.target.value)}
+			/>
 			<Button onClick={() => fileProviderThunks.changeDirectory(input)}>Change CWD</Button>
 		</Stack>
 	);
 };
+
+function formatFileName(file: FileForUI): string {
+	if (file.extension === undefined) {
+		return file.name;
+	}
+
+	return `${file.name}.${file.extension}`;
+}

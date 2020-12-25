@@ -72,13 +72,20 @@ export class NexFileSystemImpl implements NexFileSystem {
 
 registerSingleton(NexFileSystem, NexFileSystemImpl);
 
-export function mapFileStatToFile(dirContent: IFileStat): File {
-	const fileType = dirContent.isDirectory
+export function mapFileStatToFile(file: IFileStat): File {
+	const fileType = file.isDirectory
 		? FileType.Directory
-		: dirContent.isSymbolicLink
+		: file.isSymbolicLink
 		? FileType.SymbolicLink
-		: dirContent.isFile
+		: file.isFile
 		? FileType.File
 		: FileType.Unknown;
-	return { id: dirContent.resource.toString(), fileType, uri: dirContent.resource.toJSON() };
+
+	return {
+		id: file.resource.toString(),
+		fileType,
+		uri: file.resource.toJSON(),
+		size: file.size,
+		lastChangedAt: file.mtime,
+	};
 }

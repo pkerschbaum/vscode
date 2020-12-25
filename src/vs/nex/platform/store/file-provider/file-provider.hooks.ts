@@ -15,10 +15,16 @@ import { useModelService } from 'vs/nex/ui/ModelService.provider';
 import { useModeService } from 'vs/nex/ui/ModeService.provider';
 import { useNexFileSystem } from 'vs/nex/ui/NexFileSystem.provider';
 import { useDispatch, useSelector } from 'vs/nex/platform/store/store';
-import { FileType, ResourceScheme, FileStatMap } from 'vs/nex/platform/file-types';
+import { File, FileType, ResourceScheme, FileStatMap } from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { objects } from 'vs/nex/base/utils/objects.util';
+
+export type FileForUI = File & {
+	name: string;
+	extension?: string;
+	iconClasses: string[];
+};
 
 const UPDATE_INTERVAL_MS = 300;
 const logger = createLogger('file-provider.hooks');
@@ -38,16 +44,17 @@ export function useFileProviderState() {
 
 				const iconClasses = getIconClasses(modelService, modeService, URI.from(file.uri), fileType);
 
-				return {
+				const fileForUI: FileForUI = {
 					id: file.id,
 					uri: file.uri,
-					type: file.fileType,
+					fileType: file.fileType,
 					extension,
 					iconClasses,
 					name: fileName,
 					size: file.size,
 					lastChangedAt: file.lastChangedAt,
 				};
+				return fileForUI;
 			}),
 	}));
 }

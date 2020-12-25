@@ -1,23 +1,24 @@
 import * as React from 'react';
 import { render } from 'react-dom';
 import { Provider } from 'react-redux';
-import { ScopedCssBaseline } from '@material-ui/core';
+import { CssBaseline, Box } from '@material-ui/core';
 import { enUS } from '@material-ui/core/locale';
 
-import { URI } from 'vs/base/common/uri';
 import { IModeService } from 'vs/editor/common/services/modeService';
 import { IModelService } from 'vs/editor/common/services/modelService';
 
+import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import {
 	mapFileStatToFile,
 	NexFileSystem as nexFileSystem,
 } from 'vs/nex/platform/logic/file-system';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
+import { App } from 'vs/nex/ui/App';
 import { createTheme } from 'vs/nex/theme';
 import { ThemeProvider } from 'vs/nex/ThemeProvider';
 import { dispatch, store } from 'vs/nex/platform/store/store';
-import { App } from 'vs/nex/ui/App';
 import { actions as fileProviderActions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
+import { ResourceScheme } from 'vs/nex/platform/file-types';
 import { ModeServiceProvider } from 'vs/nex/ui/ModeService.provider';
 import { ModelServiceProvider } from 'vs/nex/ui/ModelService.provider';
 import { NexFileSystemProvider } from 'vs/nex/ui/NexFileSystem.provider';
@@ -32,7 +33,7 @@ export function createApp(
 	return {
 		renderApp: async function (targetContainer: HTMLElement) {
 			// load initial directory with contents
-			const parsedUri = URI.file('/home/pkerschbaum');
+			const parsedUri = uriHelper.parseUri(ResourceScheme.FileSystem, '/home/pkerschbaum');
 			const stats = await fileSystem.resolve(parsedUri, { resolveMetadata: true });
 			if (!stats.isDirectory) {
 				throw Error(
@@ -55,9 +56,10 @@ export function createApp(
 							<NexFileSystemProvider value={fileSystem}>
 								<ThemeProvider theme={theme}>
 									<Provider store={store}>
-										<ScopedCssBaseline css={commonStyles.fullHeight}>
+										<CssBaseline />
+										<Box css={commonStyles.fullHeight}>
 											<App />
-										</ScopedCssBaseline>
+										</Box>
 									</Provider>
 								</ThemeProvider>
 							</NexFileSystemProvider>

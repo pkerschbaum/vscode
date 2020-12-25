@@ -1,7 +1,7 @@
 import { css } from '@emotion/react';
 
 export const styles = {
-	dirContentIcon: css`
+	fileIcon: css`
 		::before {
 			/* icon-theme.ts sets a unwanted font-size, use !important to overrule that*/
 			font-size: 2em !important;
