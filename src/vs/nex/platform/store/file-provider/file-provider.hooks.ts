@@ -216,15 +216,20 @@ export const useFileProviderThunks = () => {
 			dispatch(actions.cutOrCopyFiles({ files, cut })),
 
 		pasteFiles: async () => {
-			const targetFolder = URI.from(cwd);
 			if (filesToPaste.length === 0) {
 				return;
 			}
 
+			const targetFolder = URI.from(cwd);
 			const targetFolderStat = await fileSystem.resolve(targetFolder);
+
+			// remove files from paste state (neither cut&paste nor copy&paste is designed to be repeatable)
+			dispatch(actions.resetPasteState());
+
 			await Promise.all(
 				filesToPaste.map(async (fileToPaste) => {
 					const fileToPasteURI = URI.from(fileToPaste);
+
 					// Check if target is ancestor of pasted folder
 					if (
 						targetFolder.toString() !== fileToPasteURI.toString() &&
@@ -308,11 +313,6 @@ export const useFileProviderThunks = () => {
 					}
 				}),
 			);
-
-			if (pasteShouldMove) {
-				// Cut is done
-				dispatch(actions.resetPasteState());
-			}
 
 			// update cwd content
 			return updateFilesOfCwd(cwd);

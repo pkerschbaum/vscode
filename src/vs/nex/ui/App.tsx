@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, Button, TextField } from '@material-ui/core';
+import { Box, Button, Divider, TextField } from '@material-ui/core';
 
 import { URI } from 'vs/base/common/uri';
 import * as arrays from 'vs/base/common/arrays';
@@ -16,10 +16,28 @@ import {
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import byteSize = require('byte-size');
 
-export const App: React.FC<{}> = () => {
-	const [idsOfSelectedFiles, setSelectedFiles] = React.useState<string[]>([]);
-	const { cwd, files } = useFileProviderState();
+export const App: React.FC = () => {
+	const { cwd } = useFileProviderState();
+
+	return (
+		<Box
+			sx={{ paddingX: 1, paddingY: 1 }}
+			className="show-file-icons"
+			css={commonStyles.fullHeight}
+		>
+			<Explorer key={URI.from(cwd).toString()} />
+		</Box>
+	);
+};
+
+const Explorer: React.FC = () => {
+	const { cwd, files, filesToPaste } = useFileProviderState();
 	const fileProviderThunks = useFileProviderThunks();
+
+	const [cwdInput, setCwdInput] = React.useState(cwd.path);
+	const [idsOfSelectedFiles, setIdsOfSelectedFiles] = React.useState<string[]>([]);
+
+	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
 
 	// sort files so that
 	// - directories come first
@@ -41,9 +59,11 @@ export const App: React.FC<{}> = () => {
 		return 0;
 	});
 
-	const openSelectedFiles = () => {
-		const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
+	function navigateUp() {
+		fileProviderThunks.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
+	}
 
+	const openSelectedFiles = () => {
 		if (selectedFiles.length === 1 && selectedFiles[0].fileType === FILE_TYPE.DIRECTORY) {
 			fileProviderThunks.changeDirectory(selectedFiles[0].uri.path);
 		} else {
@@ -54,22 +74,72 @@ export const App: React.FC<{}> = () => {
 	};
 
 	const deleteSelectedFiles = async () => {
-		const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
 		await fileProviderThunks.moveFilesToTrash(selectedFiles.map((file) => file.uri));
 	};
 
+	const cutOrCopySelectedFiles = (cut: boolean) => () => {
+		return fileProviderThunks.cutOrCopyFiles(
+			selectedFiles.map((file) => file.uri),
+			cut,
+		);
+	};
+
+	const singleFileActionsDisabled = selectedFiles.length !== 1;
+	const multipleFilesActionsDisabled = selectedFiles.length < 1;
+
 	return (
-		<Box
-			sx={{ paddingX: 1, paddingY: 1 }}
-			className="show-file-icons"
-			css={commonStyles.fullHeight}
-		>
+		<>
 			<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
-				<Actions
-					key={URI.from(cwd).toString()}
-					openAction={openSelectedFiles}
-					deleteAction={deleteSelectedFiles}
-				/>
+				<Stack>
+					<TextField
+						size="small"
+						label="Current Directory"
+						value={cwdInput}
+						onChange={(e) => setCwdInput(e.target.value)}
+					/>
+					<Button variant="outlined" onClick={() => fileProviderThunks.changeDirectory(cwdInput)}>
+						Change CWD
+					</Button>
+					<Button variant="outlined" onClick={navigateUp}>
+						Up
+					</Button>
+					<Divider orientation="vertical" flexItem />
+					<Button
+						variant="outlined"
+						onClick={openSelectedFiles}
+						disabled={singleFileActionsDisabled}
+					>
+						Open
+					</Button>
+					<Button
+						variant="outlined"
+						onClick={cutOrCopySelectedFiles(false)}
+						disabled={multipleFilesActionsDisabled}
+					>
+						Copy
+					</Button>
+					<Button
+						variant="outlined"
+						onClick={cutOrCopySelectedFiles(true)}
+						disabled={multipleFilesActionsDisabled}
+					>
+						Cut
+					</Button>
+					<Button
+						variant={filesToPaste.length < 1 ? 'outlined' : 'contained'}
+						onClick={fileProviderThunks.pasteFiles}
+						disabled={filesToPaste.length < 1}
+					>
+						Paste
+					</Button>
+					<Button
+						variant="outlined"
+						onClick={deleteSelectedFiles}
+						disabled={multipleFilesActionsDisabled}
+					>
+						Delete
+					</Button>
+				</Stack>
 				<DataTable
 					css={(commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical)}
 					rows={sortedFiles}
@@ -99,7 +169,7 @@ export const App: React.FC<{}> = () => {
 						},
 					]}
 					getIdOfRow={(row) => row.id}
-					onRowClick={(row) => setSelectedFiles([row.id])}
+					onRowClick={(row) => setIdsOfSelectedFiles([row.id])}
 					onRowDoubleClick={(row) => {
 						if (row.fileType === FILE_TYPE.DIRECTORY) {
 							fileProviderThunks.changeDirectory(row.uri.path);
@@ -107,38 +177,10 @@ export const App: React.FC<{}> = () => {
 							fileProviderThunks.openFile(row.uri);
 						}
 					}}
-					isRowSelected={(row) => !!idsOfSelectedFiles.find((id) => id === row.id)}
+					isRowSelected={(row) => !!selectedFiles.find((file) => file === row)}
 				/>
 			</Stack>
-		</Box>
-	);
-};
-
-const Actions: React.FC<{ openAction: () => void; deleteAction: () => void }> = ({
-	openAction,
-	deleteAction,
-}) => {
-	const { cwd } = useFileProviderState();
-	const [input, setInput] = React.useState(cwd.path);
-	const fileProviderThunks = useFileProviderThunks();
-
-	function navigateUp() {
-		fileProviderThunks.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
-	}
-
-	return (
-		<Stack>
-			<TextField
-				size="small"
-				label="Current Directory"
-				value={input}
-				onChange={(e) => setInput(e.target.value)}
-			/>
-			<Button onClick={navigateUp}>Up</Button>
-			<Button onClick={() => fileProviderThunks.changeDirectory(input)}>Change CWD</Button>
-			<Button onClick={openAction}>Open</Button>
-			<Button onClick={deleteAction}>Delete</Button>
-		</Stack>
+		</>
 	);
 };
 
