@@ -19,7 +19,7 @@ import { createTheme } from 'vs/nex/theme';
 import { ThemeProvider } from 'vs/nex/ThemeProvider';
 import { dispatch, store } from 'vs/nex/platform/store/store';
 import { actions as fileProviderActions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
-import { ResourceScheme } from 'vs/nex/platform/file-types';
+import { RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
 import { useDebounce } from 'vs/nex/platform/store/util/hooks.util';
 import { ModeServiceProvider } from 'vs/nex/ui/ModeService.provider';
 import { ModelServiceProvider } from 'vs/nex/ui/ModelService.provider';
@@ -36,7 +36,7 @@ export function createApp(
 	return {
 		renderApp: async function (targetContainer: HTMLElement) {
 			// load initial directory with contents
-			const parsedUri = uriHelper.parseUri(ResourceScheme.FileSystem, '/home/pkerschbaum');
+			const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/home/pkerschbaum');
 			const stats = await fileSystem.resolve(parsedUri, { resolveMetadata: true });
 			if (!stats.isDirectory) {
 				throw Error(

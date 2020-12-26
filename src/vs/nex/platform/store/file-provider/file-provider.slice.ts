@@ -3,7 +3,7 @@ import { createAction, createReducer } from '@reduxjs/toolkit';
 import { URI, UriComponents } from 'vs/base/common/uri';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
-import { File, ResourceScheme, PasteStatus, FileMap } from 'vs/nex/platform/file-types';
+import { File, RESOURCES_SCHEME, PASTE_STATUS, FileMap } from 'vs/nex/platform/file-types';
 
 export type FileProviderState = {
 	cwd: UriComponents;
@@ -12,7 +12,7 @@ export type FileProviderState = {
 	pasteShouldMove: boolean;
 	pasteProcesses: Array<{
 		id: string;
-		status: PasteStatus;
+		status: PASTE_STATUS;
 		totalSize: number;
 		bytesProcessed: number;
 	}>;
@@ -47,7 +47,7 @@ type FinishPasteProcessPayload = {
 };
 
 const INITIAL_STATE: FileProviderState = {
-	cwd: uriHelper.parseUri(ResourceScheme.FileSystem, '/').toJSON(),
+	cwd: uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/').toJSON(),
 	files: {},
 	filesToPaste: [],
 	pasteShouldMove: false,
@@ -101,7 +101,7 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			logger.debug(`STARTED pasteProcess, id: ${action.payload.id}`);
 			state.pasteProcesses.push({
 				id: action.payload.id,
-				status: PasteStatus.STARTED,
+				status: PASTE_STATUS.STARTED,
 				totalSize: action.payload.totalSize,
 				bytesProcessed: 0,
 			});
@@ -120,7 +120,7 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 		.addCase(actions.finishPasteProcess, (state, action) => {
 			const pasteProcess = state.pasteProcesses.find((pp) => pp.id === action.payload.id);
 			if (pasteProcess) {
-				pasteProcess.status = PasteStatus.FINISHED;
+				pasteProcess.status = PASTE_STATUS.FINISHED;
 				logger.debug(`FINISHED pasteProcess, id: ${pasteProcess.id}`);
 			} else {
 				logger.error('should update paste process, but could not find corresponding one');

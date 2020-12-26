@@ -12,7 +12,7 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
-import { File, FILE_TYPE, ResourceScheme } from 'vs/nex/platform/file-types';
+import { File, FILE_TYPE, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
 
 const logger = createLogger('nexFileSystem');
 export const NexFileSystem = createDecorator<NexFileSystem>('nexFileSystem');
@@ -50,7 +50,7 @@ export class NexFileSystemImpl implements NexFileSystem {
 
 	public checkDirectory = async (path: string) => {
 		try {
-			const parsedUri = uriHelper.parseUri(ResourceScheme.FileSystem, path);
+			const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, path);
 			if (!parsedUri) {
 				return false;
 			}

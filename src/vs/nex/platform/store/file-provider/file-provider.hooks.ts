@@ -15,7 +15,7 @@ import { useModelService } from 'vs/nex/ui/ModelService.provider';
 import { useModeService } from 'vs/nex/ui/ModeService.provider';
 import { useNexFileSystem } from 'vs/nex/ui/NexFileSystem.provider';
 import { useDispatch, useSelector } from 'vs/nex/platform/store/store';
-import { File, FILE_TYPE, ResourceScheme, FileStatMap } from 'vs/nex/platform/file-types';
+import { File, FILE_TYPE, RESOURCES_SCHEME, FileStatMap } from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { objects } from 'vs/nex/base/utils/objects.util';
@@ -144,7 +144,7 @@ export const useFileProviderThunks = () => {
 	}
 
 	async function changeDirectory(newDir: string) {
-		const parsedUri = uriHelper.parseUri(ResourceScheme.FileSystem, newDir);
+		const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, newDir);
 
 		// check if the directory is a valid directory (i.e., is a URI-parsable string)
 		if (!parsedUri) {

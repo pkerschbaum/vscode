@@ -67,8 +67,8 @@ export const App: React.FC<{}> = () => {
 			<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
 				<Actions
 					key={URI.from(cwd).toString()}
-					openSelectedFiles={openSelectedFiles}
-					deleteSelectedFiles={deleteSelectedFiles}
+					openAction={openSelectedFiles}
+					deleteAction={deleteSelectedFiles}
 				/>
 				<DataTable
 					css={(commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical)}
@@ -114,9 +114,9 @@ export const App: React.FC<{}> = () => {
 	);
 };
 
-const Actions: React.FC<{ openSelectedFiles: () => void; deleteSelectedFiles: () => void }> = ({
-	openSelectedFiles,
-	deleteSelectedFiles,
+const Actions: React.FC<{ openAction: () => void; deleteAction: () => void }> = ({
+	openAction,
+	deleteAction,
 }) => {
 	const { cwd } = useFileProviderState();
 	const [input, setInput] = React.useState(cwd.path);
@@ -136,8 +136,8 @@ const Actions: React.FC<{ openSelectedFiles: () => void; deleteSelectedFiles: ()
 			/>
 			<Button onClick={navigateUp}>Up</Button>
 			<Button onClick={() => fileProviderThunks.changeDirectory(input)}>Change CWD</Button>
-			<Button onClick={openSelectedFiles}>Open</Button>
-			<Button onClick={deleteSelectedFiles}>Delete</Button>
+			<Button onClick={openAction}>Open</Button>
+			<Button onClick={deleteAction}>Delete</Button>
 		</Stack>
 	);
 };

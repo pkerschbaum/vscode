@@ -8,11 +8,11 @@ export enum FILE_TYPE {
 	UNKNOWN = 'UNKNOWN',
 }
 
-export enum ResourceScheme {
-	FileSystem = 'file://',
+export enum RESOURCES_SCHEME {
+	FILE_SYSTEM = 'file://',
 }
 
-export enum PasteStatus {
+export enum PASTE_STATUS {
 	STARTED,
 	FINISHED,
 }
