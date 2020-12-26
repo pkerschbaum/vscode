@@ -15,7 +15,7 @@ import { useModelService } from 'vs/nex/ui/ModelService.provider';
 import { useModeService } from 'vs/nex/ui/ModeService.provider';
 import { useNexFileSystem } from 'vs/nex/ui/NexFileSystem.provider';
 import { useDispatch, useSelector } from 'vs/nex/platform/store/store';
-import { File, FileType, ResourceScheme, FileStatMap } from 'vs/nex/platform/file-types';
+import { File, FILE_TYPE, ResourceScheme, FileStatMap } from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { objects } from 'vs/nex/base/utils/objects.util';
@@ -70,12 +70,12 @@ function extractBaseName(filePath: string): string {
 
 function extractNameAndExtension(
 	baseName: string,
-	fileType: FileType,
+	fileType: FILE_TYPE,
 ): { fileName: string; extension?: string } {
 	let fileName;
 	let extension;
 
-	if (fileType === FileType.Directory) {
+	if (fileType === FILE_TYPE.DIRECTORY) {
 		fileName = baseName;
 	} else {
 		const nameParts = baseName.split(/\.(?=[^.]*$)/g);
@@ -90,13 +90,13 @@ function extractNameAndExtension(
 	return { fileName, extension };
 }
 
-function mapFileTypeToFileKind(fileType: FileType): FileKind {
-	if (fileType === FileType.File) {
+function mapFileTypeToFileKind(fileType: FILE_TYPE) {
+	if (fileType === FILE_TYPE.FILE) {
 		return FileKind.FILE;
-	} else if (fileType === FileType.Directory) {
+	} else if (fileType === FILE_TYPE.DIRECTORY) {
 		return FileKind.FOLDER;
 	} else {
-		throw new Error(`could not map FileType to FileKind, FileType is: ${fileType}`);
+		return undefined;
 	}
 }
 
@@ -119,19 +119,19 @@ export const useFileProviderThunks = () => {
 		}
 	}
 
-	async function resolveDeep(targetToResolve: URI, targetStat: IFileStatWithMetadata) {
+	async function resolveDeep(targetToResolve: UriComponents, targetStat: IFileStatWithMetadata) {
 		const fileStatMap: FileStatMap = {};
 		await resolveDeepRecursive(targetToResolve, targetStat, fileStatMap);
 		return fileStatMap;
 	}
 
 	async function resolveDeepRecursive(
-		targetToResolve: URI,
+		targetToResolve: UriComponents,
 		targetStat: IFileStatWithMetadata,
 		resultMap: FileStatMap,
 	) {
 		if (!targetStat.isDirectory) {
-			resultMap[targetToResolve.toString()] = targetStat;
+			resultMap[URI.from(targetToResolve).toString()] = targetStat;
 		} else if (targetStat.children && targetStat.children.length > 0) {
 			// recursive resolve
 			await Promise.all(
@@ -187,16 +187,12 @@ export const useFileProviderThunks = () => {
 	return {
 		changeDirectory,
 
-		// since 'path' of the URI is currently used as ID, we can simply call changeDirectory, but before doing so we must
-		// remove the leading slash (e.g., '/d:/TEMP' gets changed to 'd:/TEMP')
-		changeDirectoryById: async (id: string) => changeDirectory(id.substring(1, id.length)),
-
-		moveFilesToTrash: async (uris: URI[]) => {
+		moveFilesToTrash: async (uris: UriComponents[]) => {
 			// move all files to trash (in parallel)
 			await Promise.all(
 				uris.map(async (uri) => {
 					try {
-						await fileSystem.del(uri, { useTrash: true, recursive: true });
+						await fileSystem.del(URI.from(uri), { useTrash: true, recursive: true });
 					} catch (err) {
 						logger.error(`could not move file to trash`, err);
 					}
@@ -207,16 +203,16 @@ export const useFileProviderThunks = () => {
 			return updateFilesOfCwd(cwd);
 		},
 
-		openFile: async (uri: URI) => {
-			const executablePath = uri.fsPath;
+		openFile: async (uri: UriComponents) => {
+			const executablePath = URI.from(uri).fsPath;
 
 			const success = await shell.openPath(executablePath);
 			if (!success) {
-				logger.error(`electron shell openItem did not succeed for uri: ${uri}`);
+				logger.error(`electron shell openItem did not succeed`, undefined, { uri });
 			}
 		},
 
-		cutOrCopyFiles: (files: URI[], cut: boolean) =>
+		cutOrCopyFiles: (files: UriComponents[], cut: boolean) =>
 			dispatch(actions.cutOrCopyFiles({ files, cut })),
 
 		pasteFiles: async () => {
@@ -326,9 +322,9 @@ export const useFileProviderThunks = () => {
 
 function findValidPasteFileTarget(
 	targetFolder: IFileStat,
-	fileToPaste: { resource: URI; isDirectory?: boolean; allowOverwrite: boolean },
+	fileToPaste: { resource: UriComponents; isDirectory?: boolean; allowOverwrite: boolean },
 ): URI {
-	let name = resources.basenameOrAuthority(fileToPaste.resource);
+	let name = resources.basenameOrAuthority(URI.from(fileToPaste.resource));
 	let candidate = resources.joinPath(targetFolder.resource, name);
 
 	if (fileToPaste.allowOverwrite || !targetFolder.children || targetFolder.children.length === 0) {

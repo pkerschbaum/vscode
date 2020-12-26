@@ -1,11 +1,11 @@
 import { UriComponents } from 'vs/base/common/uri';
 import { IFileStatWithMetadata } from 'vs/platform/files/common/files';
 
-export enum FileType {
-	File,
-	Directory,
-	SymbolicLink,
-	Unknown,
+export enum FILE_TYPE {
+	FILE = 'FILE',
+	DIRECTORY = 'DIRECTORY',
+	SYMBOLIC_LINK = 'SYMBOLIC_LINK',
+	UNKNOWN = 'UNKNOWN',
 }
 
 export enum ResourceScheme {
@@ -23,7 +23,7 @@ export type FileMap = {
 
 export type File = {
 	id: string;
-	fileType: FileType;
+	fileType: FILE_TYPE;
 	uri: UriComponents;
 	size?: number;
 	lastChangedAt?: number;

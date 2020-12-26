@@ -48,7 +48,7 @@ export const createTheme = (locale: Localization) => {
 			},
 		},
 
-		palette: { primary: { main: primaryColor } },
+		palette: { primary: { main: primaryColor }, secondary: { main: '#581c0c' } },
 	};
 
 	return createMuiTheme(theme, locale);

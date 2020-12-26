@@ -8,17 +8,18 @@ import { styles } from 'vs/nex/ui/App.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { DataTable } from 'vs/nex/ui/elements/DataTable';
-import { useSelector } from 'vs/nex/platform/store/store';
 import {
 	FileForUI,
 	useFileProviderState,
 	useFileProviderThunks,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { FileType } from 'vs/nex/platform/file-types';
+import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import byteSize = require('byte-size');
 
 export const App: React.FC<{}> = () => {
-	const { files } = useFileProviderState();
+	const [idsOfSelectedFiles, setSelectedFiles] = React.useState<string[]>([]);
+	const { cwd, files } = useFileProviderState();
+	const fileProviderThunks = useFileProviderThunks();
 
 	// sort files so that
 	// - directories come first
@@ -32,13 +33,30 @@ export const App: React.FC<{}> = () => {
 		return 0;
 	});
 	sortedFiles = arrays.mergeSort(files, (a, b) => {
-		if (a.fileType === FileType.Directory && b.fileType === FileType.File) {
+		if (a.fileType === FILE_TYPE.DIRECTORY && b.fileType === FILE_TYPE.FILE) {
 			return -1;
-		} else if (a.fileType === FileType.File && b.fileType === FileType.Directory) {
+		} else if (a.fileType === FILE_TYPE.FILE && b.fileType === FILE_TYPE.DIRECTORY) {
 			return 1;
 		}
 		return 0;
 	});
+
+	const openSelectedFiles = () => {
+		const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
+
+		if (selectedFiles.length === 1 && selectedFiles[0].fileType === FILE_TYPE.DIRECTORY) {
+			fileProviderThunks.changeDirectory(selectedFiles[0].uri.path);
+		} else {
+			selectedFiles
+				.filter((selectedFile) => selectedFile.fileType === FILE_TYPE.FILE)
+				.forEach((selectedFile) => fileProviderThunks.openFile(selectedFile.uri));
+		}
+	};
+
+	const deleteSelectedFiles = async () => {
+		const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
+		await fileProviderThunks.moveFilesToTrash(selectedFiles.map((file) => file.uri));
+	};
 
 	return (
 		<Box
@@ -47,7 +65,11 @@ export const App: React.FC<{}> = () => {
 			css={commonStyles.fullHeight}
 		>
 			<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
-				<Actions />
+				<Actions
+					key={URI.from(cwd).toString()}
+					openSelectedFiles={openSelectedFiles}
+					deleteSelectedFiles={deleteSelectedFiles}
+				/>
 				<DataTable
 					css={(commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical)}
 					rows={sortedFiles}
@@ -77,20 +99,32 @@ export const App: React.FC<{}> = () => {
 						},
 					]}
 					getIdOfRow={(row) => row.id}
-					onRowClick={(row) => {
-						// TODO implement
-						console.dir(row);
+					onRowClick={(row) => setSelectedFiles([row.id])}
+					onRowDoubleClick={(row) => {
+						if (row.fileType === FILE_TYPE.DIRECTORY) {
+							fileProviderThunks.changeDirectory(row.uri.path);
+						} else if (row.fileType === FILE_TYPE.FILE) {
+							fileProviderThunks.openFile(row.uri);
+						}
 					}}
+					isRowSelected={(row) => !!idsOfSelectedFiles.find((id) => id === row.id)}
 				/>
 			</Stack>
 		</Box>
 	);
 };
 
-const Actions: React.FC<{}> = () => {
-	const cwd = useSelector((state) => URI.from(state.fileProvider.cwd));
+const Actions: React.FC<{ openSelectedFiles: () => void; deleteSelectedFiles: () => void }> = ({
+	openSelectedFiles,
+	deleteSelectedFiles,
+}) => {
+	const { cwd } = useFileProviderState();
 	const [input, setInput] = React.useState(cwd.path);
 	const fileProviderThunks = useFileProviderThunks();
+
+	function navigateUp() {
+		fileProviderThunks.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
+	}
 
 	return (
 		<Stack>
@@ -100,7 +134,10 @@ const Actions: React.FC<{}> = () => {
 				value={input}
 				onChange={(e) => setInput(e.target.value)}
 			/>
+			<Button onClick={navigateUp}>Up</Button>
 			<Button onClick={() => fileProviderThunks.changeDirectory(input)}>Change CWD</Button>
+			<Button onClick={openSelectedFiles}>Open</Button>
+			<Button onClick={deleteSelectedFiles}>Delete</Button>
 		</Stack>
 	);
 };

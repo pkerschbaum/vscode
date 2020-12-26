@@ -19,23 +19,33 @@ type HeadCell<RowType extends ObjectLiteral> =
 			label: string;
 			property: keyof RowType;
 			numeric?: boolean;
-		}
+	  }
 	| {
 			label: string;
 			format: (row: RowType) => React.ReactNode;
 			numeric?: boolean;
-		};
+	  };
 
 interface EnhancedTableProps<RowType extends ObjectLiteral> {
 	rows: RowType[];
 	headCells: HeadCell<RowType>[];
 	getIdOfRow: (row: RowType) => string | number;
+	isRowSelected?: (row: RowType) => boolean;
 	onRowClick: (row: RowType) => void | Promise<void>;
+	onRowDoubleClick: (row: RowType) => void | Promise<void>;
 	className?: string;
 }
 
 export function DataTable<RowType extends ObjectLiteral>(props: EnhancedTableProps<RowType>) {
-	const { rows, headCells, getIdOfRow, onRowClick, className } = props;
+	const {
+		rows,
+		headCells,
+		getIdOfRow,
+		isRowSelected,
+		onRowClick,
+		onRowDoubleClick,
+		className,
+	} = props;
 
 	return (
 		<TableContainer
@@ -53,7 +63,9 @@ export function DataTable<RowType extends ObjectLiteral>(props: EnhancedTablePro
 							css={styles.row}
 							hover
 							onClick={() => onRowClick(row)}
+							onDoubleClick={() => onRowDoubleClick(row)}
 							tabIndex={-1}
+							selected={isRowSelected === undefined ? false : isRowSelected(row)}
 						>
 							{headCells.map((headCell) => {
 								let valueToShow;

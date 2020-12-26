@@ -87,6 +87,7 @@ module.exports.indentationFilter = [
 	'!**/*.dockerfile',
 	'!extensions/markdown-language-features/media/*.js',
 	'!extensions/simple-browser/media/*.js',
+	'!src/vs/nex/**/*',
 ];
 
 module.exports.copyrightFilter = [
