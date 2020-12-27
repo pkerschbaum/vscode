@@ -3,7 +3,6 @@ import { Box, Button, Divider, TextField } from '@material-ui/core';
 import { matchSorter } from 'match-sorter';
 
 import { URI } from 'vs/base/common/uri';
-import * as arrays from 'vs/base/common/arrays';
 
 import { styles } from 'vs/nex/ui/App.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
@@ -17,6 +16,7 @@ import {
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
 import { DEFAULT_KEYDOWN_HANDLER, useKeydownHandler } from 'vs/nex/ui/utils/events.hooks';
+import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { strings } from 'vs/nex/base/utils/strings.util';
 import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 import byteSize = require('byte-size');
@@ -46,25 +46,43 @@ const Explorer: React.FC = () => {
 
 	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
 
-	// sort files so that
-	// - directories come first
-	// - and each section (directories, files) is sorted by name
-	let sortedFiles = arrays.mergeSort(files, (a, b) => {
-		if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) {
-			return -1;
-		} else if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) {
-			return 1;
-		}
-		return 0;
-	});
-	sortedFiles = arrays.mergeSort(files, (a, b) => {
-		if (a.fileType === FILE_TYPE.DIRECTORY && b.fileType === FILE_TYPE.FILE) {
-			return -1;
-		} else if (a.fileType === FILE_TYPE.FILE && b.fileType === FILE_TYPE.DIRECTORY) {
-			return 1;
-		}
-		return 0;
-	});
+	/*
+	 * Compute files to show:
+	 * - if no filter input is given, just sort the files.
+	 *   Directories first and files second. Each section sorted by name.
+	 * - otherwise, let "match-sorter" do its job for filtering and sorting.
+	 */
+	let filesToShow: FileForUI[];
+	if (strings.isNullishOrEmpty(filterInput)) {
+		filesToShow = arrays
+			.wrap(files)
+			.stableSort((a, b) => {
+				if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) {
+					return -1;
+				} else if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) {
+					return 1;
+				}
+				return 0;
+			})
+			.stableSort((a, b) => {
+				if (a.fileType === FILE_TYPE.DIRECTORY && b.fileType === FILE_TYPE.FILE) {
+					return -1;
+				} else if (a.fileType === FILE_TYPE.FILE && b.fileType === FILE_TYPE.DIRECTORY) {
+					return 1;
+				}
+				return 0;
+			})
+			.getValue();
+	} else {
+		filesToShow = arrays
+			.wrap(files)
+			.matchSort(filterInput, {
+				// avoid "WORD STARTS WITH" ranking of match-sorter by replacing each blank with another character
+				keys: [(file) => file.name.replace(' ', '_')],
+				threshold: matchSorter.rankings.CONTAINS,
+			})
+			.getValue();
+	}
 
 	function navigateUp() {
 		fileProviderThunks.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
@@ -92,14 +110,6 @@ const Explorer: React.FC = () => {
 	};
 	const copySelectedFiles = cutOrCopySelectedFiles(false);
 	const cutSelectedFiles = cutOrCopySelectedFiles(true);
-
-	const filesToShow = strings.isNullishOrEmpty(filterInput)
-		? sortedFiles
-		: matchSorter(sortedFiles, filterInput, {
-				// avoid "WORD STARTS WITH" ranking of match-sorter by replacing each blank with another character
-				keys: [(file) => file.name.replace(' ', '_')],
-				threshold: matchSorter.rankings.CONTAINS,
-		  });
 
 	/**
 	 * - If no file is selected, select the first file
