@@ -565,6 +565,16 @@
     "@octokit/openapi-types" "^2.0.1"
     "@types/node" ">= 8"
 
+"@pkerschbaum/gulp-tsb@^4.1.0":
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/@pkerschbaum/gulp-tsb/-/gulp-tsb-4.1.0.tgz#81c5af0d0ae06264852538320ba4511bf604d52c"
+  integrity sha512-j1JLMjnFqTh7gpkoWSlUZhjfTL87m7EFIA08pk4iC0WF5NkyAqpJvyix2GjGB/f3/yGA8g3XpHLso3Fs/1tjQQ==
+  dependencies:
+    ansi-colors "^1.0.1"
+    fancy-log "^1.3.2"
+    through "^2.3.6"
+    vinyl "^2.1.0"
+
 "@popperjs/core@^2.4.4":
   version "2.6.0"
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.6.0.tgz#f022195afdfc942e088ee2101285a1d31c7d727f"
