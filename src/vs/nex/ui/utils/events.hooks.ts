@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 
+export const DEFAULT_KEYDOWN_HANDLER = Symbol('DEFAULT_HANDLER');
+
 type KeyFunctionMap = {
 	[key: string]:
 		| (() => void)
@@ -7,9 +9,13 @@ type KeyFunctionMap = {
 				additionalKeys?: Array<'ALT' | 'CTRL'> | ReadonlyArray<'ALT' | 'CTRL'>;
 				handler: () => void;
 		  };
+} & {
+	[DEFAULT_KEYDOWN_HANDLER]?: (e: KeyboardEvent) => void;
 };
 
 export function useKeydownHandler(keyFunctionMap: KeyFunctionMap) {
+	const defaultHandler = keyFunctionMap[DEFAULT_KEYDOWN_HANDLER];
+
 	useEffect(() => {
 		const keyUpHandler = (e: KeyboardEvent) => {
 			const key = e.key;
@@ -33,6 +39,8 @@ export function useKeydownHandler(keyFunctionMap: KeyFunctionMap) {
 
 			if (handlerToFire) {
 				handlerToFire();
+			} else if (defaultHandler) {
+				defaultHandler(e);
 			}
 		};
 
