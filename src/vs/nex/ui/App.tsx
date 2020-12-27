@@ -14,6 +14,7 @@ import {
 	useFileProviderThunks,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
+import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 import byteSize = require('byte-size');
 
 export const App: React.FC = () => {
@@ -84,12 +85,69 @@ const Explorer: React.FC = () => {
 		);
 	};
 
+	/**
+	 * - If no file is selected, select the first file
+	 * - If at least one file is selected,
+	 * -- and arrow up is pressed, select the file above the first currently selected file (if file above exists)
+	 * -- and arrow down is pressed, select the file below the first currently selected file (if file below exists)
+	 */
+	const changeSelectedFile = (key: 'ArrowUp' | 'ArrowDown' | 'PageUp' | 'PageDown') => {
+		if (sortedFiles.length < 1) {
+			return;
+		}
+
+		if (key === 'ArrowUp' || key === 'ArrowDown') {
+			const firstSelectedFileIndex = sortedFiles.findIndex((file) =>
+				selectedFiles.some((selectedFile) => selectedFile === file),
+			);
+			if (selectedFiles.length === 0) {
+				setIdsOfSelectedFiles([sortedFiles[0].id]);
+			} else if (key === 'ArrowUp' && firstSelectedFileIndex !== 0) {
+				setIdsOfSelectedFiles([sortedFiles[firstSelectedFileIndex - 1].id]);
+			} else if (key === 'ArrowDown' && sortedFiles.length > firstSelectedFileIndex + 1) {
+				setIdsOfSelectedFiles([sortedFiles[firstSelectedFileIndex + 1].id]);
+			}
+		} else if (key === 'PageUp') {
+			setIdsOfSelectedFiles([sortedFiles[0].id]);
+		} else if (key === 'PageDown') {
+			setIdsOfSelectedFiles([sortedFiles[sortedFiles.length - 1].id]);
+		} else {
+			assertUnreachable(key);
+		}
+	};
+
+	/**
+	 * - If arrow-up or arrow-down is pressed, call [changeSelectedFile]
+	 * - If enter is pressed, open all currently selected files
+	 * - If delete is pressed, delete all currently selected files
+	 */
+	const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
+		console.dir(e);
+		const { key } = e;
+		if (key === 'ArrowUp' || key === 'ArrowDown' || key === 'PageUp' || key === 'PageDown') {
+			changeSelectedFile(key);
+			e.preventDefault();
+		} else if (key === 'Enter') {
+			openSelectedFiles();
+			e.preventDefault();
+		} else if (key === 'Delete') {
+			deleteSelectedFiles();
+			e.preventDefault();
+		}
+	};
+
 	const singleFileActionsDisabled = selectedFiles.length !== 1;
 	const multipleFilesActionsDisabled = selectedFiles.length < 1;
 
 	return (
 		<>
-			<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
+			<Stack
+				css={commonStyles.fullHeight}
+				direction="column"
+				alignItems="stretch"
+				stretchContainer
+				boxProps={{ onKeyDown }}
+			>
 				<Stack>
 					<TextField
 						size="small"

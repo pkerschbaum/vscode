@@ -26,15 +26,18 @@ type HeadCell<RowType extends ObjectLiteral> =
 			numeric?: boolean;
 	  };
 
-interface EnhancedTableProps<RowType extends ObjectLiteral> {
-	rows: RowType[];
+type EnhancedTableBaseProps<RowType extends ObjectLiteral> = {
 	headCells: HeadCell<RowType>[];
-	getIdOfRow: (row: RowType) => string | number;
 	isRowSelected?: (row: RowType) => boolean;
 	onRowClick: (row: RowType) => void | Promise<void>;
 	onRowDoubleClick: (row: RowType) => void | Promise<void>;
+};
+
+type EnhancedTableProps<RowType extends ObjectLiteral> = EnhancedTableBaseProps<RowType> & {
+	rows: RowType[];
+	getIdOfRow: (row: RowType) => string | number;
 	className?: string;
-}
+};
 
 export function DataTable<RowType extends ObjectLiteral>(props: EnhancedTableProps<RowType>) {
 	const {
@@ -58,25 +61,14 @@ export function DataTable<RowType extends ObjectLiteral>(props: EnhancedTablePro
 				<EnhancedTableHead<RowType> headCells={headCells} />
 				<TableBody>
 					{rows.map((row) => (
-						<TableRow
+						<EnhancedTableRow
 							key={getIdOfRow(row)}
-							css={styles.row}
-							hover
-							onClick={() => onRowClick(row)}
-							onDoubleClick={() => onRowDoubleClick(row)}
-							tabIndex={-1}
-							selected={isRowSelected === undefined ? false : isRowSelected(row)}
-						>
-							{headCells.map((headCell) => {
-								let valueToShow;
-								if ('format' in headCell) {
-									valueToShow = headCell.format(row);
-								} else {
-									valueToShow = row[headCell.property];
-								}
-								return <TableCell key={headCell.label}>{valueToShow}</TableCell>;
-							})}
-						</TableRow>
+							row={row}
+							headCells={headCells}
+							isRowSelected={isRowSelected}
+							onRowClick={onRowClick}
+							onRowDoubleClick={onRowDoubleClick}
+						/>
 					))}
 				</TableBody>
 			</Table>
@@ -84,9 +76,56 @@ export function DataTable<RowType extends ObjectLiteral>(props: EnhancedTablePro
 	);
 }
 
-interface EnhancedTableHeadProps<RowType extends ObjectLiteral> {
-	headCells: HeadCell<RowType>[];
+type EnhancedTableRowProps<RowType extends ObjectLiteral> = EnhancedTableBaseProps<RowType> & {
+	row: RowType;
+};
+
+function EnhancedTableRow<RowType extends ObjectLiteral>({
+	row,
+	headCells,
+	isRowSelected,
+	onRowClick,
+	onRowDoubleClick,
+}: EnhancedTableRowProps<RowType>) {
+	// if element is selected and outside view, scroll it into view
+	const rowRef = React.useRef<HTMLTableRowElement>(null);
+	const executeScroll = () =>
+		rowRef.current!.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+	const selected = isRowSelected === undefined ? false : isRowSelected(row);
+
+	React.useEffect(() => {
+		if (selected) {
+			executeScroll();
+		}
+	}, [selected]);
+
+	return (
+		<TableRow
+			ref={rowRef}
+			css={styles.row}
+			hover
+			onClick={() => onRowClick(row)}
+			onDoubleClick={() => onRowDoubleClick(row)}
+			tabIndex={-1}
+			selected={selected}
+		>
+			{headCells.map((headCell) => {
+				let valueToShow;
+				if ('format' in headCell) {
+					valueToShow = headCell.format(row);
+				} else {
+					valueToShow = row[headCell.property];
+				}
+				return <TableCell key={headCell.label}>{valueToShow}</TableCell>;
+			})}
+		</TableRow>
+	);
 }
+
+type EnhancedTableHeadProps<RowType extends ObjectLiteral> = {
+	headCells: HeadCell<RowType>[];
+};
 
 function EnhancedTableHead<RowType extends ObjectLiteral>(props: EnhancedTableHeadProps<RowType>) {
 	const { headCells } = props;
