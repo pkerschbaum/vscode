@@ -8,8 +8,9 @@ import { File, RESOURCES_SCHEME, PASTE_STATUS, FileMap } from 'vs/nex/platform/f
 export type FileProviderState = {
 	cwd: UriComponents;
 	files: FileMap;
-	filesToPaste: UriComponents[];
-	pasteShouldMove: boolean;
+	draftPasteState?: {
+		pasteShouldMove: boolean;
+	};
 	pasteProcesses: Array<{
 		id: string;
 		status: PASTE_STATUS;
@@ -28,7 +29,6 @@ type UpdateStatsOfFilesPayload = {
 };
 
 type CutOrCopyFilesPayload = {
-	files: UriComponents[];
 	cut: boolean;
 };
 
@@ -49,8 +49,6 @@ type FinishPasteProcessPayload = {
 const INITIAL_STATE: FileProviderState = {
 	cwd: uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/').toJSON(),
 	files: {},
-	filesToPaste: [],
-	pasteShouldMove: false,
 	pasteProcesses: [],
 };
 
@@ -63,7 +61,7 @@ export const actions = {
 	addPasteProcess: createAction<AddPasteProcessPayload>('PASTE_PROCESS_ADDED'),
 	updatePasteProcess: createAction<UpdatePasteProcessPayload>('PASTE_PROCESS_UPDATED'),
 	finishPasteProcess: createAction<FinishPasteProcessPayload>('PASTE_PROCESS_FINISHED'),
-	resetPasteState: createAction<void>('PASTE_STATE_RESET'),
+	clearDraftPasteState: createAction<void>('DRAFT_PASTE_STATE_CLEARED'),
 };
 export const reducer = createReducer(INITIAL_STATE, (builder) =>
 	builder
@@ -94,8 +92,7 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			});
 		})
 		.addCase(actions.cutOrCopyFiles, (state, action) => {
-			state.filesToPaste = action.payload.files;
-			state.pasteShouldMove = action.payload.cut;
+			state.draftPasteState = { pasteShouldMove: action.payload.cut };
 		})
 		.addCase(actions.addPasteProcess, (state, action) => {
 			logger.debug(`STARTED pasteProcess, id: ${action.payload.id}`);
@@ -126,8 +123,7 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 				logger.error('should update paste process, but could not find corresponding one');
 			}
 		})
-		.addCase(actions.resetPasteState, (state) => {
-			state.filesToPaste = [];
-			state.pasteShouldMove = false;
+		.addCase(actions.clearDraftPasteState, (state) => {
+			state.draftPasteState = undefined;
 		}),
 );

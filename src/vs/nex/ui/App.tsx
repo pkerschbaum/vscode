@@ -31,7 +31,7 @@ export const App: React.FC = () => {
 };
 
 const Explorer: React.FC = () => {
-	const { cwd, files, filesToPaste } = useFileProviderState();
+	const { cwd, files, draftPasteState } = useFileProviderState();
 	const fileProviderThunks = useFileProviderThunks();
 
 	const [cwdInput, setCwdInput] = React.useState(cwd.path);
@@ -126,9 +126,9 @@ const Explorer: React.FC = () => {
 						Cut
 					</Button>
 					<Button
-						variant={filesToPaste.length < 1 ? 'outlined' : 'contained'}
+						variant={draftPasteState === undefined ? 'outlined' : 'contained'}
 						onClick={fileProviderThunks.pasteFiles}
-						disabled={filesToPaste.length < 1}
+						disabled={draftPasteState === undefined}
 					>
 						Paste
 					</Button>

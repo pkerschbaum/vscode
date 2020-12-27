@@ -14,6 +14,7 @@ import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
 import { useModelService } from 'vs/nex/ui/ModelService.provider';
 import { useModeService } from 'vs/nex/ui/ModeService.provider';
 import { useNexFileSystem } from 'vs/nex/ui/NexFileSystem.provider';
+import { useClipboardResources, useNexClipboard } from 'vs/nex/ui/NexClipboard.provider';
 import { useDispatch, useSelector } from 'vs/nex/platform/store/store';
 import { File, FILE_TYPE, RESOURCES_SCHEME, FileStatMap } from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
@@ -103,7 +104,9 @@ function mapFileTypeToFileKind(fileType: FILE_TYPE) {
 export const useFileProviderThunks = () => {
 	const fileSystem = useNexFileSystem();
 	const dispatch = useDispatch();
-	const { cwd, filesToPaste, pasteShouldMove } = useFileProviderState();
+	const { cwd, draftPasteState } = useFileProviderState();
+	const clipboard = useNexClipboard();
+	const clipboardResources = useClipboardResources();
 
 	async function updateFilesOfCwd(cwd: UriComponents) {
 		// resolve and dispatch files with metadata
@@ -212,11 +215,13 @@ export const useFileProviderThunks = () => {
 			}
 		},
 
-		cutOrCopyFiles: (files: UriComponents[], cut: boolean) =>
-			dispatch(actions.cutOrCopyFiles({ files, cut })),
+		cutOrCopyFiles: async (files: UriComponents[], cut: boolean) => {
+			await clipboard.writeResources(files.map((file) => URI.from(file)));
+			dispatch(actions.cutOrCopyFiles({ cut }));
+		},
 
 		pasteFiles: async () => {
-			if (filesToPaste.length === 0) {
+			if (clipboardResources.length === 0 || draftPasteState === undefined) {
 				return;
 			}
 
@@ -224,10 +229,10 @@ export const useFileProviderThunks = () => {
 			const targetFolderStat = await fileSystem.resolve(targetFolder);
 
 			// remove files from paste state (neither cut&paste nor copy&paste is designed to be repeatable)
-			dispatch(actions.resetPasteState());
+			dispatch(actions.clearDraftPasteState());
 
 			await Promise.all(
-				filesToPaste.map(async (fileToPaste) => {
+				clipboardResources.map(async (fileToPaste) => {
 					const fileToPasteURI = URI.from(fileToPaste);
 
 					// Check if target is ancestor of pasted folder
@@ -293,7 +298,7 @@ export const useFileProviderThunks = () => {
 						const targetFile = findValidPasteFileTarget(targetFolderStat, {
 							resource: fileToPasteURI,
 							isDirectory: fileToPasteStat.isDirectory,
-							allowOverwrite: pasteShouldMove,
+							allowOverwrite: draftPasteState.pasteShouldMove,
 						});
 
 						const progressCb = (newBytesRead: number, forSource: URI) => {
@@ -302,7 +307,7 @@ export const useFileProviderThunks = () => {
 						};
 
 						// Move/Copy File
-						const operation = pasteShouldMove
+						const operation = draftPasteState.pasteShouldMove
 							? fileSystem.move(fileToPasteURI, targetFile, undefined, progressCb)
 							: fileSystem.copy(fileToPasteURI, targetFile, undefined, progressCb);
 						await operation;

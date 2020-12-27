@@ -8,10 +8,8 @@ import { IModeService } from 'vs/editor/common/services/modeService';
 import { IModelService } from 'vs/editor/common/services/modelService';
 
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
-import {
-	mapFileStatToFile,
-	NexFileSystem as nexFileSystem,
-} from 'vs/nex/platform/logic/file-system';
+import { mapFileStatToFile, NexFileSystem } from 'vs/nex/platform/logic/file-system';
+import { NexClipboard } from 'vs/nex/platform/logic/clipboard';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { App } from 'vs/nex/ui/App';
@@ -24,6 +22,7 @@ import { useDebounce } from 'vs/nex/platform/store/util/hooks.util';
 import { ModeServiceProvider } from 'vs/nex/ui/ModeService.provider';
 import { ModelServiceProvider } from 'vs/nex/ui/ModelService.provider';
 import { NexFileSystemProvider } from 'vs/nex/ui/NexFileSystem.provider';
+import { ClipboardResourcesContext, NexClipboardProvider } from 'vs/nex/ui/NexClipboard.provider';
 
 const logger = createLogger('index');
 const theme = createTheme(enUS);
@@ -31,7 +30,8 @@ const theme = createTheme(enUS);
 export function createApp(
 	modeService: IModeService,
 	modelService: IModelService,
-	fileSystem: nexFileSystem,
+	fileSystem: NexFileSystem,
+	clipboard: NexClipboard,
 ) {
 	return {
 		renderApp: async function (targetContainer: HTMLElement) {
@@ -54,7 +54,12 @@ export function createApp(
 			// render app
 			render(
 				<React.StrictMode>
-					<Root modeService={modeService} modelService={modelService} fileSystem={fileSystem} />
+					<Root
+						modeService={modeService}
+						modelService={modelService}
+						fileSystem={fileSystem}
+						clipboard={clipboard}
+					/>
 				</React.StrictMode>,
 				targetContainer,
 			);
@@ -65,8 +70,9 @@ export function createApp(
 const Root: React.FC<{
 	modeService: IModeService;
 	modelService: IModelService;
-	fileSystem: nexFileSystem;
-}> = ({ modeService, modelService, fileSystem }) => {
+	fileSystem: NexFileSystem;
+	clipboard: NexClipboard;
+}> = ({ modeService, modelService, fileSystem, clipboard }) => {
 	/*
 	 * Nex uses VS Code to show file and folder icons. The languages registered in the "ModeService"
 	 * of VS Code influence how icons get displayed. Even after the first render and paint of Nex, languages
@@ -90,14 +96,18 @@ const Root: React.FC<{
 			<ModeServiceProvider value={modeService}>
 				<ModelServiceProvider value={modelService}>
 					<NexFileSystemProvider value={fileSystem}>
-						<ThemeProvider theme={theme}>
-							<Provider store={store}>
-								<CssBaseline />
-								<Box css={commonStyles.fullHeight}>
-									<App />
-								</Box>
-							</Provider>
-						</ThemeProvider>
+						<NexClipboardProvider value={clipboard}>
+							<ClipboardResourcesContext>
+								<ThemeProvider theme={theme}>
+									<Provider store={store}>
+										<CssBaseline />
+										<Box css={commonStyles.fullHeight}>
+											<App />
+										</Box>
+									</Provider>
+								</ThemeProvider>
+							</ClipboardResourcesContext>
+						</NexClipboardProvider>
 					</NexFileSystemProvider>
 				</ModelServiceProvider>
 			</ModeServiceProvider>
