@@ -14,6 +14,8 @@ import {
 	useFileProviderThunks,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
+import { KEYS } from 'vs/nex/ui/constants';
+import { useKeydownHandler } from 'vs/nex/ui/utils/events.hooks';
 import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 import byteSize = require('byte-size');
 
@@ -44,9 +46,9 @@ const Explorer: React.FC = () => {
 	// - directories come first
 	// - and each section (directories, files) is sorted by name
 	let sortedFiles = arrays.mergeSort(files, (a, b) => {
-		if (a.name.toLowerCase() < b.name.toLowerCase()) {
+		if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) {
 			return -1;
-		} else if (a.name.toLowerCase() > b.name.toLowerCase()) {
+		} else if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) {
 			return 1;
 		}
 		return 0;
@@ -84,6 +86,8 @@ const Explorer: React.FC = () => {
 			cut,
 		);
 	};
+	const copySelectedFiles = cutOrCopySelectedFiles(false);
+	const cutSelectedFiles = cutOrCopySelectedFiles(true);
 
 	/**
 	 * - If no file is selected, select the first file
@@ -91,65 +95,68 @@ const Explorer: React.FC = () => {
 	 * -- and arrow up is pressed, select the file above the first currently selected file (if file above exists)
 	 * -- and arrow down is pressed, select the file below the first currently selected file (if file below exists)
 	 */
-	const changeSelectedFile = (key: 'ArrowUp' | 'ArrowDown' | 'PageUp' | 'PageDown') => {
+	const changeSelectedFile = (
+		key: KEYS['ARROW_UP'] | KEYS['ARROW_DOWN'] | KEYS['PAGE_UP'] | KEYS['PAGE_DOWN'],
+	) => {
 		if (sortedFiles.length < 1) {
 			return;
 		}
 
-		if (key === 'ArrowUp' || key === 'ArrowDown') {
+		if (key === KEYS.ARROW_UP || key === KEYS.ARROW_DOWN) {
 			const firstSelectedFileIndex = sortedFiles.findIndex((file) =>
 				selectedFiles.some((selectedFile) => selectedFile === file),
 			);
 			if (selectedFiles.length === 0) {
 				setIdsOfSelectedFiles([sortedFiles[0].id]);
-			} else if (key === 'ArrowUp' && firstSelectedFileIndex !== 0) {
+			} else if (key === KEYS.ARROW_UP && firstSelectedFileIndex !== 0) {
 				setIdsOfSelectedFiles([sortedFiles[firstSelectedFileIndex - 1].id]);
-			} else if (key === 'ArrowDown' && sortedFiles.length > firstSelectedFileIndex + 1) {
+			} else if (key === KEYS.ARROW_DOWN && sortedFiles.length > firstSelectedFileIndex + 1) {
 				setIdsOfSelectedFiles([sortedFiles[firstSelectedFileIndex + 1].id]);
 			}
-		} else if (key === 'PageUp') {
+		} else if (key === KEYS.PAGE_UP) {
 			setIdsOfSelectedFiles([sortedFiles[0].id]);
-		} else if (key === 'PageDown') {
+		} else if (key === KEYS.PAGE_DOWN) {
 			setIdsOfSelectedFiles([sortedFiles[sortedFiles.length - 1].id]);
 		} else {
 			assertUnreachable(key);
 		}
 	};
 
-	/**
-	 * - If arrow-up or arrow-down is pressed, call [changeSelectedFile]
-	 * - If enter is pressed, open all currently selected files
-	 * - If delete is pressed, delete all currently selected files
-	 */
-	const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
-		console.dir(e);
-		const { key } = e;
-		if (key === 'ArrowUp' || key === 'ArrowDown' || key === 'PageUp' || key === 'PageDown') {
-			changeSelectedFile(key);
-			e.preventDefault();
-		} else if (key === 'Enter') {
-			openSelectedFiles();
-			e.preventDefault();
-		} else if (key === 'Delete') {
-			deleteSelectedFiles();
-			e.preventDefault();
-		}
-	};
+	useKeydownHandler({
+		[KEYS.C]: {
+			additionalKeys: ['CTRL'],
+			handler: copySelectedFiles,
+		},
+		[KEYS.X]: {
+			additionalKeys: ['CTRL'],
+			handler: cutSelectedFiles,
+		},
+		[KEYS.V]: {
+			additionalKeys: ['CTRL'],
+			handler: fileProviderThunks.pasteFiles,
+		},
+		[KEYS.ARROW_UP]: () => changeSelectedFile(KEYS.ARROW_UP),
+		[KEYS.ARROW_DOWN]: () => changeSelectedFile(KEYS.ARROW_DOWN),
+		[KEYS.PAGE_UP]: () => changeSelectedFile(KEYS.PAGE_UP),
+		[KEYS.PAGE_DOWN]: () => changeSelectedFile(KEYS.PAGE_DOWN),
+		[KEYS.ENTER]: openSelectedFiles,
+		[KEYS.DELETE]: deleteSelectedFiles,
+		[KEYS.BACKSPACE]: navigateUp,
+	});
 
 	const singleFileActionsDisabled = selectedFiles.length !== 1;
 	const multipleFilesActionsDisabled = selectedFiles.length < 1;
 
 	return (
 		<>
-			<Stack
-				css={commonStyles.fullHeight}
-				direction="column"
-				alignItems="stretch"
-				stretchContainer
-				boxProps={{ onKeyDown }}
-			>
+			<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
 				<Stack>
 					<TextField
+						onKeyDown={(e) => {
+							// stop propagation of keyDown events so that Nex-wide shortcuts (e.g. CTRL+X for cut)
+							// don't fire if the focus is in the text field
+							e.stopPropagation();
+						}}
 						size="small"
 						label="Current Directory"
 						value={cwdInput}
@@ -171,14 +178,14 @@ const Explorer: React.FC = () => {
 					</Button>
 					<Button
 						variant="outlined"
-						onClick={cutOrCopySelectedFiles(false)}
+						onClick={copySelectedFiles}
 						disabled={multipleFilesActionsDisabled}
 					>
 						Copy
 					</Button>
 					<Button
 						variant="outlined"
-						onClick={cutOrCopySelectedFiles(true)}
+						onClick={cutSelectedFiles}
 						disabled={multipleFilesActionsDisabled}
 					>
 						Cut
