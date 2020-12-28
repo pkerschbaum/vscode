@@ -16,7 +16,11 @@ import {
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { FILE_TYPE, PasteProcess, PASTE_STATUS } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
-import { DEFAULT_KEYDOWN_HANDLER, useKeydownHandler } from 'vs/nex/ui/utils/events.hooks';
+import {
+	DEFAULT_KEYDOWN_HANDLER,
+	useKeydownHandler,
+	usePrevious,
+} from 'vs/nex/ui/utils/events.hooks';
 import { horizontalScrollProps } from 'vs/nex/ui/utils/ui.util';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { strings } from 'vs/nex/base/utils/strings.util';
@@ -88,6 +92,20 @@ const Explorer: React.FC = () => {
 			})
 			.getValue();
 	}
+
+	const rowsToShow = filesToShow.map((fileToShow) => ({
+		id: fileToShow.id,
+		data: fileToShow,
+		selected: !!selectedFiles.find((file) => file === fileToShow),
+	}));
+
+	// on mount, and every time the filter input changes, reset selection (select just the first file)
+	const prevFilterInput = usePrevious(filterInput);
+	React.useEffect(() => {
+		if (filterInput !== prevFilterInput) {
+			setIdsOfSelectedFiles([rowsToShow[0].id]);
+		}
+	}, [filterInput, prevFilterInput, rowsToShow]);
 
 	function navigateUp() {
 		fileProviderThunks.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
@@ -264,11 +282,7 @@ const Explorer: React.FC = () => {
 			</Stack>
 			<Box css={(commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical)}>
 				<DataTable
-					rows={filesToShow.map((fileToShow) => ({
-						id: fileToShow.id,
-						data: fileToShow,
-						selected: !!selectedFiles.find((file) => file === fileToShow),
-					}))}
+					rows={rowsToShow}
 					headCells={[
 						{
 							label: 'Name',
