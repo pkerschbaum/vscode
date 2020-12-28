@@ -28,27 +28,23 @@ type HeadCell<RowType extends ObjectLiteral> =
 
 type EnhancedTableBaseProps<RowType extends ObjectLiteral> = {
 	headCells: HeadCell<RowType>[];
-	isRowSelected?: (row: RowType) => boolean;
 	onRowClick: (row: RowType) => void | Promise<void>;
 	onRowDoubleClick: (row: RowType) => void | Promise<void>;
 };
 
+type RowWithMetadata<RowType extends ObjectLiteral> = {
+	id: string | number;
+	data: RowType;
+	selected?: boolean;
+};
+
 type EnhancedTableProps<RowType extends ObjectLiteral> = EnhancedTableBaseProps<RowType> & {
-	rows: RowType[];
-	getIdOfRow: (row: RowType) => string | number;
+	rows: RowWithMetadata<RowType>[];
 	className?: string;
 };
 
 export function DataTable<RowType extends ObjectLiteral>(props: EnhancedTableProps<RowType>) {
-	const {
-		rows,
-		headCells,
-		getIdOfRow,
-		isRowSelected,
-		onRowClick,
-		onRowDoubleClick,
-		className,
-	} = props;
+	const { rows, headCells, onRowClick, onRowDoubleClick, className } = props;
 
 	return (
 		<TableContainer
@@ -62,10 +58,9 @@ export function DataTable<RowType extends ObjectLiteral>(props: EnhancedTablePro
 				<TableBody>
 					{rows.map((row) => (
 						<EnhancedTableRow
-							key={getIdOfRow(row)}
+							key={row.id}
 							row={row}
 							headCells={headCells}
-							isRowSelected={isRowSelected}
 							onRowClick={onRowClick}
 							onRowDoubleClick={onRowDoubleClick}
 						/>
@@ -73,53 +68,6 @@ export function DataTable<RowType extends ObjectLiteral>(props: EnhancedTablePro
 				</TableBody>
 			</Table>
 		</TableContainer>
-	);
-}
-
-type EnhancedTableRowProps<RowType extends ObjectLiteral> = EnhancedTableBaseProps<RowType> & {
-	row: RowType;
-};
-
-function EnhancedTableRow<RowType extends ObjectLiteral>({
-	row,
-	headCells,
-	isRowSelected,
-	onRowClick,
-	onRowDoubleClick,
-}: EnhancedTableRowProps<RowType>) {
-	// if element is selected and outside view, scroll it into view
-	const rowRef = React.useRef<HTMLTableRowElement>(null);
-	const executeScroll = () =>
-		rowRef.current!.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-	const selected = isRowSelected === undefined ? false : isRowSelected(row);
-
-	React.useEffect(() => {
-		if (selected) {
-			executeScroll();
-		}
-	}, [selected]);
-
-	return (
-		<TableRow
-			ref={rowRef}
-			css={styles.row}
-			hover
-			onClick={() => onRowClick(row)}
-			onDoubleClick={() => onRowDoubleClick(row)}
-			tabIndex={-1}
-			selected={selected}
-		>
-			{headCells.map((headCell) => {
-				let valueToShow;
-				if ('format' in headCell) {
-					valueToShow = headCell.format(row);
-				} else {
-					valueToShow = row[headCell.property];
-				}
-				return <TableCell key={headCell.label}>{valueToShow}</TableCell>;
-			})}
-		</TableRow>
 	);
 }
 
@@ -140,5 +88,51 @@ function EnhancedTableHead<RowType extends ObjectLiteral>(props: EnhancedTableHe
 				))}
 			</TableRow>
 		</TableHead>
+	);
+}
+
+type EnhancedTableRowProps<RowType extends ObjectLiteral> = EnhancedTableBaseProps<RowType> & {
+	row: RowWithMetadata<RowType>;
+};
+
+function EnhancedTableRow<RowType extends ObjectLiteral>({
+	row,
+	headCells,
+	onRowClick,
+	onRowDoubleClick,
+}: EnhancedTableRowProps<RowType>) {
+	// if element is selected and outside view, scroll it into view
+	const rowRef = React.useRef<HTMLTableRowElement>(null);
+	const executeScroll = () =>
+		rowRef.current!.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+	const selected = !!row.selected;
+
+	React.useEffect(() => {
+		if (selected) {
+			executeScroll();
+		}
+	}, [selected]);
+
+	return (
+		<TableRow
+			ref={rowRef}
+			css={styles.row}
+			hover
+			onClick={() => onRowClick(row.data)}
+			onDoubleClick={() => onRowDoubleClick(row.data)}
+			tabIndex={-1}
+			selected={selected}
+		>
+			{headCells.map((headCell) => {
+				let valueToShow;
+				if ('format' in headCell) {
+					valueToShow = headCell.format(row.data);
+				} else {
+					valueToShow = row.data[headCell.property];
+				}
+				return <TableCell key={headCell.label}>{valueToShow}</TableCell>;
+			})}
+		</TableRow>
 	);
 }

@@ -264,7 +264,11 @@ const Explorer: React.FC = () => {
 			</Stack>
 			<Box css={(commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical)}>
 				<DataTable
-					rows={filesToShow}
+					rows={filesToShow.map((fileToShow) => ({
+						id: fileToShow.id,
+						data: fileToShow,
+						selected: !!selectedFiles.find((file) => file === fileToShow),
+					}))}
 					headCells={[
 						{
 							label: 'Name',
@@ -289,7 +293,6 @@ const Explorer: React.FC = () => {
 							},
 						},
 					]}
-					getIdOfRow={(row) => row.id}
 					onRowClick={(row) => setIdsOfSelectedFiles([row.id])}
 					onRowDoubleClick={(row) => {
 						if (row.fileType === FILE_TYPE.DIRECTORY) {
@@ -298,7 +301,6 @@ const Explorer: React.FC = () => {
 							fileProviderThunks.openFile(row.uri);
 						}
 					}}
-					isRowSelected={(row) => !!selectedFiles.find((file) => file === row)}
 				/>
 			</Box>
 			{pasteProcesses.length > 0 && (
