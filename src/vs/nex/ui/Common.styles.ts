@@ -42,8 +42,12 @@ export const commonStyles = {
 			flex-grow: 1;
 		`,
 
-		shrinkContainer: css`
+		shrinkContainerHorizontal: css`
 			width: min-content;
+		`,
+
+		disableShrinkContainerHorizontal: css`
+			width: max-content;
 		`,
 	},
 

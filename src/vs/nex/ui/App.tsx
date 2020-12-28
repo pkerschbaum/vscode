@@ -17,6 +17,7 @@ import {
 import { FILE_TYPE, PasteProcess, PASTE_STATUS } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
 import { DEFAULT_KEYDOWN_HANDLER, useKeydownHandler } from 'vs/nex/ui/utils/events.hooks';
+import { horizontalScrollProps } from 'vs/nex/ui/utils/ui.util';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { strings } from 'vs/nex/base/utils/strings.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
@@ -27,13 +28,15 @@ export const App: React.FC = () => {
 	const { cwd } = useFileProviderState();
 
 	return (
-		<Box
-			sx={{ paddingX: 1, paddingY: 1 }}
+		<Stack
 			className="show-file-icons"
 			css={[styles.container, commonStyles.fullHeight]}
+			direction="column"
+			alignItems="stretch"
+			stretchContainer
 		>
 			<Explorer key={URI.from(cwd).toString()} />
-		</Box>
+		</Stack>
 	);
 };
 
@@ -177,7 +180,7 @@ const Explorer: React.FC = () => {
 	const multipleFilesActionsDisabled = selectedFiles.length < 1;
 
 	return (
-		<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
+		<>
 			<Stack>
 				<TextField
 					onKeyDown={(e) => {
@@ -259,52 +262,58 @@ const Explorer: React.FC = () => {
 					}}
 				/>
 			</Stack>
-			<DataTable
-				css={(commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical)}
-				rows={filesToShow}
-				headCells={[
-					{
-						label: 'Name',
-						format: (row) => (
-							<Stack
-								css={styles.fileIcon}
-								className={row.iconClasses.join(' ')}
-								alignItems="center"
-							>
-								{formatFileName(row)}
-							</Stack>
-						),
-					},
-					{
-						label: 'Size',
-						format: (row) => {
-							if (row.fileType !== FILE_TYPE.FILE || row.size === undefined) {
-								return;
-							}
-
-							return formatter.bytes(row.size);
+			<Box css={(commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical)}>
+				<DataTable
+					rows={filesToShow}
+					headCells={[
+						{
+							label: 'Name',
+							format: (row) => (
+								<Stack
+									css={styles.fileIcon}
+									className={row.iconClasses.join(' ')}
+									alignItems="center"
+								>
+									{formatFileName(row)}
+								</Stack>
+							),
 						},
-					},
-				]}
-				getIdOfRow={(row) => row.id}
-				onRowClick={(row) => setIdsOfSelectedFiles([row.id])}
-				onRowDoubleClick={(row) => {
-					if (row.fileType === FILE_TYPE.DIRECTORY) {
-						fileProviderThunks.changeDirectory(row.uri.path);
-					} else if (row.fileType === FILE_TYPE.FILE) {
-						fileProviderThunks.openFile(row.uri);
-					}
-				}}
-				isRowSelected={(row) => !!selectedFiles.find((file) => file === row)}
-			/>
+						{
+							label: 'Size',
+							format: (row) => {
+								if (row.fileType !== FILE_TYPE.FILE || row.size === undefined) {
+									return;
+								}
+
+								return formatter.bytes(row.size);
+							},
+						},
+					]}
+					getIdOfRow={(row) => row.id}
+					onRowClick={(row) => setIdsOfSelectedFiles([row.id])}
+					onRowDoubleClick={(row) => {
+						if (row.fileType === FILE_TYPE.DIRECTORY) {
+							fileProviderThunks.changeDirectory(row.uri.path);
+						} else if (row.fileType === FILE_TYPE.FILE) {
+							fileProviderThunks.openFile(row.uri);
+						}
+					}}
+					isRowSelected={(row) => !!selectedFiles.find((file) => file === row)}
+				/>
+			</Box>
 			{pasteProcesses.length > 0 && (
-				<Stack>
-					{pasteProcesses.map((process) => (
-						<PasteProcessEntry key={process.id} process={process} />
-					))}
-				</Stack>
+				<Box {...horizontalScrollProps}>
+					<Stack
+						css={[styles.processesArea, commonStyles.flex.disableShrinkContainerHorizontal]}
+						spacing={2}
+					>
+						{pasteProcesses.map((process) => (
+							<PasteProcessEntry key={process.id} process={process} />
+						))}
+					</Stack>
+				</Box>
 			)}
-		</Stack>
+		</>
 	);
 };
 
