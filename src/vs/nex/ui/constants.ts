@@ -14,3 +14,11 @@ export const KEYS = {
 } as const;
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type KEYS = typeof KEYS;
+
+// https://javascript.info/mouse-events-basics#mouse-button
+export const MOUSE_BUTTONS = {
+	BACK: 3,
+	FORWARD: 4,
+} as const;
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type MOUSE_BUTTONS = typeof MOUSE_BUTTONS;

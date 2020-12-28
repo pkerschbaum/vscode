@@ -15,12 +15,8 @@ import {
 	useFileProviderThunks,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { FILE_TYPE, PasteProcess, PASTE_STATUS } from 'vs/nex/platform/file-types';
-import { KEYS } from 'vs/nex/ui/constants';
-import {
-	DEFAULT_KEYDOWN_HANDLER,
-	useKeydownHandler,
-	usePrevious,
-} from 'vs/nex/ui/utils/events.hooks';
+import { KEYS, MOUSE_BUTTONS } from 'vs/nex/ui/constants';
+import { useWindowEvent, usePrevious } from 'vs/nex/ui/utils/events.hooks';
 import { horizontalScrollProps } from 'vs/nex/ui/utils/ui.util';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { strings } from 'vs/nex/base/utils/strings.util';
@@ -167,32 +163,37 @@ const Explorer: React.FC = () => {
 		}
 	};
 
-	useKeydownHandler({
-		[KEYS.C]: {
-			additionalKeys: ['CTRL'],
-			handler: copySelectedFiles,
+	useWindowEvent('keydown', [
+		{ condition: (e) => e.ctrlKey && e.key === KEYS.C, handler: copySelectedFiles },
+		{ condition: (e) => e.ctrlKey && e.key === KEYS.X, handler: cutSelectedFiles },
+		{ condition: (e) => e.ctrlKey && e.key === KEYS.V, handler: fileProviderThunks.pasteFiles },
+		{ condition: (e) => e.key === KEYS.ARROW_UP, handler: () => changeSelectedFile(KEYS.ARROW_UP) },
+		{
+			condition: (e) => e.key === KEYS.ARROW_DOWN,
+			handler: () => changeSelectedFile(KEYS.ARROW_DOWN),
 		},
-		[KEYS.X]: {
-			additionalKeys: ['CTRL'],
-			handler: cutSelectedFiles,
+		{ condition: (e) => e.key === KEYS.PAGE_UP, handler: () => changeSelectedFile(KEYS.PAGE_UP) },
+		{
+			condition: (e) => e.key === KEYS.PAGE_DOWN,
+			handler: () => changeSelectedFile(KEYS.PAGE_DOWN),
 		},
-		[KEYS.V]: {
-			additionalKeys: ['CTRL'],
-			handler: fileProviderThunks.pasteFiles,
+		{ condition: (e) => e.key === KEYS.ENTER, handler: openSelectedFiles },
+		{ condition: (e) => e.key === KEYS.DELETE, handler: deleteSelectedFiles },
+		{ condition: (e) => e.altKey && e.key === KEYS.ARROW_LEFT, handler: navigateUp },
+		{
+			condition: (e) =>
+				e.key !== KEYS.BACKSPACE && !e.altKey && !e.ctrlKey && filterInputRef.current !== null,
+			handler: () => {
+				if (filterInputRef.current !== null) {
+					filterInputRef.current.focus();
+				}
+			},
 		},
-		[KEYS.ARROW_UP]: () => changeSelectedFile(KEYS.ARROW_UP),
-		[KEYS.ARROW_DOWN]: () => changeSelectedFile(KEYS.ARROW_DOWN),
-		[KEYS.PAGE_UP]: () => changeSelectedFile(KEYS.PAGE_UP),
-		[KEYS.PAGE_DOWN]: () => changeSelectedFile(KEYS.PAGE_DOWN),
-		[KEYS.ENTER]: openSelectedFiles,
-		[KEYS.DELETE]: deleteSelectedFiles,
-		[KEYS.ARROW_LEFT]: { additionalKeys: ['ALT'], handler: navigateUp },
-		[DEFAULT_KEYDOWN_HANDLER]: (e) => {
-			if (e.key !== KEYS.BACKSPACE && !e.altKey && !e.ctrlKey && filterInputRef.current !== null) {
-				filterInputRef.current.focus();
-			}
-		},
-	});
+	]);
+
+	useWindowEvent('auxclick', [
+		{ condition: (e) => e.button === MOUSE_BUTTONS.BACK, handler: navigateUp },
+	]);
 
 	const singleFileActionsDisabled = selectedFiles.length !== 1;
 	const multipleFilesActionsDisabled = selectedFiles.length < 1;
@@ -262,7 +263,13 @@ const Explorer: React.FC = () => {
 						 * keyboard navigation (e.g. CTRL+X would not only cut the text of the input field, but
 						 * also the files currently selected)
 						 */
-						if (e.key === KEYS.ARROW_UP || e.key === KEYS.ARROW_DOWN || e.key === KEYS.ENTER) {
+						if (
+							e.ctrlKey ||
+							e.altKey ||
+							e.key === KEYS.ARROW_UP ||
+							e.key === KEYS.ARROW_DOWN ||
+							e.key === KEYS.ENTER
+						) {
 							e.preventDefault();
 						} else {
 							e.stopPropagation();
