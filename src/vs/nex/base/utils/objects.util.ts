@@ -1,4 +1,4 @@
-import { ObjectLiteral, JsonObject } from 'vs/nex/base/utils/types.util';
+import { ObjectLiteral, IsJsonable } from 'vs/nex/base/utils/types.util';
 
 export const objects = {
 	isEmpty,
@@ -37,6 +37,6 @@ function shallowCopy<T>(inObject: T): T {
 	}
 }
 
-function deepCopyJson<T extends JsonObject<{}>>(inObj: T): T {
-	return JSON.parse(JSON.stringify(inObj)) as T;
+function deepCopyJson<T>(inObj: IsJsonable<T>): IsJsonable<T> {
+	return JSON.parse(JSON.stringify(inObj)) as IsJsonable<T>;
 }

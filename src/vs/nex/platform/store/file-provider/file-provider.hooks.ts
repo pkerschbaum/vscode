@@ -26,6 +26,7 @@ import {
 } from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { createLogger } from 'vs/nex/base/logger/logger';
+import { CustomError } from 'vs/nex/base/custom-error';
 import { objects } from 'vs/nex/base/utils/objects.util';
 
 export type FileForUI = File & {
@@ -237,51 +238,54 @@ export const useFileProviderThunks = () => {
 				return;
 			}
 
-			const targetFolder = URI.from(cwd);
-			const targetFolderStat = await fileSystem.resolve(targetFolder);
+			const destinationFolder = URI.from(cwd);
+			const targetFolderStat = await fileSystem.resolve(destinationFolder);
 
-			// remove files from paste state (neither cut&paste nor copy&paste is designed to be repeatable)
+			// clear draft paste state (neither cut&paste nor copy&paste is designed to be repeatable)
 			dispatch(actions.clearDraftPasteState());
 
 			await Promise.all(
-				clipboardResources.map(async (fileToPaste) => {
-					const fileToPasteURI = URI.from(fileToPaste);
+				clipboardResources.map(async (sourceFile) => {
+					const sourceFileURI = URI.from(sourceFile);
 
-					// Check if target is ancestor of pasted folder
+					// Destination folder must not be a subfolder of any source file/folder. Imagine copying
+					// a folder "test" and paste it (and its content) *into* itself, that would not work.
 					if (
-						targetFolder.toString() !== fileToPasteURI.toString() &&
-						resources.isEqualOrParent(targetFolder, fileToPasteURI, !isLinux /* ignorecase */)
+						destinationFolder.toString() !== sourceFileURI.toString() &&
+						resources.isEqualOrParent(destinationFolder, sourceFileURI, !isLinux /* ignorecase */)
 					) {
-						throw new Error('File to paste is an ancestor of the destination folder');
+						throw new CustomError('The destination folder is a subfolder of the source file', {
+							destinationFolder,
+							sourceFile,
+						});
 					}
 
-					let fileToPasteStat;
+					let sourceFileStat;
 					try {
-						fileToPasteStat = await fileSystem.resolve(fileToPasteURI, { resolveMetadata: true });
+						sourceFileStat = await fileSystem.resolve(sourceFileURI, { resolveMetadata: true });
 					} catch (err: unknown) {
 						logger.error(
-							'error during file paste process, file to paste was probably deleted or moved meanwhile',
+							'error during file paste process, source file was probably deleted or moved meanwhile',
 							err,
 						);
 						return;
 					}
 
-					const fileStatMap = await resolveDeep(fileToPasteURI, fileToPasteStat);
+					const fileStatMap = await resolveDeep(sourceFileURI, sourceFileStat);
 
 					const pasteStatus: Omit<PasteProcess, 'status'> = {
 						id: uuid.generateUuid(),
 						totalSize: 0,
 						bytesProcessed: 0,
+						destinationFolder: destinationFolder.toJSON(),
 					};
 					const statusPerFile: {
-						[uri: string]: {
-							bytesProcessed: number;
-						};
+						[uri: string]: { bytesProcessed: number };
 					} = {};
 
-					Object.entries(fileStatMap).forEach(([key, fileStat]) => {
+					Object.entries(fileStatMap).forEach(([uri, fileStat]) => {
 						pasteStatus.totalSize += fileStat.size;
-						statusPerFile[key] = { bytesProcessed: 0 };
+						statusPerFile[uri] = { bytesProcessed: 0 };
 					});
 
 					dispatch(actions.addPasteProcess(objects.deepCopyJson(pasteStatus)));
@@ -296,9 +300,9 @@ export const useFileProviderThunks = () => {
 					}, UPDATE_INTERVAL_MS);
 
 					try {
-						const targetFile = findValidPasteFileTarget(targetFolderStat, {
-							resource: fileToPasteURI,
-							isDirectory: fileToPasteStat.isDirectory,
+						const targetFileURI = findValidPasteFileTarget(targetFolderStat, {
+							resource: sourceFileURI,
+							isDirectory: sourceFileStat.isDirectory,
 							allowOverwrite: draftPasteState.pasteShouldMove,
 						});
 
@@ -309,8 +313,8 @@ export const useFileProviderThunks = () => {
 
 						// Move/Copy File
 						const operation = draftPasteState.pasteShouldMove
-							? fileSystem.move(fileToPasteURI, targetFile, undefined, progressCb)
-							: fileSystem.copy(fileToPasteURI, targetFile, undefined, progressCb);
+							? fileSystem.move(sourceFileURI, targetFileURI, undefined, progressCb)
+							: fileSystem.copy(sourceFileURI, targetFileURI, undefined, progressCb);
 						await operation;
 
 						dispatch(actions.finishPasteProcess({ id: pasteStatus.id }));

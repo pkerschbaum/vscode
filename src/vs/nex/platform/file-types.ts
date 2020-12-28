@@ -22,6 +22,7 @@ export type PasteProcess = {
 	status: PASTE_STATUS;
 	totalSize: number;
 	bytesProcessed: number;
+	destinationFolder: UriComponents;
 };
 
 export type FileMap = {

@@ -33,7 +33,9 @@ type CutOrCopyFilesPayload = {
 	cut: boolean;
 };
 
-type AddPasteProcessPayload = Omit<PasteProcess, 'status'>;
+type AddPasteProcessPayload = Omit<PasteProcess, 'status'> & {
+	destinationFolder: UriComponents;
+};
 
 type UpdatePasteProcessPayload = {
 	id: string;

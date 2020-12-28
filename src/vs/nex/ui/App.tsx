@@ -313,7 +313,7 @@ const PasteProcessEntry: React.FC<{ process: PasteProcess }> = ({ process }) => 
 
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
-			<Box>{process.id}</Box>
+			<Box>Destination: {URI.from(process.destinationFolder).fsPath}</Box>
 			<Box>{formatter.bytes(process.bytesProcessed, { unit: smallestUnitOfTotalSize })}</Box>
 			<Box>{formatter.bytes(process.totalSize, { unit: smallestUnitOfTotalSize })}</Box>
 			<Box>{process.status}</Box>
