@@ -1,10 +1,11 @@
-import { ObjectLiteral } from 'vs/nex/base/utils/types.util';
+import { ObjectLiteral, JsonObject } from 'vs/nex/base/utils/types.util';
 
 export const objects = {
 	isEmpty,
 	isNotNullish,
 	undefinedIfEmpty,
 	shallowCopy,
+	deepCopyJson,
 };
 
 function isEmpty(obj: ObjectLiteral) {
@@ -34,4 +35,8 @@ function shallowCopy<T>(inObject: T): T {
 		// shallow copy via object spread
 		return { ...inObject };
 	}
+}
+
+function deepCopyJson<T extends JsonObject<{}>>(inObj: T): T {
+	return JSON.parse(JSON.stringify(inObj)) as T;
 }

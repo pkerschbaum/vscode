@@ -16,7 +16,14 @@ import { useModeService } from 'vs/nex/ui/ModeService.provider';
 import { useNexFileSystem } from 'vs/nex/ui/NexFileSystem.provider';
 import { useClipboardResources, useNexClipboard } from 'vs/nex/ui/NexClipboard.provider';
 import { useDispatch, useSelector } from 'vs/nex/platform/store/store';
-import { File, FILE_TYPE, RESOURCES_SCHEME, FileStatMap } from 'vs/nex/platform/file-types';
+import {
+	File,
+	FILE_TYPE,
+	RESOURCES_SCHEME,
+	FileStatMap,
+	PASTE_STATUS,
+	PasteProcess,
+} from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { objects } from 'vs/nex/base/utils/objects.util';
@@ -36,6 +43,11 @@ export function useFileProviderState() {
 
 	return useSelector((state) => ({
 		...state.fileProvider,
+		pasteProcesses: state.fileProvider.pasteProcesses.map((process) => ({
+			...process,
+			bytesProcessed:
+				process.status === PASTE_STATUS.FINISHED ? process.totalSize : process.bytesProcessed,
+		})),
 		files: Object.values(state.fileProvider.files)
 			.filter(objects.isNotNullish)
 			.map((file) => {
@@ -256,34 +268,23 @@ export const useFileProviderThunks = () => {
 
 					const fileStatMap = await resolveDeep(fileToPasteURI, fileToPasteStat);
 
-					const pasteStatus: {
-						id: string;
-						totalSize: number;
-						bytesProcessed: number;
-						statusPerFile: {
-							[uri: string]: {
-								stat: IFileStatWithMetadata;
-								bytesProcessed: number;
-							};
-						};
-					} = {
+					const pasteStatus: Omit<PasteProcess, 'status'> = {
 						id: uuid.generateUuid(),
 						totalSize: 0,
 						bytesProcessed: 0,
-						statusPerFile: {},
 					};
+					const statusPerFile: {
+						[uri: string]: {
+							bytesProcessed: number;
+						};
+					} = {};
 
 					Object.entries(fileStatMap).forEach(([key, fileStat]) => {
 						pasteStatus.totalSize += fileStat.size;
-						pasteStatus.statusPerFile[key] = { stat: fileStat, bytesProcessed: 0 };
+						statusPerFile[key] = { bytesProcessed: 0 };
 					});
 
-					dispatch(
-						actions.addPasteProcess({
-							id: pasteStatus.id,
-							totalSize: pasteStatus.totalSize,
-						}),
-					);
+					dispatch(actions.addPasteProcess(objects.deepCopyJson(pasteStatus)));
 
 					const intervalId = setInterval(function dispatchProgress() {
 						dispatch(
@@ -303,7 +304,7 @@ export const useFileProviderThunks = () => {
 
 						const progressCb = (newBytesRead: number, forSource: URI) => {
 							pasteStatus.bytesProcessed += newBytesRead;
-							pasteStatus.statusPerFile[forSource.toString()].bytesProcessed += newBytesRead;
+							statusPerFile[forSource.toString()].bytesProcessed += newBytesRead;
 						};
 
 						// Move/Copy File

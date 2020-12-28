@@ -13,9 +13,16 @@ export enum RESOURCES_SCHEME {
 }
 
 export enum PASTE_STATUS {
-	STARTED,
-	FINISHED,
+	STARTED = 'STARTED',
+	FINISHED = 'FINISHED',
 }
+
+export type PasteProcess = {
+	id: string;
+	status: PASTE_STATUS;
+	totalSize: number;
+	bytesProcessed: number;
+};
 
 export type FileMap = {
 	[stringifiedUri: string]: File | undefined;

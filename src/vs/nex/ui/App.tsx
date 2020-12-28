@@ -8,18 +8,20 @@ import { styles } from 'vs/nex/ui/App.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { DataTable } from 'vs/nex/ui/elements/DataTable';
+import { LinearProgress } from 'vs/nex/ui/elements/LinearProgress';
 import {
 	FileForUI,
 	useFileProviderState,
 	useFileProviderThunks,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { FILE_TYPE } from 'vs/nex/platform/file-types';
+import { FILE_TYPE, PasteProcess, PASTE_STATUS } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
 import { DEFAULT_KEYDOWN_HANDLER, useKeydownHandler } from 'vs/nex/ui/utils/events.hooks';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { strings } from 'vs/nex/base/utils/strings.util';
+import { formatter } from 'vs/nex/base/utils/formatter.util';
+import { byteSize } from 'vs/nex/base/utils/byte-size.util';
 import { assertUnreachable } from 'vs/nex/base/utils/types.util';
-import byteSize = require('byte-size');
 
 export const App: React.FC = () => {
 	const { cwd } = useFileProviderState();
@@ -36,7 +38,7 @@ export const App: React.FC = () => {
 };
 
 const Explorer: React.FC = () => {
-	const { cwd, files, draftPasteState } = useFileProviderState();
+	const { cwd, files, draftPasteState, pasteProcesses } = useFileProviderState();
 	const fileProviderThunks = useFileProviderThunks();
 
 	const [cwdInput, setCwdInput] = React.useState(cwd.path);
@@ -165,7 +167,7 @@ const Explorer: React.FC = () => {
 		[KEYS.DELETE]: deleteSelectedFiles,
 		[KEYS.ARROW_LEFT]: { additionalKeys: ['ALT'], handler: navigateUp },
 		[DEFAULT_KEYDOWN_HANDLER]: (e) => {
-			if (e.key !== KEYS.ALT && e.key !== KEYS.BACKSPACE && filterInputRef.current !== null) {
+			if (e.key !== KEYS.BACKSPACE && !e.altKey && !e.ctrlKey && filterInputRef.current !== null) {
 				filterInputRef.current.focus();
 			}
 		},
@@ -276,12 +278,11 @@ const Explorer: React.FC = () => {
 					{
 						label: 'Size',
 						format: (row) => {
-							if (row.size === undefined) {
+							if (row.fileType !== FILE_TYPE.FILE || row.size === undefined) {
 								return;
 							}
 
-							const { value, unit } = byteSize(row.size);
-							return `${value} ${unit}`;
+							return formatter.bytes(row.size);
 						},
 					},
 				]}
@@ -295,6 +296,34 @@ const Explorer: React.FC = () => {
 					}
 				}}
 				isRowSelected={(row) => !!selectedFiles.find((file) => file === row)}
+			/>
+			{pasteProcesses.length > 0 && (
+				<Stack>
+					{pasteProcesses.map((process) => (
+						<PasteProcessEntry key={process.id} process={process} />
+					))}
+				</Stack>
+			)}
+		</Stack>
+	);
+};
+
+const PasteProcessEntry: React.FC<{ process: PasteProcess }> = ({ process }) => {
+	const smallestUnitOfTotalSize = byteSize.probe(process.totalSize).unit;
+
+	return (
+		<Stack key={process.id} direction="column" alignItems="stretch">
+			<Box>{process.id}</Box>
+			<Box>{formatter.bytes(process.bytesProcessed, { unit: smallestUnitOfTotalSize })}</Box>
+			<Box>{formatter.bytes(process.totalSize, { unit: smallestUnitOfTotalSize })}</Box>
+			<Box>{process.status}</Box>
+			<LinearProgress
+				value={
+					process.status === PASTE_STATUS.FINISHED
+						? 100
+						: (process.bytesProcessed / process.totalSize) * 100
+				}
+				showLabel
 			/>
 		</Stack>
 	);
