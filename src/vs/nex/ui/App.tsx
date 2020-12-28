@@ -98,7 +98,7 @@ const Explorer: React.FC = () => {
 	// on mount, and every time the filter input changes, reset selection (select just the first file)
 	const prevFilterInput = usePrevious(filterInput);
 	React.useEffect(() => {
-		if (filterInput !== prevFilterInput) {
+		if (filterInput !== prevFilterInput && rowsToShow.length > 0) {
 			setIdsOfSelectedFiles([rowsToShow[0].id]);
 		}
 	}, [filterInput, prevFilterInput, rowsToShow]);
@@ -201,91 +201,100 @@ const Explorer: React.FC = () => {
 	return (
 		<>
 			<Stack>
-				<TextField
-					onKeyDown={(e) => {
-						// stop propagation of keyDown events so that Nex-wide shortcuts (e.g. CTRL+X for cut)
-						// don't fire if the focus is in the text field
-						e.stopPropagation();
-					}}
-					size="small"
-					label="Current Directory"
-					value={cwdInput}
-					onChange={(e) => setCwdInput(e.target.value)}
-				/>
-				<Button variant="outlined" onClick={() => fileProviderThunks.changeDirectory(cwdInput)}>
-					Change CWD
-				</Button>
-				<Button variant="outlined" onClick={navigateUp}>
-					Up
-				</Button>
+				<Stack>
+					<TextField
+						inputRef={filterInputRef}
+						onKeyDown={(e) => {
+							/*
+							 * For some keys, the default action should be stopped (e.g. in case of ARROW_UP and
+							 * ARROW_DOWN, the cursor in the input field jumps to the start/end of the field). The event
+							 * must get propagated to the parent, this is needed for navigating the files using the
+							 * keyboard. For all other events, we stop propagation to avoid interference with the
+							 * keyboard navigation (e.g. CTRL+X would not only cut the text of the input field, but
+							 * also the files currently selected)
+							 */
+							if (
+								e.ctrlKey ||
+								e.altKey ||
+								e.key === KEYS.ARROW_UP ||
+								e.key === KEYS.ARROW_DOWN ||
+								e.key === KEYS.ENTER
+							) {
+								e.preventDefault();
+							} else {
+								e.stopPropagation();
+							}
+						}}
+						size="small"
+						label="Filter"
+						value={filterInput}
+						onChange={(e) => {
+							const newVal = e.target.value.trimStart();
+							setFilterInput(newVal);
+							if (newVal === '' && filterInputRef.current !== null) {
+								filterInputRef.current.blur();
+							}
+						}}
+					/>
+				</Stack>
 				<Divider orientation="vertical" flexItem />
-				<Button variant="outlined" onClick={openSelectedFiles} disabled={singleFileActionsDisabled}>
-					Open
-				</Button>
-				<Button
-					variant="outlined"
-					onClick={copySelectedFiles}
-					disabled={multipleFilesActionsDisabled}
-				>
-					Copy
-				</Button>
-				<Button
-					variant="outlined"
-					onClick={cutSelectedFiles}
-					disabled={multipleFilesActionsDisabled}
-				>
-					Cut
-				</Button>
-				<Button
-					variant={draftPasteState === undefined ? 'outlined' : 'contained'}
-					onClick={fileProviderThunks.pasteFiles}
-					disabled={draftPasteState === undefined}
-				>
-					Paste
-				</Button>
-				<Button
-					variant="outlined"
-					onClick={deleteSelectedFiles}
-					disabled={multipleFilesActionsDisabled}
-				>
-					Delete
-				</Button>
-			</Stack>
-			<Stack>
-				<TextField
-					inputRef={filterInputRef}
-					onKeyDown={(e) => {
-						/*
-						 * For some keys, the default action should be stopped (e.g. in case of ARROW_UP and
-						 * ARROW_DOWN, the cursor in the input field jumps to the start/end of the field). The event
-						 * must get propagated to the parent, this is needed for navigating the files using the
-						 * keyboard. For all other events, we stop propagation to avoid interference with the
-						 * keyboard navigation (e.g. CTRL+X would not only cut the text of the input field, but
-						 * also the files currently selected)
-						 */
-						if (
-							e.ctrlKey ||
-							e.altKey ||
-							e.key === KEYS.ARROW_UP ||
-							e.key === KEYS.ARROW_DOWN ||
-							e.key === KEYS.ENTER
-						) {
-							e.preventDefault();
-						} else {
+				<Stack css={[commonStyles.flex.disableShrink, commonStyles.flex.disableShrinkChildren]}>
+					<TextField
+						onKeyDown={(e) => {
+							// stop propagation of keyDown events so that Nex-wide shortcuts (e.g. CTRL+X for cut)
+							// don't fire if the focus is in the text field
 							e.stopPropagation();
-						}
-					}}
-					size="small"
-					label="Filter"
-					value={filterInput}
-					onChange={(e) => {
-						const newVal = e.target.value.trimStart();
-						setFilterInput(newVal);
-						if (newVal === '' && filterInputRef.current !== null) {
-							filterInputRef.current.blur();
-						}
-					}}
-				/>
+						}}
+						size="small"
+						label="Current Directory"
+						value={cwdInput}
+						onChange={(e) => setCwdInput(e.target.value)}
+					/>
+					<Button variant="outlined" onClick={() => fileProviderThunks.changeDirectory(cwdInput)}>
+						Change CWD
+					</Button>
+					<Button variant="outlined" onClick={navigateUp}>
+						Up
+					</Button>
+				</Stack>
+				<Divider orientation="vertical" flexItem />
+				<Stack wrap>
+					<Button
+						variant="outlined"
+						onClick={openSelectedFiles}
+						disabled={singleFileActionsDisabled}
+					>
+						Open
+					</Button>
+					<Button
+						variant="outlined"
+						onClick={copySelectedFiles}
+						disabled={multipleFilesActionsDisabled}
+					>
+						Copy
+					</Button>
+					<Button
+						variant="outlined"
+						onClick={cutSelectedFiles}
+						disabled={multipleFilesActionsDisabled}
+					>
+						Cut
+					</Button>
+					<Button
+						variant={draftPasteState === undefined ? 'outlined' : 'contained'}
+						onClick={fileProviderThunks.pasteFiles}
+						disabled={draftPasteState === undefined}
+					>
+						Paste
+					</Button>
+					<Button
+						variant="outlined"
+						onClick={deleteSelectedFiles}
+						disabled={multipleFilesActionsDisabled}
+					>
+						Delete
+					</Button>
+				</Stack>
 			</Stack>
 			<Box css={(commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical)}>
 				<DataTable
@@ -326,10 +335,7 @@ const Explorer: React.FC = () => {
 			</Box>
 			{pasteProcesses.length > 0 && (
 				<Box {...horizontalScrollProps}>
-					<Stack
-						css={[styles.processesArea, commonStyles.flex.disableShrinkContainerHorizontal]}
-						spacing={2}
-					>
+					<Stack css={[styles.processesArea, commonStyles.flex.disableShrinkChildren]} spacing={2}>
 						{pasteProcesses.map((process) => (
 							<PasteProcessEntry key={process.id} process={process} />
 						))}

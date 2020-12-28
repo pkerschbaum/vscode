@@ -46,8 +46,14 @@ export const commonStyles = {
 			width: min-content;
 		`,
 
-		disableShrinkContainerHorizontal: css`
-			width: max-content;
+		disableShrink: css`
+			flex-shrink: 0;
+		`,
+
+		disableShrinkChildren: css`
+			& > * {
+				flex-shrink: 0;
+			}
 		`,
 	},
 

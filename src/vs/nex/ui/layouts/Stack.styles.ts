@@ -24,18 +24,12 @@ export const styles = {
 			justifyContent: params.justifyContent,
 			alignItems: params.alignItems,
 			flexWrap: typeof params.wrap === 'string' ? params.wrap : !!params.wrap ? 'wrap' : undefined,
+			gap: theme.spacing(params.spacing),
 
 			'& > *': {
 				flexGrow,
 				flexShrink,
 				flexBasis,
-				marginBottom: params.direction !== 'column' ? undefined : theme.spacing(params.spacing),
-				marginRight: params.direction !== 'row' ? undefined : theme.spacing(params.spacing),
-			},
-
-			'& > *:last-child': {
-				marginBottom: 0,
-				marginRight: 0,
 			},
 		});
 	},
