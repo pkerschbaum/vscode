@@ -158,7 +158,10 @@ export class Workbench extends Layout {
 				// Layout
 				this.layout();
 
-				// Nex-App: remove monaco-grid-view of the VS code workbench
+				/*
+				 * Nex-App: remove monaco-grid-view (and thus, the entire VS Code UI except for the command 
+				 * palette and notifications) of the VS code workbench
+				 */
 				this.container.removeChild(document.getElementsByClassName('monaco-grid-view')[0]);
 
 				// Restore

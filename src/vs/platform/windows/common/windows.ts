@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { isMacintosh, isLinux, isWeb, IProcessEnvironment } from 'vs/base/common/platform';
+import { isMacintosh, isWeb, IProcessEnvironment } from 'vs/base/common/platform';
 import { URI, UriComponents } from 'vs/base/common/uri';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IWorkspaceIdentifier, ISingleFolderWorkspaceIdentifier } from 'vs/platform/workspaces/common/workspaces';
@@ -140,7 +140,13 @@ export function getTitleBarStyle(configurationService: IConfigurationService): '
 		}
 	}
 
-	return isLinux ? 'native' : 'custom'; // default to custom on all macOS and Windows
+
+	/*
+	 * Nex-App: VS Code uses custom title bar style in Windows, but for Nex we want the normal, 
+	 * native style.
+	 */
+	// return isLinux ? 'native' : 'custom'; // default to custom on all macOS and Windows
+	return 'native';
 }
 
 export interface IPath extends IPathData {
