@@ -84,14 +84,16 @@ export function isFileToOpen(uriToOpen: IWindowOpenable): uriToOpen is IFileToOp
 export type MenuBarVisibility = 'classic' | 'visible' | 'toggle' | 'hidden' | 'compact';
 
 export function getMenuBarVisibility(configurationService: IConfigurationService): MenuBarVisibility {
-	const titleBarStyle = getTitleBarStyle(configurationService);
-	const menuBarVisibility = configurationService.getValue<MenuBarVisibility | 'default'>('window.menuBarVisibility');
+	// Nex-App: We do not want to display the menu bar (which VS Code is displaying by default)
+	// const titleBarStyle = getTitleBarStyle(configurationService);
+	// const menuBarVisibility = configurationService.getValue<MenuBarVisibility | 'default'>('window.menuBarVisibility');
 
-	if (menuBarVisibility === 'default' || (titleBarStyle === 'native' && menuBarVisibility === 'compact')) {
-		return 'classic';
-	} else {
-		return menuBarVisibility;
-	}
+	// if (menuBarVisibility === 'default' || (titleBarStyle === 'native' && menuBarVisibility === 'compact')) {
+	// 	return 'classic';
+	// } else {
+	// 	return menuBarVisibility;
+	// }
+	return 'hidden';
 }
 
 export interface IWindowsConfiguration {

@@ -18,11 +18,14 @@ import { FILE_TYPE, PasteProcess, PASTE_STATUS } from 'vs/nex/platform/file-type
 import { KEYS, MOUSE_BUTTONS } from 'vs/nex/ui/constants';
 import { useWindowEvent, usePrevious } from 'vs/nex/ui/utils/events.hooks';
 import { horizontalScrollProps } from 'vs/nex/ui/utils/ui.util';
-import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { strings } from 'vs/nex/base/utils/strings.util';
+import { functions } from 'vs/nex/base/utils/functions.util';
+import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
 import { byteSize } from 'vs/nex/base/utils/byte-size.util';
 import { assertUnreachable } from 'vs/nex/base/utils/types.util';
+
+const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
 
 export const App: React.FC = () => {
 	const { cwd } = useFileProviderState();
@@ -164,6 +167,14 @@ const Explorer: React.FC = () => {
 	};
 
 	useWindowEvent('keydown', [
+		/* These handlers allow navigation of the directory content. If the user did type in any
+		 * input field other than the filter input, don't execute any navigation handler.
+		 */
+		{
+			condition: (e) =>
+				e.target instanceof HTMLInputElement && e.target.id !== EXPLORER_FILTER_INPUT_ID,
+			handler: functions.noop,
+		},
 		{ condition: (e) => e.ctrlKey && e.key === KEYS.C, handler: copySelectedFiles },
 		{ condition: (e) => e.ctrlKey && e.key === KEYS.X, handler: cutSelectedFiles },
 		{ condition: (e) => e.ctrlKey && e.key === KEYS.V, handler: fileProviderThunks.pasteFiles },
@@ -203,7 +214,9 @@ const Explorer: React.FC = () => {
 			<Stack>
 				<Stack>
 					<TextField
+						id={EXPLORER_FILTER_INPUT_ID}
 						inputRef={filterInputRef}
+						InputLabelProps={{ shrink: true }}
 						onKeyDown={(e) => {
 							/*
 							 * For some keys, the default action should be stopped (e.g. in case of ARROW_UP and
@@ -218,14 +231,13 @@ const Explorer: React.FC = () => {
 								e.altKey ||
 								e.key === KEYS.ARROW_UP ||
 								e.key === KEYS.ARROW_DOWN ||
+								e.key === KEYS.PAGE_UP ||
+								e.key === KEYS.PAGE_DOWN ||
 								e.key === KEYS.ENTER
 							) {
 								e.preventDefault();
-							} else {
-								e.stopPropagation();
 							}
 						}}
-						size="small"
 						label="Filter"
 						value={filterInput}
 						onChange={(e) => {
@@ -240,44 +252,22 @@ const Explorer: React.FC = () => {
 				<Divider orientation="vertical" flexItem />
 				<Stack css={[commonStyles.flex.disableShrink, commonStyles.flex.disableShrinkChildren]}>
 					<TextField
-						onKeyDown={(e) => {
-							// stop propagation of keyDown events so that Nex-wide shortcuts (e.g. CTRL+X for cut)
-							// don't fire if the focus is in the text field
-							e.stopPropagation();
-						}}
-						size="small"
 						label="Current Directory"
 						value={cwdInput}
 						onChange={(e) => setCwdInput(e.target.value)}
 					/>
-					<Button variant="outlined" onClick={() => fileProviderThunks.changeDirectory(cwdInput)}>
-						Change CWD
-					</Button>
-					<Button variant="outlined" onClick={navigateUp}>
-						Up
-					</Button>
+					<Button onClick={() => fileProviderThunks.changeDirectory(cwdInput)}>Change CWD</Button>
+					<Button onClick={navigateUp}>Up</Button>
 				</Stack>
 				<Divider orientation="vertical" flexItem />
 				<Stack wrap>
-					<Button
-						variant="outlined"
-						onClick={openSelectedFiles}
-						disabled={singleFileActionsDisabled}
-					>
+					<Button onClick={openSelectedFiles} disabled={singleFileActionsDisabled}>
 						Open
 					</Button>
-					<Button
-						variant="outlined"
-						onClick={copySelectedFiles}
-						disabled={multipleFilesActionsDisabled}
-					>
+					<Button onClick={copySelectedFiles} disabled={multipleFilesActionsDisabled}>
 						Copy
 					</Button>
-					<Button
-						variant="outlined"
-						onClick={cutSelectedFiles}
-						disabled={multipleFilesActionsDisabled}
-					>
+					<Button onClick={cutSelectedFiles} disabled={multipleFilesActionsDisabled}>
 						Cut
 					</Button>
 					<Button
@@ -287,11 +277,7 @@ const Explorer: React.FC = () => {
 					>
 						Paste
 					</Button>
-					<Button
-						variant="outlined"
-						onClick={deleteSelectedFiles}
-						disabled={multipleFilesActionsDisabled}
-					>
+					<Button onClick={deleteSelectedFiles} disabled={multipleFilesActionsDisabled}>
 						Delete
 					</Button>
 				</Stack>

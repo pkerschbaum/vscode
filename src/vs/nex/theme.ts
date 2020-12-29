@@ -38,6 +38,12 @@ export const createTheme = (locale: Localization) => {
 				},
 			},
 
+			MuiButton: {
+				defaultProps: { variant: 'outlined' },
+			},
+
+			MuiTextField: { defaultProps: { size: 'small' } },
+
 			MuiIconButton: {
 				styleOverrides: {
 					root: {
