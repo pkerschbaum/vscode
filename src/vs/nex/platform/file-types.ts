@@ -34,7 +34,8 @@ export type File = {
 	fileType: FILE_TYPE;
 	uri: UriComponents;
 	size?: number;
-	lastChangedAt?: number;
+	ctime?: number;
+	mtime?: number;
 };
 
 export type FileStatMap = {
@@ -42,5 +43,5 @@ export type FileStatMap = {
 };
 
 type TagId = string;
-export type FileToTags = { [uri: string]: TagId[] | undefined };
+export type FileToTags = { [uri: string]: { ctimeOfFile: number; tags: TagId[] } | undefined };
 export type Tag = { id: TagId; name: string; colorHex: string };

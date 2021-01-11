@@ -10,10 +10,12 @@ import {
 	DialogContent,
 	DialogTitle,
 	Divider,
+	IconButton,
 	Paper,
 	TextField,
 	useTheme,
 } from '@material-ui/core';
+import CancelIcon from '@material-ui/icons/Cancel';
 import { matchSorter } from 'match-sorter';
 import { css } from '@emotion/react';
 
@@ -79,7 +81,10 @@ const Explorer: React.FC = () => {
 	 */
 	let filesToShow: FileForUI[] = files.map((file) => ({
 		...file,
-		tags: fileProviderThunks.getTagsOfFile(file.uri),
+		tags:
+			file.ctime === undefined
+				? []
+				: fileProviderThunks.getTagsOfFile({ uri: file.uri, ctime: file.ctime }),
 	}));
 	if (strings.isNullishOrEmpty(filterInput)) {
 		filesToShow = arrays
@@ -308,12 +313,13 @@ const Explorer: React.FC = () => {
 							id,
 						}))}
 						onValueCreated={(tag) => tagActions.addTag(tag)}
-						onValueChosen={(chosenTag) => {
-							fileProviderThunks.addTags(
+						onValueChosen={async (chosenTag) => {
+							await fileProviderThunks.addTags(
 								selectedFiles.map((file) => file.uri),
 								[chosenTag.id],
 							);
 						}}
+						onValueDeleted={(tag) => tagActions.removeTags([tag.id])}
 						disabled={multipleDirectoriesActionsDisabled}
 					/>
 				</Stack>
@@ -389,8 +395,9 @@ const AddTag: React.FC<{
 	options: Tag[];
 	onValueCreated: (value: Omit<Tag, 'id'>) => Tag;
 	onValueChosen: (value: Tag) => void;
+	onValueDeleted: (value: Tag) => void;
 	disabled?: boolean;
-}> = ({ options, onValueCreated, onValueChosen, disabled }) => {
+}> = ({ options, onValueCreated, onValueChosen, onValueDeleted, disabled }) => {
 	const { availableTagColors } = useTheme();
 	const defaultTag = {
 		inputValue: '',
@@ -469,7 +476,7 @@ const AddTag: React.FC<{
 				handleHomeEndKeys
 				renderOption={(props, option) => (
 					<li {...props}>
-						<Stack>
+						<Stack css={commonStyles.fullWidth}>
 							{strings.isNullishOrEmpty(option.inputValue) && (
 								<Button
 									css={styles.colorButton}
@@ -478,7 +485,10 @@ const AddTag: React.FC<{
 									style={{ backgroundColor: option.colorHex }}
 								/>
 							)}
-							<span>{option.name}</span>
+							<span css={commonStyles.flex.shrinkAndFitHorizontal}>{option.name}</span>
+							<IconButton onClick={() => onValueDeleted(option)}>
+								<CancelIcon />
+							</IconButton>
 						</Stack>
 					</li>
 				)}

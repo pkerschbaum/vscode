@@ -69,6 +69,7 @@ export function mapFileStatToFile(file: IFileStat): File {
 		fileType,
 		uri: file.resource.toJSON(),
 		size: file.size,
-		lastChangedAt: file.mtime,
+		mtime: file.mtime,
+		ctime: file.ctime,
 	};
 }

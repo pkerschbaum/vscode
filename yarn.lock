@@ -334,6 +334,13 @@
     react-is "^16.8.0 || ^17.0.0"
     react-transition-group "^4.4.0"
 
+"@material-ui/icons@5.0.0-alpha.20":
+  version "5.0.0-alpha.20"
+  resolved "https://sdm-uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/npm-aws-test/@material-ui/icons/-/icons-5.0.0-alpha.20.tgz#f320db27ba88b6b3643d1c0a37dbe962707d58fc"
+  integrity sha512-yTMlKTMRR3ukfZJrkqUSiRL+Z+uROlxgDigLzj+MpePtlDgYiO8KsmrErbUNyHg3EimUZq/CXBYIEOaxCMiuLg==
+  dependencies:
+    "@babel/runtime" "^7.4.4"
+
 "@material-ui/lab@^5.0.0-alpha.20":
   version "5.0.0-alpha.20"
   resolved "https://registry.yarnpkg.com/@material-ui/lab/-/lab-5.0.0-alpha.20.tgz#1ee575a6ab40f8dc55c9cbeb6d6d5921b87f3dba"
