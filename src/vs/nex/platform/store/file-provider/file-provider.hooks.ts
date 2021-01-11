@@ -216,6 +216,89 @@ export const useFileProviderThunks = () => {
 		return updateFilesOfCwd(newCmd);
 	}
 
+	const addTags = (files: UriComponents[], tagIds: string[]) => {
+		logger.debug(`adding tags to files...`, { files, tagIds });
+
+		const existingTagIds = Object.keys(tagsActions.getTags());
+		const invalidTagIds = tagIds.filter(
+			(tagId) => !existingTagIds.find((existing) => existing === tagId),
+		);
+		if (invalidTagIds.length > 0) {
+			throw new CustomError(
+				`at least one tag which should be added is not present in the storage`,
+				{ invalidTagIds },
+			);
+		}
+
+		const fileToTagsMap = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS) ?? {};
+
+		for (const file of files) {
+			const existingTagsOfFile = fileToTagsMap[URI.from(file).toString()] ?? [];
+			fileToTagsMap[URI.from(file).toString()] = [...existingTagsOfFile, ...tagIds];
+		}
+
+		storage.store(STORAGE_KEY.RESOURCES_TO_TAGS, fileToTagsMap);
+
+		logger.debug(`tags to files added and stored in storage!`);
+	};
+
+	const getTagsOfFile = (file: UriComponents): Tag[] => {
+		const tagIdsOfFile = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS)?.[URI.from(file).toString()];
+
+		if (tagIdsOfFile === undefined || tagIdsOfFile.length === 0) {
+			return [];
+		}
+
+		const tags = tagsActions.getTags();
+		const tagsOfFile = Object.entries(tags)
+			.map(([id, otherValues]) => ({ ...otherValues, id }))
+			.filter((tag) => tagIdsOfFile.some((tagId) => tagId === tag.id));
+
+		logger.debug(`got tags of file from storage`, { file, tagsOfFile });
+
+		return tagsOfFile;
+	};
+
+	const removeTags = (files: UriComponents[], tagIds: string[]) => {
+		logger.debug(`removing tags from files...`, { files, tagIds });
+
+		const fileToTagsMap = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS);
+
+		if (fileToTagsMap === undefined) {
+			logger.debug(`tags from files removed (no tags were present at all)`);
+			return;
+		}
+
+		for (const file of files) {
+			const existingTagsOfFile = fileToTagsMap[URI.from(file).toString()];
+			if (existingTagsOfFile !== undefined) {
+				fileToTagsMap[URI.from(file).toString()] = existingTagsOfFile.filter(
+					(existingTagId) => !tagIds.some((tagIdToRemove) => tagIdToRemove === existingTagId),
+				);
+			}
+		}
+
+		storage.store(STORAGE_KEY.RESOURCES_TO_TAGS, fileToTagsMap);
+
+		logger.debug(
+			`tags from files removed! Deleting those tags now which are not ` +
+				`associated with at least one file anymore...`,
+		);
+
+		const usedTagIds = arrays.uniqueValues(
+			arrays.flatten(Object.values(fileToTagsMap).filter(objects.isNotNullish)),
+		);
+		const tagIdsToDelete = tagIds.filter(
+			(tagId) => !usedTagIds.some((usedTagId) => usedTagId === tagId),
+		);
+		if (tagIdsToDelete.length > 0) {
+			logger.debug(`deleting tags...`, { tagIdsToDelete });
+			tagsActions.removeTags(tagIdsToDelete);
+		} else {
+			logger.debug(`no tags to delete`);
+		}
+	};
+
 	return {
 		changeDirectory,
 
@@ -333,6 +416,15 @@ export const useFileProviderThunks = () => {
 							: fileSystem.copy(sourceFileURI, targetFileURI, undefined, progressCb);
 						await operation;
 
+						// Also copy tags to destination
+						const tagsOfSourceFile = getTagsOfFile(sourceFileURI).map((t) => t.id);
+						addTags([targetFileURI], tagsOfSourceFile);
+
+						// If move operation was performed, remove tags from source URI
+						if (draftPasteState.pasteShouldMove) {
+							removeTags([sourceFileURI], tagsOfSourceFile);
+						}
+
 						dispatch(actions.finishPasteProcess({ id: pasteStatus.id }));
 					} finally {
 						clearInterval(intervalId);
@@ -344,88 +436,9 @@ export const useFileProviderThunks = () => {
 			return updateFilesOfCwd(cwd);
 		},
 
-		addTags: (files: UriComponents[], tagIds: string[]) => {
-			logger.debug(`adding tags to files...`, { files, tagIds });
-
-			const existingTagIds = Object.keys(tagsActions.getTags());
-			const invalidTagIds = tagIds.filter(
-				(tagId) => !existingTagIds.find((existing) => existing === tagId),
-			);
-			if (invalidTagIds.length > 0) {
-				throw new CustomError(
-					`at least one tag which should be added is not present in the storage`,
-					{ invalidTagIds },
-				);
-			}
-
-			const fileToTagsMap = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS) ?? {};
-
-			for (const file of files) {
-				const existingTagsOfFile = fileToTagsMap[URI.from(file).toString()] ?? [];
-				fileToTagsMap[URI.from(file).toString()] = [...existingTagsOfFile, ...tagIds];
-			}
-
-			storage.store(STORAGE_KEY.RESOURCES_TO_TAGS, fileToTagsMap);
-
-			logger.debug(`tags to files added and stored in storage!`);
-		},
-
-		getTagsOfFile: (file: UriComponents): Tag[] => {
-			const tagIdsOfFile = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS)?.[URI.from(file).toString()];
-
-			if (tagIdsOfFile === undefined || tagIdsOfFile.length === 0) {
-				return [];
-			}
-
-			const tags = tagsActions.getTags();
-			const tagsOfFile = Object.entries(tags)
-				.map(([id, otherValues]) => ({ ...otherValues, id }))
-				.filter((tag) => tagIdsOfFile.some((tagId) => tagId === tag.id));
-
-			logger.debug(`got tags of file from storage`, { file, tagsOfFile });
-
-			return tagsOfFile;
-		},
-
-		removeTags: (files: UriComponents[], tagIds: string[]) => {
-			logger.debug(`removing tags from files...`, { files, tagIds });
-
-			const fileToTagsMap = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS);
-
-			if (fileToTagsMap === undefined) {
-				logger.debug(`tags from files removed (no tags were present at all)`);
-				return;
-			}
-
-			for (const file of files) {
-				const existingTagsOfFile = fileToTagsMap[URI.from(file).toString()];
-				if (existingTagsOfFile !== undefined) {
-					fileToTagsMap[URI.from(file).toString()] = existingTagsOfFile.filter(
-						(existingTagId) => !tagIds.some((tagIdToRemove) => tagIdToRemove === existingTagId),
-					);
-				}
-			}
-
-			storage.store(STORAGE_KEY.RESOURCES_TO_TAGS, fileToTagsMap);
-
-			logger.debug(
-				`tags from files removed! Deleting those tags now which are not ` +
-					`associated with at least one file anymore...`,
-			);
-
-			const usedTagIds = arrays.uniqueValues(
-				arrays.flatten(Object.values(fileToTagsMap).filter(objects.isNotNullish)),
-			);
-			const tagIdsToDelete = tagIds.filter(
-				(tagId) => !usedTagIds.some((usedTagId) => usedTagId === tagId),
-			);
-			if (tagIdsToDelete.length > 0) {
-				logger.debug(`deleting tags...`, { tagIdsToDelete });
-				tagsActions.removeTags(tagIdsToDelete);
-			} else {
-				logger.debug(`no tags to delete`);
-			}
-		},
+		addTags,
+		getTagsOfFile,
+		removeTags,
 	};
 };
 
