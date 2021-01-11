@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { shell } from 'electron';
 
 import * as resources from 'vs/base/common/resources';
@@ -15,6 +16,7 @@ import { useModelService } from 'vs/nex/ui/ModelService.provider';
 import { useModeService } from 'vs/nex/ui/ModeService.provider';
 import { useNexFileSystem } from 'vs/nex/ui/NexFileSystem.provider';
 import { useClipboardResources, useNexClipboard } from 'vs/nex/ui/NexClipboard.provider';
+import { useNexStorage } from 'vs/nex/ui/NexStorage.provider';
 import { useDispatch, useSelector } from 'vs/nex/platform/store/store';
 import {
 	File,
@@ -23,15 +25,21 @@ import {
 	FileStatMap,
 	PASTE_STATUS,
 	PasteProcess,
+	Tag,
 } from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
 import { objects } from 'vs/nex/base/utils/objects.util';
+import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
+import { useTagsActions } from 'vs/nex/platform/tags.hooks';
+import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
+import { arrays } from 'vs/nex/base/utils/arrays.util';
 
 export type FileForUI = File & {
 	name: string;
 	extension?: string;
+	tags: Tag[];
 	iconClasses: string[];
 };
 
@@ -67,6 +75,7 @@ export function useFileProviderState() {
 					name: fileName,
 					size: file.size,
 					lastChangedAt: file.lastChangedAt,
+					tags: [],
 				};
 				return fileForUI;
 			}),
@@ -115,11 +124,18 @@ function mapFileTypeToFileKind(fileType: FILE_TYPE) {
 }
 
 export const useFileProviderThunks = () => {
-	const fileSystem = useNexFileSystem();
 	const dispatch = useDispatch();
 	const { cwd, draftPasteState } = useFileProviderState();
+	const fileSystem = useNexFileSystem();
 	const clipboard = useNexClipboard();
 	const clipboardResources = useClipboardResources();
+	const storage = useNexStorage();
+	const tagsActions = useTagsActions();
+
+	useRerenderOnEventFire(
+		storage.onDataChanged,
+		React.useCallback((storageKey) => storageKey === STORAGE_KEY.RESOURCES_TO_TAGS, []),
+	);
 
 	async function updateFilesOfCwd(cwd: UriComponents) {
 		// resolve and dispatch files with metadata
@@ -326,6 +342,89 @@ export const useFileProviderThunks = () => {
 
 			// update cwd content
 			return updateFilesOfCwd(cwd);
+		},
+
+		addTags: (files: UriComponents[], tagIds: string[]) => {
+			logger.debug(`adding tags to files...`, { files, tagIds });
+
+			const existingTagIds = Object.keys(tagsActions.getTags());
+			const invalidTagIds = tagIds.filter(
+				(tagId) => !existingTagIds.find((existing) => existing === tagId),
+			);
+			if (invalidTagIds.length > 0) {
+				throw new CustomError(
+					`at least one tag which should be added is not present in the storage`,
+					{ invalidTagIds },
+				);
+			}
+
+			const fileToTagsMap = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS) ?? {};
+
+			for (const file of files) {
+				const existingTagsOfFile = fileToTagsMap[URI.from(file).toString()] ?? [];
+				fileToTagsMap[URI.from(file).toString()] = [...existingTagsOfFile, ...tagIds];
+			}
+
+			storage.store(STORAGE_KEY.RESOURCES_TO_TAGS, fileToTagsMap);
+
+			logger.debug(`tags to files added and stored in storage!`);
+		},
+
+		getTagsOfFile: (file: UriComponents): Tag[] => {
+			const tagIdsOfFile = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS)?.[URI.from(file).toString()];
+
+			if (tagIdsOfFile === undefined || tagIdsOfFile.length === 0) {
+				return [];
+			}
+
+			const tags = tagsActions.getTags();
+			const tagsOfFile = Object.entries(tags)
+				.map(([id, otherValues]) => ({ ...otherValues, id }))
+				.filter((tag) => tagIdsOfFile.some((tagId) => tagId === tag.id));
+
+			logger.debug(`got tags of file from storage`, { file, tagsOfFile });
+
+			return tagsOfFile;
+		},
+
+		removeTags: (files: UriComponents[], tagIds: string[]) => {
+			logger.debug(`removing tags from files...`, { files, tagIds });
+
+			const fileToTagsMap = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS);
+
+			if (fileToTagsMap === undefined) {
+				logger.debug(`tags from files removed (no tags were present at all)`);
+				return;
+			}
+
+			for (const file of files) {
+				const existingTagsOfFile = fileToTagsMap[URI.from(file).toString()];
+				if (existingTagsOfFile !== undefined) {
+					fileToTagsMap[URI.from(file).toString()] = existingTagsOfFile.filter(
+						(existingTagId) => !tagIds.some((tagIdToRemove) => tagIdToRemove === existingTagId),
+					);
+				}
+			}
+
+			storage.store(STORAGE_KEY.RESOURCES_TO_TAGS, fileToTagsMap);
+
+			logger.debug(
+				`tags from files removed! Deleting those tags now which are not ` +
+					`associated with at least one file anymore...`,
+			);
+
+			const usedTagIds = arrays.uniqueValues(
+				arrays.flatten(Object.values(fileToTagsMap).filter(objects.isNotNullish)),
+			);
+			const tagIdsToDelete = tagIds.filter(
+				(tagId) => !usedTagIds.some((usedTagId) => usedTagId === tagId),
+			);
+			if (tagIdsToDelete.length > 0) {
+				logger.debug(`deleting tags...`, { tagIdsToDelete });
+				tagsActions.removeTags(tagIdsToDelete);
+			} else {
+				logger.debug(`no tags to delete`);
+			}
 		},
 	};
 };

@@ -21,25 +21,8 @@ export const createTheme = (locale: Localization) => {
 				},
 			},
 
-			MuiTooltip: {
-				defaultProps: {
-					disableInteractive: true,
-				},
-
-				styleOverrides: {
-					tooltip: {
-						backgroundColor: 'black',
-						boxShadow: `0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12)`, // theme.shadows[1]
-					},
-
-					arrow: {
-						color: 'black',
-					},
-				},
-			},
-
 			MuiButton: {
-				defaultProps: { variant: 'outlined' },
+				defaultProps: { variant: 'outlined', type: 'button' },
 			},
 
 			MuiTextField: { defaultProps: { size: 'small' } },

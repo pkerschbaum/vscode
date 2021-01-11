@@ -1,6 +1,20 @@
 import * as React from 'react';
-import { Box, Button, Divider, TextField } from '@material-ui/core';
+import {
+	Autocomplete,
+	Box,
+	Button,
+	Chip,
+	createFilterOptions,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
+	Divider,
+	Paper,
+	TextField,
+} from '@material-ui/core';
 import { matchSorter } from 'match-sorter';
+import { css } from '@emotion/react';
 
 import { URI } from 'vs/base/common/uri';
 
@@ -14,7 +28,8 @@ import {
 	useFileProviderState,
 	useFileProviderThunks,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { FILE_TYPE, PasteProcess, PASTE_STATUS } from 'vs/nex/platform/file-types';
+import { useTagsActions } from 'vs/nex/platform/tags.hooks';
+import { FILE_TYPE, PasteProcess, PASTE_STATUS, Tag } from 'vs/nex/platform/file-types';
 import { KEYS, MOUSE_BUTTONS } from 'vs/nex/ui/constants';
 import { useWindowEvent, usePrevious } from 'vs/nex/ui/utils/events.hooks';
 import { horizontalScrollProps } from 'vs/nex/ui/utils/ui.util';
@@ -46,6 +61,7 @@ export const App: React.FC = () => {
 const Explorer: React.FC = () => {
 	const { cwd, files, draftPasteState, pasteProcesses } = useFileProviderState();
 	const fileProviderThunks = useFileProviderThunks();
+	const tagActions = useTagsActions();
 
 	const [cwdInput, setCwdInput] = React.useState(cwd.path);
 	const [idsOfSelectedFiles, setIdsOfSelectedFiles] = React.useState<string[]>([]);
@@ -60,10 +76,13 @@ const Explorer: React.FC = () => {
 	 *   Directories first and files second. Each section sorted by name.
 	 * - otherwise, let "match-sorter" do its job for filtering and sorting.
 	 */
-	let filesToShow: FileForUI[];
+	let filesToShow: FileForUI[] = files.map((file) => ({
+		...file,
+		tags: fileProviderThunks.getTagsOfFile(file.uri),
+	}));
 	if (strings.isNullishOrEmpty(filterInput)) {
 		filesToShow = arrays
-			.wrap(files)
+			.wrap(filesToShow)
 			.stableSort((a, b) => {
 				if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) {
 					return -1;
@@ -83,7 +102,7 @@ const Explorer: React.FC = () => {
 			.getValue();
 	} else {
 		filesToShow = arrays
-			.wrap(files)
+			.wrap(filesToShow)
 			.matchSort(filterInput, {
 				// avoid "WORD STARTS WITH" ranking of match-sorter by replacing each blank with another character
 				keys: [(file) => file.name.replace(' ', '_')],
@@ -95,7 +114,7 @@ const Explorer: React.FC = () => {
 	const rowsToShow = filesToShow.map((fileToShow) => ({
 		id: fileToShow.id,
 		data: fileToShow,
-		selected: !!selectedFiles.find((file) => file === fileToShow),
+		selected: !!selectedFiles.find((file) => file.id === fileToShow.id),
 	}));
 
 	// on mount, and every time the filter input changes, reset selection (select just the first file)
@@ -148,11 +167,11 @@ const Explorer: React.FC = () => {
 
 		if (key === KEYS.ARROW_UP || key === KEYS.ARROW_DOWN) {
 			const firstSelectedFileIndex = filesToShow.findIndex((file) =>
-				selectedFiles.some((selectedFile) => selectedFile === file),
+				selectedFiles.some((selectedFile) => selectedFile.id === file.id),
 			);
 			if (selectedFiles.length === 0) {
 				setIdsOfSelectedFiles([filesToShow[0].id]);
-			} else if (key === KEYS.ARROW_UP && firstSelectedFileIndex !== 0) {
+			} else if (key === KEYS.ARROW_UP && firstSelectedFileIndex > 0) {
 				setIdsOfSelectedFiles([filesToShow[firstSelectedFileIndex - 1].id]);
 			} else if (key === KEYS.ARROW_DOWN && filesToShow.length > firstSelectedFileIndex + 1) {
 				setIdsOfSelectedFiles([filesToShow[firstSelectedFileIndex + 1].id]);
@@ -208,6 +227,8 @@ const Explorer: React.FC = () => {
 
 	const singleFileActionsDisabled = selectedFiles.length !== 1;
 	const multipleFilesActionsDisabled = selectedFiles.length < 1;
+	const multipleDirectoriesActionsDisabled =
+		selectedFiles.length < 1 || selectedFiles.some((file) => file.fileType !== FILE_TYPE.DIRECTORY);
 
 	return (
 		<>
@@ -280,6 +301,20 @@ const Explorer: React.FC = () => {
 					<Button onClick={deleteSelectedFiles} disabled={multipleFilesActionsDisabled}>
 						Delete
 					</Button>
+					<AddTag
+						options={Object.entries(tagActions.getTags()).map(([id, otherValues]) => ({
+							...otherValues,
+							id,
+						}))}
+						onValueCreated={(tag) => tagActions.addTag(tag)}
+						onValueChosen={(chosenTag) => {
+							fileProviderThunks.addTags(
+								selectedFiles.map((file) => file.uri),
+								[chosenTag.id],
+							);
+						}}
+						disabled={multipleDirectoriesActionsDisabled}
+					/>
 				</Stack>
 			</Stack>
 			<Box css={(commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical)}>
@@ -294,7 +329,17 @@ const Explorer: React.FC = () => {
 									className={row.iconClasses.join(' ')}
 									alignItems="center"
 								>
-									{formatFileName(row)}
+									<Box component="span">{formatFileName(row)}</Box>
+									{row.tags.map((tag) => (
+										<Chip
+											key={tag.id}
+											style={{ backgroundColor: tag.colorHex }}
+											variant="outlined"
+											size="small"
+											label={tag.name}
+											onDelete={() => fileProviderThunks.removeTags([row.uri], [tag.id])}
+										/>
+									))}
 								</Stack>
 							),
 						},
@@ -329,6 +374,198 @@ const Explorer: React.FC = () => {
 				</Box>
 			)}
 		</>
+	);
+};
+
+// derived from https://material-ui.com/components/autocomplete/#creatable
+type WithInput<T> = T & {
+	inputValue?: string;
+};
+
+const AVAILABLE_COLORS = {
+	RED: '#F28B82',
+	GREEN: '#B2E775',
+	ORANGE: '#FBBC04',
+	YELLOW: '#FFF475',
+	TEAL: '#3bd4c5',
+	BLUE: '#5ea9eb',
+	LIGHT_BLUE: '#AECBFA',
+	PURPLE: '#D7AEFB',
+	PINK: '#FDCFE8',
+	BROWN: '#E6C9A8',
+} as const;
+const autocompleteDefaultFilter = createFilterOptions<WithInput<Tag>>();
+const DEFAULT_TAG = {
+	inputValue: '',
+	name: '',
+	colorHex: Object.values(AVAILABLE_COLORS)[0],
+	id: 'add-tag-action',
+};
+
+const AddTag: React.FC<{
+	options: Tag[];
+	onValueCreated: (value: Omit<Tag, 'id'>) => Tag;
+	onValueChosen: (value: Tag) => void;
+	disabled?: boolean;
+}> = ({ options, onValueCreated, onValueChosen, disabled }) => {
+	const [open, toggleOpen] = React.useState(false);
+	const [dialogValue, setDialogValue] = React.useState<WithInput<Omit<Tag, 'id'>>>(DEFAULT_TAG);
+
+	function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		if (!strings.isNullishOrEmpty(dialogValue.name)) {
+			const tag = onValueCreated(dialogValue);
+			onValueChosen(tag);
+		}
+		handleClose();
+	}
+
+	function handleClose() {
+		setDialogValue(DEFAULT_TAG);
+		toggleOpen(false);
+	}
+
+	return (
+		<React.Fragment>
+			<Autocomplete
+				css={styles.tagAutocomplete}
+				disabled={disabled}
+				value={null as WithInput<Tag> | null}
+				onChange={(_, newValue) => {
+					if (typeof newValue === 'string') {
+						toggleOpen(true);
+						setDialogValue({
+							name: newValue,
+							colorHex: Object.values(AVAILABLE_COLORS)[0],
+						});
+					} else if (newValue && newValue.inputValue) {
+						toggleOpen(true);
+						setDialogValue({
+							name: newValue.inputValue,
+							colorHex: Object.values(AVAILABLE_COLORS)[0],
+						});
+					} else if (newValue !== null) {
+						onValueChosen(newValue);
+					}
+				}}
+				filterOptions={(options, params) => {
+					const filtered = autocompleteDefaultFilter(options, params);
+
+					if (!strings.isNullishOrEmpty(params.inputValue)) {
+						filtered.push({
+							inputValue: params.inputValue,
+							name: `Add "${params.inputValue}"`,
+							colorHex: Object.values(AVAILABLE_COLORS)[0],
+							id: 'add-tag-action',
+						});
+					}
+
+					return filtered;
+				}}
+				options={options as WithInput<Tag>[]}
+				getOptionLabel={(option) => {
+					if (typeof option === 'string') {
+						return option;
+					}
+					if (option.inputValue) {
+						return option.inputValue;
+					}
+					return option.name;
+				}}
+				freeSolo
+				selectOnFocus
+				clearOnBlur
+				handleHomeEndKeys
+				renderOption={(props, option) => (
+					<li {...props}>
+						<Stack>
+							{strings.isNullishOrEmpty(option.inputValue) && (
+								<Button
+									css={styles.colorButton}
+									disableElevation
+									variant="contained"
+									style={{ backgroundColor: option.colorHex }}
+								/>
+							)}
+							<span>{option.name}</span>
+						</Stack>
+					</li>
+				)}
+				renderInput={(params) => <TextField {...params} label="Add Tag" />}
+			/>
+			<Dialog open={open} onClose={handleClose}>
+				<form onSubmit={handleSubmit}>
+					<DialogTitle>Add a new tag</DialogTitle>
+					<DialogContent>
+						<Stack direction="column" alignItems="start">
+							<Stack>
+								<Button
+									css={styles.colorButton}
+									disableElevation
+									variant="contained"
+									style={{ backgroundColor: dialogValue.colorHex }}
+								/>
+								<TextField
+									css={styles.tagNameInput}
+									autoFocus
+									margin="none"
+									label="Name of tag"
+									value={dialogValue.name}
+									onChange={(event) =>
+										setDialogValue({
+											...dialogValue,
+											name: event.target.value.trim(),
+										})
+									}
+								/>
+							</Stack>
+							<Paper
+								variant="outlined"
+								css={(theme) =>
+									css`
+										padding: ${theme.spacing()};
+									`
+								}
+							>
+								<Stack direction="column" alignItems="start">
+									{arrays
+										.partitionArray(Object.values(AVAILABLE_COLORS), { itemsPerPartition: 5 })
+										.map((partition, idx) => (
+											<Stack key={idx}>
+												{partition.map((colorHex) => {
+													const isSelected = dialogValue.colorHex === colorHex;
+													return (
+														<Button
+															key={colorHex}
+															css={styles.colorButton}
+															style={{
+																backgroundColor: colorHex,
+																opacity: isSelected ? '0.35' : undefined,
+															}}
+															disableRipple
+															disableElevation
+															variant={isSelected ? 'outlined' : 'contained'}
+															onClick={() => setDialogValue({ ...dialogValue, colorHex })}
+														/>
+													);
+												})}
+											</Stack>
+										))}
+								</Stack>
+							</Paper>
+						</Stack>
+					</DialogContent>
+					<DialogActions>
+						<Button variant="text" onClick={handleClose}>
+							Cancel
+						</Button>
+						<Button variant="text" type="submit">
+							Add
+						</Button>
+					</DialogActions>
+				</form>
+			</Dialog>
+		</React.Fragment>
 	);
 };
 

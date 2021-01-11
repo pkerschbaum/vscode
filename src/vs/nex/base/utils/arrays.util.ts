@@ -5,14 +5,25 @@ import * as vsArraysUtils from 'vs/base/common/arrays';
 export const arrays = {
 	isNullishOrEmpty,
 	stableSort: vsArraysUtils.mergeSort,
+	flatten,
 	uniqueValues,
 	shallowCopy,
 	pickElementAndRemove,
+	partitionArray,
 	wrap,
 };
 
 function isNullishOrEmpty(arr: Array<any> | undefined | null): boolean {
 	return arr === undefined || arr === null || arr.length === 0;
+}
+
+function flatten<T>(array: T[][]): T[] {
+	return array.reduce((flat, toFlatten) => {
+		for (const elem of toFlatten) {
+			flat = flat.concat(elem);
+		}
+		return flat;
+	}, []);
 }
 
 function uniqueValues<T>(array: T[]): T[] {
@@ -31,6 +42,39 @@ function pickElementAndRemove<T>(array: T[], elementIndex: number): T | undefine
 	return elementArray[0];
 }
 
+function partitionArray<T>(
+	array: T[],
+	options: { countOfPartitions: number } | { itemsPerPartition: number },
+): T[][] {
+	const partitions: T[][] = [];
+
+	if ('countOfPartitions' in options && options.countOfPartitions !== undefined) {
+		const { countOfPartitions } = options;
+
+		for (let i = 0; i < countOfPartitions; i++) {
+			partitions[i] = [];
+		}
+		for (let i = 0; i < array.length; i++) {
+			const item = array[i];
+			partitions[i % countOfPartitions].push(item);
+		}
+	} else if ('itemsPerPartition' in options && options.itemsPerPartition !== undefined) {
+		const { itemsPerPartition } = options;
+
+		let currentPartition: T[] = [];
+		for (const item of array) {
+			if (currentPartition.length === itemsPerPartition) {
+				partitions.push(currentPartition);
+				currentPartition = [];
+			}
+			currentPartition.push(item);
+		}
+		partitions.push(currentPartition);
+	}
+
+	return partitions;
+}
+
 function wrap<T>(array: T[]) {
 	let currentVal = array;
 	const wrapper = {
@@ -44,6 +88,10 @@ function wrap<T>(array: T[]) {
 		},
 		shallowCopy: () => {
 			currentVal = shallowCopy(currentVal);
+			return wrapper;
+		},
+		uniqueValues: () => {
+			currentVal = uniqueValues(currentVal);
 			return wrapper;
 		},
 		pickElementAndRemove: (elementIndex: number) => {

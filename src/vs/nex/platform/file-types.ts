@@ -40,3 +40,7 @@ export type File = {
 export type FileStatMap = {
 	[uri: string]: IFileStatWithMetadata;
 };
+
+type TagId = string;
+export type FileToTags = { [uri: string]: TagId[] | undefined };
+export type Tag = { id: TagId; name: string; colorHex: string };

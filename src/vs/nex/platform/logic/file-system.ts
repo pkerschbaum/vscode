@@ -15,11 +15,11 @@ const logger = createLogger('nexFileSystem');
 export const NexFileSystem = createDecorator<NexFileSystem>('nexFileSystem');
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export interface NexFileSystem extends Pick<IFileService, 'resolve' | 'del' | 'copy' | 'move'> {
+export type NexFileSystem = Pick<IFileService, 'resolve' | 'del' | 'copy' | 'move'> & {
 	_serviceBrand: undefined;
 
 	checkDirectory(path: string): Promise<boolean>;
-}
+};
 
 export class NexFileSystemImpl implements NexFileSystem {
 	public _serviceBrand: undefined;

@@ -7,11 +7,11 @@ import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService
 export const NexClipboard = createDecorator<NexClipboard>('nexClipboard');
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export interface NexClipboard extends Pick<IClipboardService, 'readResources' | 'writeResources'> {
+export type NexClipboard = Pick<IClipboardService, 'readResources' | 'writeResources'> & {
 	_serviceBrand: undefined;
 
 	onClipboardChanged: Event<void>;
-}
+};
 
 export class NexClipboardImpl implements NexClipboard {
 	public _serviceBrand: undefined;

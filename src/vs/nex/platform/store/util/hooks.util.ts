@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { useDispatch } from 'react-redux';
 
+import { Event } from 'vs/base/common/event';
+
 export const useActionsWithDispatch = <T extends {}>(actions: T) => {
 	// use type "Dispatch" just to clarify that dispatching is automatically done
 	type Dispatch<FuncType> = FuncType;
@@ -45,4 +47,20 @@ export function useDebounce<T>(value: T, delay: number): T {
 	);
 
 	return debouncedValue;
+}
+
+export function useRerenderOnEventFire<T>(event: Event<T>, shouldRerender: (value: T) => boolean) {
+	const [, setCurrentVal] = React.useState(0);
+
+	React.useEffect(
+		function triggerRrenderIfNecessary() {
+			const disposable = event((value) => {
+				if (shouldRerender(value)) {
+					setCurrentVal((oldVal) => oldVal + 1);
+				}
+			});
+			return () => disposable.dispose();
+		},
+		[event, shouldRerender],
+	);
 }
