@@ -12,6 +12,7 @@ import {
 	Divider,
 	Paper,
 	TextField,
+	useTheme,
 } from '@material-ui/core';
 import { matchSorter } from 'match-sorter';
 import { css } from '@emotion/react';
@@ -382,25 +383,7 @@ type WithInput<T> = T & {
 	inputValue?: string;
 };
 
-const AVAILABLE_COLORS = {
-	RED: '#F28B82',
-	GREEN: '#B2E775',
-	ORANGE: '#FBBC04',
-	YELLOW: '#FFF475',
-	TEAL: '#3bd4c5',
-	BLUE: '#5ea9eb',
-	LIGHT_BLUE: '#AECBFA',
-	PURPLE: '#D7AEFB',
-	PINK: '#FDCFE8',
-	BROWN: '#E6C9A8',
-} as const;
 const autocompleteDefaultFilter = createFilterOptions<WithInput<Tag>>();
-const DEFAULT_TAG = {
-	inputValue: '',
-	name: '',
-	colorHex: Object.values(AVAILABLE_COLORS)[0],
-	id: 'add-tag-action',
-};
 
 const AddTag: React.FC<{
 	options: Tag[];
@@ -408,8 +391,16 @@ const AddTag: React.FC<{
 	onValueChosen: (value: Tag) => void;
 	disabled?: boolean;
 }> = ({ options, onValueCreated, onValueChosen, disabled }) => {
+	const { availableTagColors } = useTheme();
+	const defaultTag = {
+		inputValue: '',
+		name: '',
+		colorHex: availableTagColors[0],
+		id: 'add-tag-action',
+	};
+
 	const [open, toggleOpen] = React.useState(false);
-	const [dialogValue, setDialogValue] = React.useState<WithInput<Omit<Tag, 'id'>>>(DEFAULT_TAG);
+	const [dialogValue, setDialogValue] = React.useState<WithInput<Omit<Tag, 'id'>>>(defaultTag);
 
 	function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault();
@@ -421,7 +412,7 @@ const AddTag: React.FC<{
 	}
 
 	function handleClose() {
-		setDialogValue(DEFAULT_TAG);
+		setDialogValue(defaultTag);
 		toggleOpen(false);
 	}
 
@@ -436,13 +427,13 @@ const AddTag: React.FC<{
 						toggleOpen(true);
 						setDialogValue({
 							name: newValue,
-							colorHex: Object.values(AVAILABLE_COLORS)[0],
+							colorHex: availableTagColors[0],
 						});
 					} else if (newValue && newValue.inputValue) {
 						toggleOpen(true);
 						setDialogValue({
 							name: newValue.inputValue,
-							colorHex: Object.values(AVAILABLE_COLORS)[0],
+							colorHex: availableTagColors[0],
 						});
 					} else if (newValue !== null) {
 						onValueChosen(newValue);
@@ -455,7 +446,7 @@ const AddTag: React.FC<{
 						filtered.push({
 							inputValue: params.inputValue,
 							name: `Add "${params.inputValue}"`,
-							colorHex: Object.values(AVAILABLE_COLORS)[0],
+							colorHex: availableTagColors[0],
 							id: 'add-tag-action',
 						});
 					}
@@ -529,7 +520,7 @@ const AddTag: React.FC<{
 							>
 								<Stack direction="column" alignItems="start">
 									{arrays
-										.partitionArray(Object.values(AVAILABLE_COLORS), { itemsPerPartition: 5 })
+										.partitionArray(availableTagColors, { itemsPerPartition: 5 })
 										.map((partition, idx) => (
 											<Stack key={idx}>
 												{partition.map((colorHex) => {
