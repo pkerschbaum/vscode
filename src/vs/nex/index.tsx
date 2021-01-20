@@ -14,61 +14,59 @@ import { NexStorage } from 'vs/nex/platform/logic/storage';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { App } from 'vs/nex/ui/App';
 import { createTheme } from 'vs/nex/theme';
-import { ThemeProvider } from 'vs/nex/ThemeProvider';
+import { ThemeProvider } from 'vs/nex/theme.provider';
 import { dispatch, store } from 'vs/nex/platform/store/store';
 import { actions as fileProviderActions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
 import { RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
 import { useDebounce } from 'vs/nex/platform/store/util/hooks.util';
-import { ModeServiceProvider } from 'vs/nex/ui/ModeService.provider';
-import { ModelServiceProvider } from 'vs/nex/ui/ModelService.provider';
-import { NexFileSystemProvider } from 'vs/nex/ui/NexFileSystem.provider';
-import { ClipboardResourcesContext, NexClipboardProvider } from 'vs/nex/ui/NexClipboard.provider';
-import { NexStorageProvider } from 'vs/nex/ui/NexStorage.provider';
+import { ModeServiceProvider } from 'vs/nex/ModeService.provider';
+import { ModelServiceProvider } from 'vs/nex/ModelService.provider';
+import { NexFileSystemProvider } from 'vs/nex/NexFileSystem.provider';
+import { ClipboardResourcesContext, NexClipboardProvider } from 'vs/nex/NexClipboard.provider';
+import { NexStorageProvider } from 'vs/nex/NexStorage.provider';
 
 const logger = createLogger('index');
 const theme = createTheme(enUS);
 
-export function createApp(
+export const createApp = (
 	modeService: IModeService,
 	modelService: IModelService,
 	fileSystem: NexFileSystem,
 	clipboard: NexClipboard,
 	storage: NexStorage,
-) {
-	return {
-		renderApp: async function (targetContainer: HTMLElement) {
-			// load initial directory with contents
-			const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/home/pkerschbaum');
-			const stats = await fileSystem.resolve(parsedUri, { resolveMetadata: true });
-			if (!stats.isDirectory) {
-				throw Error(
-					`could not set intial directory, reason: uri is not a valid directory. uri: ${parsedUri}`,
-				);
-			}
-			const children = stats.children ?? [];
-			dispatch(
-				fileProviderActions.changeCwd({
-					newDir: parsedUri.toJSON(),
-					files: children.map(mapFileStatToFile),
-				}),
+) => ({
+	renderApp: async function (targetContainer: HTMLElement) {
+		// load initial directory with contents
+		const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/home/pkerschbaum');
+		const stats = await fileSystem.resolve(parsedUri, { resolveMetadata: true });
+		if (!stats.isDirectory) {
+			throw Error(
+				`could not set intial directory, reason: uri is not a valid directory. uri: ${parsedUri}`,
 			);
+		}
+		const children = stats.children ?? [];
+		dispatch(
+			fileProviderActions.changeCwd({
+				newDir: parsedUri.toJSON(),
+				files: children.map(mapFileStatToFile),
+			}),
+		);
 
-			// render app
-			render(
-				<React.StrictMode>
-					<Root
-						modeService={modeService}
-						modelService={modelService}
-						fileSystem={fileSystem}
-						clipboard={clipboard}
-						storage={storage}
-					/>
-				</React.StrictMode>,
-				targetContainer,
-			);
-		},
-	};
-}
+		// render app
+		render(
+			<React.StrictMode>
+				<Root
+					modeService={modeService}
+					modelService={modelService}
+					fileSystem={fileSystem}
+					clipboard={clipboard}
+					storage={storage}
+				/>
+			</React.StrictMode>,
+			targetContainer,
+		);
+	},
+});
 
 const Root: React.FC<{
 	modeService: IModeService;

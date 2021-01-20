@@ -12,11 +12,11 @@ import { getIconClasses } from 'vs/editor/common/services/getIconClasses';
 
 import { actions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
 import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
-import { useModelService } from 'vs/nex/ui/ModelService.provider';
-import { useModeService } from 'vs/nex/ui/ModeService.provider';
-import { useNexFileSystem } from 'vs/nex/ui/NexFileSystem.provider';
-import { useClipboardResources, useNexClipboard } from 'vs/nex/ui/NexClipboard.provider';
-import { useNexStorage } from 'vs/nex/ui/NexStorage.provider';
+import { useModelService } from 'vs/nex/ModelService.provider';
+import { useModeService } from 'vs/nex/ModeService.provider';
+import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
+import { useClipboardResources, useNexClipboard } from 'vs/nex/NexClipboard.provider';
+import { useNexStorage } from 'vs/nex/NexStorage.provider';
 import { useDispatch, useSelector } from 'vs/nex/platform/store/store';
 import {
 	File,

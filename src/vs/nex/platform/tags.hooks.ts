@@ -2,7 +2,7 @@ import * as React from 'react';
 import { nanoid } from '@reduxjs/toolkit';
 
 import { createLogger } from 'vs/nex/base/logger/logger';
-import { useNexStorage } from 'vs/nex/ui/NexStorage.provider';
+import { useNexStorage } from 'vs/nex/NexStorage.provider';
 import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
 import { Tag } from 'vs/nex/platform/file-types';
 import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
