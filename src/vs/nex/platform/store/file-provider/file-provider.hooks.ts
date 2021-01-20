@@ -211,7 +211,7 @@ export const useFileProviderThunks = () => {
 		return updateFilesOfCwd(newCmd);
 	}
 
-	const addTags = async (files: UriComponents[], tagIds: string[]) => {
+	async function addTags(files: UriComponents[], tagIds: string[]) {
 		logger.debug(`adding tags to files...`, { files, tagIds });
 
 		const existingTagIds = Object.keys(tagsActions.getTags());
@@ -242,9 +242,9 @@ export const useFileProviderThunks = () => {
 		storage.store(STORAGE_KEY.RESOURCES_TO_TAGS, fileToTagsMap);
 
 		logger.debug(`tags to files added and stored in storage!`);
-	};
+	}
 
-	const getTagsOfFile = (file: { uri: UriComponents; ctime: number }): Tag[] => {
+	function getTagsOfFile(file: { uri: UriComponents; ctime: number }): Tag[] {
 		const tagIdsOfFile = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS)?.[
 			URI.from(file.uri).toString()
 		];
@@ -265,9 +265,9 @@ export const useFileProviderThunks = () => {
 		logger.debug(`got tags of file from storage`, { file, tagsOfFile });
 
 		return tagsOfFile;
-	};
+	}
 
-	const removeTags = (files: UriComponents[], tagIds: string[]) => {
+	function removeTags(files: UriComponents[], tagIds: string[]) {
 		logger.debug(`removing tags from files...`, { files, tagIds });
 
 		const fileToTagsMap = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS);
@@ -289,148 +289,151 @@ export const useFileProviderThunks = () => {
 		storage.store(STORAGE_KEY.RESOURCES_TO_TAGS, fileToTagsMap);
 
 		logger.debug(`tags from files removed!`);
-	};
+	}
+
+	async function moveFilesToTrash(uris: UriComponents[]) {
+		// move all files to trash (in parallel)
+		await Promise.all(
+			uris.map(async (uri) => {
+				try {
+					await fileSystem.del(URI.from(uri), { useTrash: true, recursive: true });
+				} catch (err) {
+					logger.error(`could not move file to trash`, err);
+				}
+			}),
+		);
+
+		// update cwd content
+		return updateFilesOfCwd(cwd);
+	}
+
+	async function openFile(uri: UriComponents) {
+		const executablePath = URI.from(uri).fsPath;
+
+		const success = await shell.openPath(executablePath);
+		if (!success) {
+			logger.error(`electron shell openItem did not succeed`, undefined, { uri });
+		}
+	}
+
+	async function cutOrCopyFiles(files: UriComponents[], cut: boolean) {
+		await clipboard.writeResources(files.map((file) => URI.from(file)));
+		dispatch(actions.cutOrCopyFiles({ cut }));
+	}
+
+	async function pasteFiles() {
+		if (clipboardResources.length === 0 || draftPasteState === undefined) {
+			return;
+		}
+
+		const destinationFolder = URI.from(cwd);
+		const targetFolderStat = await fileSystem.resolve(destinationFolder);
+
+		// clear draft paste state (neither cut&paste nor copy&paste is designed to be repeatable)
+		dispatch(actions.clearDraftPasteState());
+
+		await Promise.all(
+			clipboardResources.map(async (sourceFile) => {
+				const sourceFileURI = URI.from(sourceFile);
+
+				// Destination folder must not be a subfolder of any source file/folder. Imagine copying
+				// a folder "test" and paste it (and its content) *into* itself, that would not work.
+				if (
+					destinationFolder.toString() !== sourceFileURI.toString() &&
+					resources.isEqualOrParent(destinationFolder, sourceFileURI, !isLinux /* ignorecase */)
+				) {
+					throw new CustomError('The destination folder is a subfolder of the source file', {
+						destinationFolder,
+						sourceFile,
+					});
+				}
+
+				let sourceFileStat;
+				try {
+					sourceFileStat = await fileSystem.resolve(sourceFileURI, { resolveMetadata: true });
+				} catch (err: unknown) {
+					logger.error(
+						'error during file paste process, source file was probably deleted or moved meanwhile',
+						err,
+					);
+					return;
+				}
+
+				const fileStatMap = await resolveDeep(sourceFileURI, sourceFileStat);
+
+				const pasteStatus: Omit<PasteProcess, 'status'> = {
+					id: uuid.generateUuid(),
+					totalSize: 0,
+					bytesProcessed: 0,
+					destinationFolder: destinationFolder.toJSON(),
+				};
+				const statusPerFile: {
+					[uri: string]: { bytesProcessed: number };
+				} = {};
+
+				Object.entries(fileStatMap).forEach(([uri, fileStat]) => {
+					pasteStatus.totalSize += fileStat.size;
+					statusPerFile[uri] = { bytesProcessed: 0 };
+				});
+
+				dispatch(actions.addPasteProcess(objects.deepCopyJson(pasteStatus)));
+
+				const intervalId = setInterval(function dispatchProgress() {
+					dispatch(
+						actions.updatePasteProcess({
+							id: pasteStatus.id,
+							bytesProcessed: pasteStatus.bytesProcessed,
+						}),
+					);
+				}, UPDATE_INTERVAL_MS);
+
+				try {
+					const targetFileURI = findValidPasteFileTarget(targetFolderStat, {
+						resource: sourceFileURI,
+						isDirectory: sourceFileStat.isDirectory,
+						allowOverwrite: draftPasteState.pasteShouldMove,
+					});
+
+					const progressCb = (newBytesRead: number, forSource: URI) => {
+						pasteStatus.bytesProcessed += newBytesRead;
+						statusPerFile[forSource.toString()].bytesProcessed += newBytesRead;
+					};
+
+					// Move/Copy File
+					const operation = draftPasteState.pasteShouldMove
+						? fileSystem.move(sourceFileURI, targetFileURI, undefined, progressCb)
+						: fileSystem.copy(sourceFileURI, targetFileURI, undefined, progressCb);
+					await operation;
+
+					// Also copy tags to destination
+					const tagsOfSourceFile = getTagsOfFile({
+						uri: sourceFileURI,
+						ctime: sourceFileStat.ctime,
+					}).map((t) => t.id);
+					await addTags([targetFileURI], tagsOfSourceFile);
+
+					// If move operation was performed, remove tags from source URI
+					if (draftPasteState.pasteShouldMove) {
+						removeTags([sourceFileURI], tagsOfSourceFile);
+					}
+
+					dispatch(actions.finishPasteProcess({ id: pasteStatus.id }));
+				} finally {
+					clearInterval(intervalId);
+				}
+			}),
+		);
+
+		// update cwd content
+		return updateFilesOfCwd(cwd);
+	}
 
 	return {
 		changeDirectory,
-
-		moveFilesToTrash: async (uris: UriComponents[]) => {
-			// move all files to trash (in parallel)
-			await Promise.all(
-				uris.map(async (uri) => {
-					try {
-						await fileSystem.del(URI.from(uri), { useTrash: true, recursive: true });
-					} catch (err) {
-						logger.error(`could not move file to trash`, err);
-					}
-				}),
-			);
-
-			// update cwd content
-			return updateFilesOfCwd(cwd);
-		},
-
-		openFile: async (uri: UriComponents) => {
-			const executablePath = URI.from(uri).fsPath;
-
-			const success = await shell.openPath(executablePath);
-			if (!success) {
-				logger.error(`electron shell openItem did not succeed`, undefined, { uri });
-			}
-		},
-
-		cutOrCopyFiles: async (files: UriComponents[], cut: boolean) => {
-			await clipboard.writeResources(files.map((file) => URI.from(file)));
-			dispatch(actions.cutOrCopyFiles({ cut }));
-		},
-
-		pasteFiles: async () => {
-			if (clipboardResources.length === 0 || draftPasteState === undefined) {
-				return;
-			}
-
-			const destinationFolder = URI.from(cwd);
-			const targetFolderStat = await fileSystem.resolve(destinationFolder);
-
-			// clear draft paste state (neither cut&paste nor copy&paste is designed to be repeatable)
-			dispatch(actions.clearDraftPasteState());
-
-			await Promise.all(
-				clipboardResources.map(async (sourceFile) => {
-					const sourceFileURI = URI.from(sourceFile);
-
-					// Destination folder must not be a subfolder of any source file/folder. Imagine copying
-					// a folder "test" and paste it (and its content) *into* itself, that would not work.
-					if (
-						destinationFolder.toString() !== sourceFileURI.toString() &&
-						resources.isEqualOrParent(destinationFolder, sourceFileURI, !isLinux /* ignorecase */)
-					) {
-						throw new CustomError('The destination folder is a subfolder of the source file', {
-							destinationFolder,
-							sourceFile,
-						});
-					}
-
-					let sourceFileStat;
-					try {
-						sourceFileStat = await fileSystem.resolve(sourceFileURI, { resolveMetadata: true });
-					} catch (err: unknown) {
-						logger.error(
-							'error during file paste process, source file was probably deleted or moved meanwhile',
-							err,
-						);
-						return;
-					}
-
-					const fileStatMap = await resolveDeep(sourceFileURI, sourceFileStat);
-
-					const pasteStatus: Omit<PasteProcess, 'status'> = {
-						id: uuid.generateUuid(),
-						totalSize: 0,
-						bytesProcessed: 0,
-						destinationFolder: destinationFolder.toJSON(),
-					};
-					const statusPerFile: {
-						[uri: string]: { bytesProcessed: number };
-					} = {};
-
-					Object.entries(fileStatMap).forEach(([uri, fileStat]) => {
-						pasteStatus.totalSize += fileStat.size;
-						statusPerFile[uri] = { bytesProcessed: 0 };
-					});
-
-					dispatch(actions.addPasteProcess(objects.deepCopyJson(pasteStatus)));
-
-					const intervalId = setInterval(function dispatchProgress() {
-						dispatch(
-							actions.updatePasteProcess({
-								id: pasteStatus.id,
-								bytesProcessed: pasteStatus.bytesProcessed,
-							}),
-						);
-					}, UPDATE_INTERVAL_MS);
-
-					try {
-						const targetFileURI = findValidPasteFileTarget(targetFolderStat, {
-							resource: sourceFileURI,
-							isDirectory: sourceFileStat.isDirectory,
-							allowOverwrite: draftPasteState.pasteShouldMove,
-						});
-
-						const progressCb = (newBytesRead: number, forSource: URI) => {
-							pasteStatus.bytesProcessed += newBytesRead;
-							statusPerFile[forSource.toString()].bytesProcessed += newBytesRead;
-						};
-
-						// Move/Copy File
-						const operation = draftPasteState.pasteShouldMove
-							? fileSystem.move(sourceFileURI, targetFileURI, undefined, progressCb)
-							: fileSystem.copy(sourceFileURI, targetFileURI, undefined, progressCb);
-						await operation;
-
-						// Also copy tags to destination
-						const tagsOfSourceFile = getTagsOfFile({
-							uri: sourceFileURI,
-							ctime: sourceFileStat.ctime,
-						}).map((t) => t.id);
-						await addTags([targetFileURI], tagsOfSourceFile);
-
-						// If move operation was performed, remove tags from source URI
-						if (draftPasteState.pasteShouldMove) {
-							removeTags([sourceFileURI], tagsOfSourceFile);
-						}
-
-						dispatch(actions.finishPasteProcess({ id: pasteStatus.id }));
-					} finally {
-						clearInterval(intervalId);
-					}
-				}),
-			);
-
-			// update cwd content
-			return updateFilesOfCwd(cwd);
-		},
-
+		moveFilesToTrash,
+		openFile,
+		cutOrCopyFiles,
+		pasteFiles,
 		addTags,
 		getTagsOfFile,
 		removeTags,
