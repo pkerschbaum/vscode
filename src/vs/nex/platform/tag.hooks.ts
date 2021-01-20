@@ -7,7 +7,7 @@ import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
 import { Tag } from 'vs/nex/platform/file-types';
 import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
 
-const logger = createLogger('tags.hooks');
+const logger = createLogger('tag.hooks');
 
 export function useTagsActions() {
 	const storage = useNexStorage();
