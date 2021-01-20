@@ -26,49 +26,4 @@ export const styles = {
 				outline: 0;
 			}
 		`,
-
-	fileIcon: css`
-		::before {
-			/* icon-theme.ts sets a unwanted font-size, use !important to overrule that*/
-			font-size: 2em !important;
-
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			width: 24px;
-			max-width: 24px;
-			height: 1em;
-			max-height: 1em;
-			margin-right: 4px;
-
-			background-size: 24px 1em;
-			background-repeat: no-repeat;
-			-webkit-font-smoothing: antialiased;
-		}
-	`,
-
-	tagAutocomplete: css`
-		min-width: 150px;
-	`,
-
-	colorButton: css`
-		min-height: 0;
-		min-width: 0;
-		padding: 0;
-		height: 24px;
-		width: 24px;
-	`,
-
-	tagNameInput: css`
-		width: 170px;
-	`,
-
-	processesArea: (theme: Theme) => css`
-		& > *:first-of-type {
-			margin-left: ${theme.spacing()};
-		}
-		& > *:last-of-type {
-			margin-right: ${theme.spacing()};
-		}
-	`,
 };
