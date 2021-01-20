@@ -118,7 +118,7 @@ function mapFileTypeToFileKind(fileType: FILE_TYPE) {
 	}
 }
 
-export const useFileProviderThunks = () => {
+export const useFileProviderActions = () => {
 	const dispatch = useDispatch();
 	const { cwd, draftPasteState } = useFileProviderState();
 	const fileSystem = useNexFileSystem();

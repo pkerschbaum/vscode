@@ -13,7 +13,7 @@ import { PasteProcess } from 'vs/nex/ui/PasteProcess';
 import {
 	FileForUI,
 	useFileProviderState,
-	useFileProviderThunks,
+	useFileProviderActions,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useTagsActions } from 'vs/nex/platform/tags.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
@@ -30,7 +30,7 @@ const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
 
 export const Explorer: React.FC = () => {
 	const { cwd, files, draftPasteState, pasteProcesses } = useFileProviderState();
-	const fileProviderThunks = useFileProviderThunks();
+	const fileProviderActions = useFileProviderActions();
 	const tagActions = useTagsActions();
 
 	const [cwdInput, setCwdInput] = React.useState(cwd.path);
@@ -51,7 +51,7 @@ export const Explorer: React.FC = () => {
 		tags:
 			file.ctime === undefined
 				? []
-				: fileProviderThunks.getTagsOfFile({ uri: file.uri, ctime: file.ctime }),
+				: fileProviderActions.getTagsOfFile({ uri: file.uri, ctime: file.ctime }),
 	}));
 	if (strings.isNullishOrEmpty(filterInput)) {
 		filesToShow = arrays
@@ -99,25 +99,25 @@ export const Explorer: React.FC = () => {
 	}, [filterInput, prevFilterInput, rowsToShow]);
 
 	function navigateUp() {
-		fileProviderThunks.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
+		fileProviderActions.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
 	}
 
 	const openSelectedFiles = () => {
 		if (selectedFiles.length === 1 && selectedFiles[0].fileType === FILE_TYPE.DIRECTORY) {
-			fileProviderThunks.changeDirectory(selectedFiles[0].uri.path);
+			fileProviderActions.changeDirectory(selectedFiles[0].uri.path);
 		} else {
 			selectedFiles
 				.filter((selectedFile) => selectedFile.fileType === FILE_TYPE.FILE)
-				.forEach((selectedFile) => fileProviderThunks.openFile(selectedFile.uri));
+				.forEach((selectedFile) => fileProviderActions.openFile(selectedFile.uri));
 		}
 	};
 
 	const deleteSelectedFiles = async () => {
-		await fileProviderThunks.moveFilesToTrash(selectedFiles.map((file) => file.uri));
+		await fileProviderActions.moveFilesToTrash(selectedFiles.map((file) => file.uri));
 	};
 
 	const cutOrCopySelectedFiles = (cut: boolean) => () => {
-		return fileProviderThunks.cutOrCopyFiles(
+		return fileProviderActions.cutOrCopyFiles(
 			selectedFiles.map((file) => file.uri),
 			cut,
 		);
@@ -169,7 +169,7 @@ export const Explorer: React.FC = () => {
 		},
 		{ condition: (e) => e.ctrlKey && e.key === KEYS.C, handler: copySelectedFiles },
 		{ condition: (e) => e.ctrlKey && e.key === KEYS.X, handler: cutSelectedFiles },
-		{ condition: (e) => e.ctrlKey && e.key === KEYS.V, handler: fileProviderThunks.pasteFiles },
+		{ condition: (e) => e.ctrlKey && e.key === KEYS.V, handler: fileProviderActions.pasteFiles },
 		{ condition: (e) => e.key === KEYS.ARROW_UP, handler: () => changeSelectedFile(KEYS.ARROW_UP) },
 		{
 			condition: (e) => e.key === KEYS.ARROW_DOWN,
@@ -250,7 +250,7 @@ export const Explorer: React.FC = () => {
 						value={cwdInput}
 						onChange={(e) => setCwdInput(e.target.value)}
 					/>
-					<Button onClick={() => fileProviderThunks.changeDirectory(cwdInput)}>Change CWD</Button>
+					<Button onClick={() => fileProviderActions.changeDirectory(cwdInput)}>Change CWD</Button>
 					<Button onClick={navigateUp}>Up</Button>
 				</Stack>
 				<Divider orientation="vertical" flexItem />
@@ -266,7 +266,7 @@ export const Explorer: React.FC = () => {
 					</Button>
 					<Button
 						variant={draftPasteState === undefined ? 'outlined' : 'contained'}
-						onClick={fileProviderThunks.pasteFiles}
+						onClick={fileProviderActions.pasteFiles}
 						disabled={draftPasteState === undefined}
 					>
 						Paste
@@ -281,7 +281,7 @@ export const Explorer: React.FC = () => {
 						}))}
 						onValueCreated={(tag) => tagActions.addTag(tag)}
 						onValueChosen={async (chosenTag) => {
-							await fileProviderThunks.addTags(
+							await fileProviderActions.addTags(
 								selectedFiles.map((file) => file.uri),
 								[chosenTag.id],
 							);
@@ -311,7 +311,7 @@ export const Explorer: React.FC = () => {
 											variant="outlined"
 											size="small"
 											label={tag.name}
-											onDelete={() => fileProviderThunks.removeTags([row.uri], [tag.id])}
+											onDelete={() => fileProviderActions.removeTags([row.uri], [tag.id])}
 										/>
 									))}
 								</Stack>
@@ -331,9 +331,9 @@ export const Explorer: React.FC = () => {
 					onRowClick={(row) => setIdsOfSelectedFiles([row.id])}
 					onRowDoubleClick={(row) => {
 						if (row.fileType === FILE_TYPE.DIRECTORY) {
-							fileProviderThunks.changeDirectory(row.uri.path);
+							fileProviderActions.changeDirectory(row.uri.path);
 						} else if (row.fileType === FILE_TYPE.FILE) {
-							fileProviderThunks.openFile(row.uri);
+							fileProviderActions.openFile(row.uri);
 						}
 					}}
 				/>
