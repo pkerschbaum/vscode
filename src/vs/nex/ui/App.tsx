@@ -6,10 +6,10 @@ import { styles } from 'vs/nex/ui/App.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { Explorer } from 'vs/nex/ui/Explorer';
-import { useFileProviderState } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
+import { useFileProviderCwd } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 
 export const App: React.FC = () => {
-	const { cwd } = useFileProviderState();
+	const cwd = useFileProviderCwd();
 
 	return (
 		<Stack

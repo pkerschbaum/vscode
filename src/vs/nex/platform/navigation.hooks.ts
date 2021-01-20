@@ -5,7 +5,7 @@ import { actions } from 'vs/nex/platform/store/file-provider/file-provider.slice
 import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
 import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
 import { useDispatch } from 'vs/nex/platform/store/store';
-import { useFileProviderState } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
+import { useFileProviderCwd } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { File, RESOURCES_SCHEME, Tag } from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 
@@ -18,7 +18,7 @@ export type FileForUI = File & {
 
 export function useNavigationActions() {
 	const dispatch = useDispatch();
-	const { cwd } = useFileProviderState();
+	const cwd = useFileProviderCwd();
 	const fileSystem = useNexFileSystem();
 
 	async function changeDirectory(newDir: string) {

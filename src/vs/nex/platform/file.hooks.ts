@@ -19,10 +19,13 @@ import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
 import { objects } from 'vs/nex/base/utils/objects.util';
 import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
-import { useFileProviderState } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useTagsActions } from 'vs/nex/platform/tag.hooks';
 import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
 import { useNavigationActions } from 'vs/nex/platform/navigation.hooks';
+import {
+	useFileProviderCwd,
+	useFileProviderDraftPasteState,
+} from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 
 export type FileForUI = File & {
 	name: string;
@@ -36,7 +39,8 @@ const logger = createLogger('file.hooks');
 
 export function useFileActions() {
 	const dispatch = useDispatch();
-	const { cwd, draftPasteState } = useFileProviderState();
+	const cwd = useFileProviderCwd();
+	const draftPasteState = useFileProviderDraftPasteState();
 
 	const fileSystem = useNexFileSystem();
 	const clipboard = useNexClipboard();

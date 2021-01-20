@@ -8,44 +8,49 @@ import { useSelector } from 'vs/nex/platform/store/store';
 import { File, FILE_TYPE, PASTE_STATUS, Tag } from 'vs/nex/platform/file-types';
 import { objects } from 'vs/nex/base/utils/objects.util';
 
+export const useFileProviderCwd = () => useSelector((state) => state.fileProvider.cwd);
+
+export const useFileProviderDraftPasteState = () =>
+	useSelector((state) => state.fileProvider.draftPasteState);
+
+export const useFileProviderPasteProcesses = () =>
+	useSelector((state) => state.fileProvider.pasteProcesses).map((process) => ({
+		...process,
+		bytesProcessed:
+			process.status === PASTE_STATUS.FINISHED ? process.totalSize : process.bytesProcessed,
+	}));
+
 export type FileForUI = File & {
 	name: string;
 	extension?: string;
 	tags: Tag[];
 	iconClasses: string[];
 };
-
-export function useFileProviderState() {
+export const useFileProviderFiles = () => {
 	const modelService = useModelService();
 	const modeService = useModeService();
 
-	return useSelector((state) => ({
-		...state.fileProvider,
-		pasteProcesses: state.fileProvider.pasteProcesses.map((process) => ({
-			...process,
-			bytesProcessed:
-				process.status === PASTE_STATUS.FINISHED ? process.totalSize : process.bytesProcessed,
-		})),
-		files: Object.values(state.fileProvider.files)
-			.filter(objects.isNotNullish)
-			.map((file) => {
-				const baseName = extractBaseName(file.uri.path);
-				const { fileName, extension } = extractNameAndExtension(baseName, file.fileType);
-				const fileType = mapFileTypeToFileKind(file.fileType);
+	const files = useSelector((state) => state.fileProvider.files);
 
-				const iconClasses = getIconClasses(modelService, modeService, URI.from(file.uri), fileType);
+	return Object.values(files)
+		.filter(objects.isNotNullish)
+		.map((file) => {
+			const baseName = extractBaseName(file.uri.path);
+			const { fileName, extension } = extractNameAndExtension(baseName, file.fileType);
+			const fileType = mapFileTypeToFileKind(file.fileType);
 
-				const fileForUI: FileForUI = {
-					...file,
-					extension,
-					iconClasses,
-					name: fileName,
-					tags: [],
-				};
-				return fileForUI;
-			}),
-	}));
-}
+			const iconClasses = getIconClasses(modelService, modeService, URI.from(file.uri), fileType);
+
+			const fileForUI: FileForUI = {
+				...file,
+				extension,
+				iconClasses,
+				name: fileName,
+				tags: [],
+			};
+			return fileForUI;
+		});
+};
 
 function extractBaseName(filePath: string): string {
 	const extractFilename = /[^/]+$/g.exec(filePath);

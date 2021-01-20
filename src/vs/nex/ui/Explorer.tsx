@@ -10,7 +10,12 @@ import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { DataTable } from 'vs/nex/ui/elements/DataTable';
 import { AddTag } from 'vs/nex/ui/AddTag';
 import { PasteProcess } from 'vs/nex/ui/PasteProcess';
-import { useFileProviderState } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
+import {
+	useFileProviderCwd,
+	useFileProviderDraftPasteState,
+	useFileProviderFiles,
+	useFileProviderPasteProcesses,
+} from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { FileForUI, useFileActions } from 'vs/nex/platform/file.hooks';
 import { useNavigationActions } from 'vs/nex/platform/navigation.hooks';
 import { useTagsActions } from 'vs/nex/platform/tag.hooks';
@@ -27,7 +32,11 @@ import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
 
 export const Explorer: React.FC = () => {
-	const { cwd, files, draftPasteState, pasteProcesses } = useFileProviderState();
+	const cwd = useFileProviderCwd();
+	const files = useFileProviderFiles();
+	const draftPasteState = useFileProviderDraftPasteState();
+	const pasteProcesses = useFileProviderPasteProcesses();
+
 	const fileActions = useFileActions();
 	const navigationActions = useNavigationActions();
 	const tagActions = useTagsActions();
