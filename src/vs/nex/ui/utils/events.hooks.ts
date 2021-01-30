@@ -17,7 +17,7 @@ export function useWindowEvent<E extends keyof WindowEventMap>(
 			}
 		};
 
-		window.addEventListener(event, keyUpHandler, { passive: true });
+		window.addEventListener(event, keyUpHandler);
 		return () => window.removeEventListener(event, keyUpHandler);
 	}, [event, eventHandlers]);
 }

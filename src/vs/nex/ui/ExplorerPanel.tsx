@@ -4,7 +4,7 @@ import { matchSorter } from 'match-sorter';
 
 import { URI } from 'vs/base/common/uri';
 
-import { styles } from 'vs/nex/ui/Explorer.styles';
+import { styles } from 'vs/nex/ui/ExplorerPanel.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { DataTable } from 'vs/nex/ui/elements/DataTable';
@@ -31,7 +31,7 @@ import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 
 const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
 
-export const Explorer: React.FC<{ explorerId: string }> = ({ explorerId }) => {
+export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) => {
 	const cwd = useFileProviderCwd(explorerId);
 	const files = useFileProviderFiles();
 	const draftPasteState = useFileProviderDraftPasteState();
@@ -98,7 +98,7 @@ export const Explorer: React.FC<{ explorerId: string }> = ({ explorerId }) => {
 		selected: !!selectedFiles.find((file) => file.id === fileToShow.id),
 	}));
 
-	// on mount, and every time the filter input changes, reset selection (select just the first file)
+	// on mount, and every time the filter input changes, reset selection (just select the first file)
 	const prevFilterInput = usePrevious(filterInput);
 	React.useEffect(() => {
 		if (filterInput !== prevFilterInput && rowsToShow.length > 0) {
@@ -140,8 +140,11 @@ export const Explorer: React.FC<{ explorerId: string }> = ({ explorerId }) => {
 	 * -- and arrow down is pressed, select the file below the first currently selected file (if file below exists)
 	 */
 	const changeSelectedFile = (
+		e: KeyboardEvent,
 		key: KEYS['ARROW_UP'] | KEYS['ARROW_DOWN'] | KEYS['PAGE_UP'] | KEYS['PAGE_DOWN'],
 	) => {
+		e.preventDefault();
+
 		if (filesToShow.length < 1) {
 			return;
 		}
@@ -166,10 +169,16 @@ export const Explorer: React.FC<{ explorerId: string }> = ({ explorerId }) => {
 		}
 	};
 
+	/*
+	 * The following keydown handlers allow navigation of the directory content.
+	 *
+	 * The first event handler determines whether the event target is any input field. If so, no
+	 * navigation handler is executed. This allows the user to type in input fields without triggering
+	 * navigation actions.
+	 * The only exception of this rule is the filter input field. Navigation actions get triggered even
+	 * if the filter field is focused. This allows the user to filter and navigate using the keyboard only.
+	 */
 	useWindowEvent('keydown', [
-		/* These handlers allow navigation of the directory content. If the user did type in any
-		 * input field other than the filter input, don't execute any navigation handler.
-		 */
 		{
 			condition: (e) =>
 				e.target instanceof HTMLInputElement && e.target.id !== EXPLORER_FILTER_INPUT_ID,
@@ -178,15 +187,21 @@ export const Explorer: React.FC<{ explorerId: string }> = ({ explorerId }) => {
 		{ condition: (e) => e.ctrlKey && e.key === KEYS.C, handler: copySelectedFiles },
 		{ condition: (e) => e.ctrlKey && e.key === KEYS.X, handler: cutSelectedFiles },
 		{ condition: (e) => e.ctrlKey && e.key === KEYS.V, handler: explorerActions.pasteFiles },
-		{ condition: (e) => e.key === KEYS.ARROW_UP, handler: () => changeSelectedFile(KEYS.ARROW_UP) },
+		{
+			condition: (e) => e.key === KEYS.ARROW_UP,
+			handler: (e) => changeSelectedFile(e, KEYS.ARROW_UP),
+		},
 		{
 			condition: (e) => e.key === KEYS.ARROW_DOWN,
-			handler: () => changeSelectedFile(KEYS.ARROW_DOWN),
+			handler: (e) => changeSelectedFile(e, KEYS.ARROW_DOWN),
 		},
-		{ condition: (e) => e.key === KEYS.PAGE_UP, handler: () => changeSelectedFile(KEYS.PAGE_UP) },
+		{
+			condition: (e) => e.key === KEYS.PAGE_UP,
+			handler: (e) => changeSelectedFile(e, KEYS.PAGE_UP),
+		},
 		{
 			condition: (e) => e.key === KEYS.PAGE_DOWN,
-			handler: () => changeSelectedFile(KEYS.PAGE_DOWN),
+			handler: (e) => changeSelectedFile(e, KEYS.PAGE_DOWN),
 		},
 		{ condition: (e) => e.key === KEYS.ENTER, handler: openSelectedFiles },
 		{ condition: (e) => e.key === KEYS.DELETE, handler: deleteSelectedFiles },

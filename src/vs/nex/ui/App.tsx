@@ -5,7 +5,7 @@ import { URI } from 'vs/base/common/uri';
 import { styles } from 'vs/nex/ui/App.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
-import { Explorer } from 'vs/nex/ui/Explorer';
+import { ExplorerPanel } from 'vs/nex/ui/ExplorerPanel';
 import {
 	useFileProviderCwd,
 	useFileProviderExplorers,
@@ -23,14 +23,14 @@ export const App: React.FC = () => {
 			stretchContainer
 		>
 			{Object.keys(explorers).map((explorerId) => (
-				<ExplorerContainer key={explorerId} explorerId={explorerId} />
+				<ExplorerPanelContainer key={explorerId} explorerId={explorerId} />
 			))}
 		</Stack>
 	);
 };
 
-const ExplorerContainer: React.FC<{ explorerId: string }> = ({ explorerId }) => {
+const ExplorerPanelContainer: React.FC<{ explorerId: string }> = ({ explorerId }) => {
 	const cwd = useFileProviderCwd(explorerId);
 
-	return <Explorer key={URI.from(cwd).toString()} explorerId={explorerId} />;
+	return <ExplorerPanel key={URI.from(cwd).toString()} explorerId={explorerId} />;
 };

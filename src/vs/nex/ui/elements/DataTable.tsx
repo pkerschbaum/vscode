@@ -101,28 +101,14 @@ function EnhancedTableRow<RowType extends ObjectLiteral>({
 	onRowClick,
 	onRowDoubleClick,
 }: EnhancedTableRowProps<RowType>) {
-	// if element is selected and outside view, scroll it into view
-	const rowRef = React.useRef<HTMLTableRowElement>(null);
-	const executeScroll = () =>
-		rowRef.current!.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-	const selected = !!row.selected;
-
-	React.useEffect(() => {
-		if (selected) {
-			executeScroll();
-		}
-	}, [selected]);
-
 	return (
 		<TableRow
-			ref={rowRef}
 			css={styles.row}
 			hover
 			onClick={() => onRowClick(row.data)}
 			onDoubleClick={() => onRowDoubleClick(row.data)}
 			tabIndex={-1}
-			selected={selected}
+			selected={!!row.selected}
 		>
 			{headCells.map((headCell) => {
 				let valueToShow;
