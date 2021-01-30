@@ -84,8 +84,8 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 	}));
 
 	return (
-		<>
-			<Stack>
+		<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
+			<Stack css={styles.explorerSection}>
 				<PanelActions
 					explorerId={explorerId}
 					filesToShow={filesToShow}
@@ -97,7 +97,13 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 				<Divider orientation="vertical" flexItem />
 				<ExplorerActions selectedFiles={selectedFiles} />
 			</Stack>
-			<Box css={(commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical)}>
+			<Box
+				css={[
+					styles.explorerSection,
+					commonStyles.fullHeight,
+					commonStyles.flex.shrinkAndFitVertical,
+				]}
+			>
 				<DataTable
 					rows={rowsToShow}
 					headCells={[
@@ -153,7 +159,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 					</Stack>
 				</Box>
 			)}
-		</>
+		</Stack>
 	);
 };
 

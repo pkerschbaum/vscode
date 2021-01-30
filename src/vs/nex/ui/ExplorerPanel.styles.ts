@@ -1,6 +1,12 @@
 import { css, Theme } from '@emotion/react';
 
 export const styles = {
+	explorerSection: (theme: Theme) =>
+		css`
+			padding-left: ${theme.spacing()};
+			padding-right: ${theme.spacing()};
+		`,
+
 	fileIcon: css`
 		::before {
 			/* icon-theme.ts sets a unwanted font-size, use !important to overrule that*/

@@ -40,7 +40,7 @@ export const Stack = React.forwardRef<HTMLElement, StackProps>(
 	) => {
 		const stackStyle = styles.stack({
 			direction,
-			justifyContent: justifyContent ?? 'flex-start',
+			justifyContent,
 			alignItems: alignItems ?? 'center',
 			wrap,
 			growItems,

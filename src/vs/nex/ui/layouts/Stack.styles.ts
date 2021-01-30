@@ -3,8 +3,8 @@ import { Property } from 'csstype';
 
 type StyleParams = {
 	direction: 'row' | 'column' | 'row-reverse' | 'column-reverse';
-	justifyContent: Property.JustifyContent;
-	alignItems: Property.AlignItems;
+	justifyContent?: Property.JustifyContent;
+	alignItems?: Property.AlignItems;
 	wrap?: true | 'nowrap' | 'wrap-reverse';
 	growItems?: boolean;
 	shrinkItems?: boolean;
