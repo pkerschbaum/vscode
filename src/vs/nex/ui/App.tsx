@@ -6,10 +6,13 @@ import { styles } from 'vs/nex/ui/App.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { Explorer } from 'vs/nex/ui/Explorer';
-import { useFileProviderCwd } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
+import {
+	useFileProviderCwd,
+	useFileProviderExplorers,
+} from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 
 export const App: React.FC = () => {
-	const cwd = useFileProviderCwd();
+	const explorers = useFileProviderExplorers();
 
 	return (
 		<Stack
@@ -19,7 +22,15 @@ export const App: React.FC = () => {
 			alignItems="stretch"
 			stretchContainer
 		>
-			<Explorer key={URI.from(cwd).toString()} />
+			{Object.keys(explorers).map((explorerId) => (
+				<ExplorerContainer key={explorerId} explorerId={explorerId} />
+			))}
 		</Stack>
 	);
+};
+
+const ExplorerContainer: React.FC<{ explorerId: string }> = ({ explorerId }) => {
+	const cwd = useFileProviderCwd(explorerId);
+
+	return <Explorer key={URI.from(cwd).toString()} explorerId={explorerId} />;
 };

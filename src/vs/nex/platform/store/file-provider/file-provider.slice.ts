@@ -1,6 +1,8 @@
 import { createAction, createReducer } from '@reduxjs/toolkit';
 
 import { URI, UriComponents } from 'vs/base/common/uri';
+import * as uuid from 'vs/base/common/uuid';
+
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import {
@@ -12,7 +14,12 @@ import {
 } from 'vs/nex/platform/file-types';
 
 export type FileProviderState = {
-	cwd: UriComponents;
+	explorers: {
+		[id: string]: {
+			cwd: UriComponents;
+			urisOfFilesInCwd: UriComponents[];
+		};
+	};
 	files: FileMap;
 	draftPasteState?: {
 		pasteShouldMove: boolean;
@@ -21,8 +28,9 @@ export type FileProviderState = {
 };
 
 type ChangeCwdPayload = {
+	explorerId: string;
 	newDir: UriComponents;
-	files: File[];
+	urisOfFilesInCwd: UriComponents[];
 };
 
 type UpdateStatsOfFilesPayload = {
@@ -47,7 +55,12 @@ type FinishPasteProcessPayload = {
 };
 
 const INITIAL_STATE: FileProviderState = {
-	cwd: uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/').toJSON(),
+	explorers: {
+		[uuid.generateUuid()]: {
+			cwd: uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/').toJSON(),
+			urisOfFilesInCwd: [],
+		},
+	},
 	files: {},
 	pasteProcesses: [],
 };
@@ -66,14 +79,9 @@ export const actions = {
 export const reducer = createReducer(INITIAL_STATE, (builder) =>
 	builder
 		.addCase(actions.changeCwd, (state, action) => {
-			const { newDir, files } = action.payload;
+			const { explorerId, newDir, urisOfFilesInCwd } = action.payload;
 
-			state.cwd = newDir;
-
-			state.files = {};
-			for (const file of files) {
-				state.files[URI.from(file.uri).toString()] = file;
-			}
+			state.explorers[explorerId] = { cwd: newDir, urisOfFilesInCwd };
 		})
 		.addCase(actions.updateStatsOfFiles, (state, action) => {
 			const { files } = action.payload;

@@ -2,6 +2,7 @@ import { ObjectLiteral, IsJsonable } from 'vs/nex/base/utils/types.util';
 
 export const objects = {
 	isEmpty,
+	isNullish,
 	isNotNullish,
 	undefinedIfEmpty,
 	shallowCopy,
@@ -17,8 +18,12 @@ function isEmpty(obj: ObjectLiteral) {
 	return true;
 }
 
-function isNotNullish<T>(obj: T | undefined | null): obj is Exclude<T, undefined | null> {
-	return obj !== undefined && obj !== null;
+function isNullish<T>(obj: T | undefined | null): obj is undefined | null {
+	return obj === undefined || obj === null;
+}
+
+function isNotNullish<T>(obj: T | undefined | null): obj is T {
+	return !isNullish(obj);
 }
 
 function undefinedIfEmpty(obj: ObjectLiteral) {
@@ -38,5 +43,5 @@ function shallowCopy<T>(inObject: T): T {
 }
 
 function deepCopyJson<T>(inObj: IsJsonable<T>): IsJsonable<T> {
-	return JSON.parse(JSON.stringify(inObj)) as IsJsonable<T>;
+	return JSON.parse(JSON.stringify(inObj));
 }

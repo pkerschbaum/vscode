@@ -1,31 +1,22 @@
 import * as React from 'react';
 import { shell } from 'electron';
 
-import * as resources from 'vs/base/common/resources';
-import * as uuid from 'vs/base/common/uuid';
-import { extname, basename } from 'vs/base/common/path';
-import { Constants } from 'vs/base/common/uint';
-import { isLinux } from 'vs/base/common/platform';
 import { URI, UriComponents } from 'vs/base/common/uri';
-import { IFileStat, IFileStatWithMetadata } from 'vs/platform/files/common/files';
+import { IFileStatWithMetadata } from 'vs/platform/files/common/files';
 
 import { actions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
 import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
-import { useClipboardResources, useNexClipboard } from 'vs/nex/NexClipboard.provider';
+import { useNexClipboard } from 'vs/nex/NexClipboard.provider';
 import { useNexStorage } from 'vs/nex/NexStorage.provider';
 import { useDispatch } from 'vs/nex/platform/store/store';
-import { File, FileStatMap, PasteProcess, Tag } from 'vs/nex/platform/file-types';
+import { File, FileStatMap, Tag } from 'vs/nex/platform/file-types';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
-import { objects } from 'vs/nex/base/utils/objects.util';
 import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
 import { useTagsActions } from 'vs/nex/platform/tag.hooks';
 import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
-import { useNavigationActions } from 'vs/nex/platform/navigation.hooks';
-import {
-	useFileProviderCwd,
-	useFileProviderDraftPasteState,
-} from 'vs/nex/platform/store/file-provider/file-provider.hooks';
+import { useFileProviderExplorers } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
+import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
 
 export type FileForUI = File & {
 	name: string;
@@ -34,21 +25,17 @@ export type FileForUI = File & {
 	iconClasses: string[];
 };
 
-const UPDATE_INTERVAL_MS = 300;
 const logger = createLogger('file.hooks');
 
 export function useFileActions() {
 	const dispatch = useDispatch();
-	const cwd = useFileProviderCwd();
-	const draftPasteState = useFileProviderDraftPasteState();
+	const explorers = useFileProviderExplorers();
 
 	const fileSystem = useNexFileSystem();
 	const clipboard = useNexClipboard();
-	const clipboardResources = useClipboardResources();
 	const storage = useNexStorage();
 
 	const tagsActions = useTagsActions();
-	const navigationActions = useNavigationActions();
 
 	useRerenderOnEventFire(
 		storage.onDataChanged,
@@ -77,119 +64,12 @@ export function useFileActions() {
 		);
 
 		// update cwd content
-		return navigationActions.updateFilesOfCwd(cwd);
+		await Promise.all(Object.values(explorers).map((explorer) => updateFilesOfCwd(explorer.cwd)));
 	}
 
 	async function cutOrCopyFiles(files: UriComponents[], cut: boolean) {
 		await clipboard.writeResources(files.map((file) => URI.from(file)));
 		dispatch(actions.cutOrCopyFiles({ cut }));
-	}
-
-	async function pasteFiles() {
-		if (clipboardResources.length === 0 || draftPasteState === undefined) {
-			return;
-		}
-
-		const destinationFolder = URI.from(cwd);
-		const targetFolderStat = await fileSystem.resolve(destinationFolder);
-
-		// clear draft paste state (neither cut&paste nor copy&paste is designed to be repeatable)
-		dispatch(actions.clearDraftPasteState());
-
-		await Promise.all(
-			clipboardResources.map(async (sourceFile) => {
-				const sourceFileURI = URI.from(sourceFile);
-
-				// Destination folder must not be a subfolder of any source file/folder. Imagine copying
-				// a folder "test" and paste it (and its content) *into* itself, that would not work.
-				if (
-					destinationFolder.toString() !== sourceFileURI.toString() &&
-					resources.isEqualOrParent(destinationFolder, sourceFileURI, !isLinux /* ignorecase */)
-				) {
-					throw new CustomError('The destination folder is a subfolder of the source file', {
-						destinationFolder,
-						sourceFile,
-					});
-				}
-
-				let sourceFileStat;
-				try {
-					sourceFileStat = await fileSystem.resolve(sourceFileURI, { resolveMetadata: true });
-				} catch (err: unknown) {
-					logger.error(
-						'error during file paste process, source file was probably deleted or moved meanwhile',
-						err,
-					);
-					return;
-				}
-
-				const fileStatMap = await resolveDeep(sourceFileURI, sourceFileStat);
-
-				const pasteStatus: Omit<PasteProcess, 'status'> = {
-					id: uuid.generateUuid(),
-					totalSize: 0,
-					bytesProcessed: 0,
-					destinationFolder: destinationFolder.toJSON(),
-				};
-				const statusPerFile: {
-					[uri: string]: { bytesProcessed: number };
-				} = {};
-
-				Object.entries(fileStatMap).forEach(([uri, fileStat]) => {
-					pasteStatus.totalSize += fileStat.size;
-					statusPerFile[uri] = { bytesProcessed: 0 };
-				});
-
-				dispatch(actions.addPasteProcess(objects.deepCopyJson(pasteStatus)));
-
-				const intervalId = setInterval(function dispatchProgress() {
-					dispatch(
-						actions.updatePasteProcess({
-							id: pasteStatus.id,
-							bytesProcessed: pasteStatus.bytesProcessed,
-						}),
-					);
-				}, UPDATE_INTERVAL_MS);
-
-				try {
-					const targetFileURI = findValidPasteFileTarget(targetFolderStat, {
-						resource: sourceFileURI,
-						isDirectory: sourceFileStat.isDirectory,
-						allowOverwrite: draftPasteState.pasteShouldMove,
-					});
-
-					const progressCb = (newBytesRead: number, forSource: URI) => {
-						pasteStatus.bytesProcessed += newBytesRead;
-						statusPerFile[forSource.toString()].bytesProcessed += newBytesRead;
-					};
-
-					// Move/Copy File
-					const operation = draftPasteState.pasteShouldMove
-						? fileSystem.move(sourceFileURI, targetFileURI, undefined, progressCb)
-						: fileSystem.copy(sourceFileURI, targetFileURI, undefined, progressCb);
-					await operation;
-
-					// Also copy tags to destination
-					const tagsOfSourceFile = getTagsOfFile({
-						uri: sourceFileURI,
-						ctime: sourceFileStat.ctime,
-					}).map((t) => t.id);
-					await addTags([targetFileURI], tagsOfSourceFile);
-
-					// If move operation was performed, remove tags from source URI
-					if (draftPasteState.pasteShouldMove) {
-						removeTags([sourceFileURI], tagsOfSourceFile);
-					}
-
-					dispatch(actions.finishPasteProcess({ id: pasteStatus.id }));
-				} finally {
-					clearInterval(intervalId);
-				}
-			}),
-		);
-
-		// update cwd content
-		return navigationActions.updateFilesOfCwd(cwd);
 	}
 
 	async function resolveDeep(targetToResolve: UriComponents, targetStat: IFileStatWithMetadata) {
@@ -211,6 +91,20 @@ export function useFileActions() {
 				targetStat.children.map(async (child) => {
 					const childStat = await fileSystem.resolve(child.resource, { resolveMetadata: true });
 					return resolveDeepRecursive(child.resource, childStat, resultMap);
+				}),
+			);
+		}
+	}
+
+	async function updateFilesOfCwd(cwd: UriComponents) {
+		// resolve and dispatch files with metadata
+		const statsWithMetadata = await fileSystem.resolve(URI.from(cwd), {
+			resolveMetadata: true,
+		});
+		if (statsWithMetadata.children) {
+			dispatch(
+				actions.updateStatsOfFiles({
+					files: statsWithMetadata.children.map(mapFileStatToFile),
 				}),
 			);
 		}
@@ -300,63 +194,10 @@ export function useFileActions() {
 		moveFilesToTrash,
 		openFile,
 		cutOrCopyFiles,
-		pasteFiles,
+		resolveDeep,
+		updateFilesOfCwd,
 		addTags,
 		getTagsOfFile,
 		removeTags,
 	};
-}
-
-function findValidPasteFileTarget(
-	targetFolder: IFileStat,
-	fileToPaste: { resource: UriComponents; isDirectory?: boolean; allowOverwrite: boolean },
-): URI {
-	let name = resources.basenameOrAuthority(URI.from(fileToPaste.resource));
-	let candidate = resources.joinPath(targetFolder.resource, name);
-
-	if (fileToPaste.allowOverwrite || !targetFolder.children || targetFolder.children.length === 0) {
-		return candidate;
-	}
-
-	const cmpFunction = (child: IFileStat) => child.resource.toString() === candidate.toString();
-
-	while (true) {
-		const conflict = targetFolder.children.find(cmpFunction);
-		if (!conflict) {
-			break;
-		}
-
-		name = incrementFileName(name, !!fileToPaste.isDirectory);
-		candidate = resources.joinPath(targetFolder.resource, name);
-	}
-
-	return candidate;
-}
-
-function incrementFileName(name: string, isFolder: boolean): string {
-	let namePrefix = name;
-	let extSuffix = '';
-	if (!isFolder) {
-		extSuffix = extname(name);
-		namePrefix = basename(name, extSuffix);
-	}
-
-	// name copy 5(.txt) => name copy 6(.txt)
-	// name copy(.txt) => name copy 2(.txt)
-	const suffixRegex = /^(.+ copy)( \d+)?$/;
-	if (suffixRegex.test(namePrefix)) {
-		return (
-			namePrefix.replace(suffixRegex, (match, g1?, g2?) => {
-				const number = g2 ? parseInt(g2) : 1;
-				return number === 0
-					? `${g1}`
-					: number < Constants.MAX_SAFE_SMALL_INTEGER
-					? `${g1} ${number + 1}`
-					: `${g1}${g2} copy`;
-			}) + extSuffix
-		);
-	}
-
-	// name(.txt) => name copy(.txt)
-	return `${namePrefix} copy${extSuffix}`;
 }

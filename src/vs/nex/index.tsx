@@ -45,9 +45,16 @@ export const createApp = (
 			);
 		}
 		const children = stats.children ?? [];
+
 		dispatch(
 			fileProviderActions.changeCwd({
+				explorerId: Object.keys(store.getState().fileProvider.explorers)[0],
 				newDir: parsedUri.toJSON(),
+				urisOfFilesInCwd: children.map(mapFileStatToFile).map((file) => file.uri),
+			}),
+		);
+		dispatch(
+			fileProviderActions.updateStatsOfFiles({
 				files: children.map(mapFileStatToFile),
 			}),
 		);

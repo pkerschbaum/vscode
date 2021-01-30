@@ -17,7 +17,7 @@ import {
 	useFileProviderPasteProcesses,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { FileForUI, useFileActions } from 'vs/nex/platform/file.hooks';
-import { useNavigationActions } from 'vs/nex/platform/navigation.hooks';
+import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
 import { useTagsActions } from 'vs/nex/platform/tag.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS, MOUSE_BUTTONS } from 'vs/nex/ui/constants';
@@ -31,14 +31,14 @@ import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 
 const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
 
-export const Explorer: React.FC = () => {
-	const cwd = useFileProviderCwd();
+export const Explorer: React.FC<{ explorerId: string }> = ({ explorerId }) => {
+	const cwd = useFileProviderCwd(explorerId);
 	const files = useFileProviderFiles();
 	const draftPasteState = useFileProviderDraftPasteState();
 	const pasteProcesses = useFileProviderPasteProcesses();
 
 	const fileActions = useFileActions();
-	const navigationActions = useNavigationActions();
+	const explorerActions = useExplorerActions(explorerId);
 	const tagActions = useTagsActions();
 
 	const [cwdInput, setCwdInput] = React.useState(cwd.path);
@@ -107,12 +107,12 @@ export const Explorer: React.FC = () => {
 	}, [filterInput, prevFilterInput, rowsToShow]);
 
 	function navigateUp() {
-		navigationActions.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
+		explorerActions.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
 	}
 
 	const openSelectedFiles = () => {
 		if (selectedFiles.length === 1 && selectedFiles[0].fileType === FILE_TYPE.DIRECTORY) {
-			navigationActions.changeDirectory(selectedFiles[0].uri.path);
+			explorerActions.changeDirectory(selectedFiles[0].uri.path);
 		} else {
 			selectedFiles
 				.filter((selectedFile) => selectedFile.fileType === FILE_TYPE.FILE)
@@ -177,7 +177,7 @@ export const Explorer: React.FC = () => {
 		},
 		{ condition: (e) => e.ctrlKey && e.key === KEYS.C, handler: copySelectedFiles },
 		{ condition: (e) => e.ctrlKey && e.key === KEYS.X, handler: cutSelectedFiles },
-		{ condition: (e) => e.ctrlKey && e.key === KEYS.V, handler: fileActions.pasteFiles },
+		{ condition: (e) => e.ctrlKey && e.key === KEYS.V, handler: explorerActions.pasteFiles },
 		{ condition: (e) => e.key === KEYS.ARROW_UP, handler: () => changeSelectedFile(KEYS.ARROW_UP) },
 		{
 			condition: (e) => e.key === KEYS.ARROW_DOWN,
@@ -258,7 +258,7 @@ export const Explorer: React.FC = () => {
 						value={cwdInput}
 						onChange={(e) => setCwdInput(e.target.value)}
 					/>
-					<Button onClick={() => navigationActions.changeDirectory(cwdInput)}>Change CWD</Button>
+					<Button onClick={() => explorerActions.changeDirectory(cwdInput)}>Change CWD</Button>
 					<Button onClick={navigateUp}>Up</Button>
 				</Stack>
 				<Divider orientation="vertical" flexItem />
@@ -274,7 +274,7 @@ export const Explorer: React.FC = () => {
 					</Button>
 					<Button
 						variant={draftPasteState === undefined ? 'outlined' : 'contained'}
-						onClick={fileActions.pasteFiles}
+						onClick={explorerActions.pasteFiles}
 						disabled={draftPasteState === undefined}
 					>
 						Paste
@@ -339,7 +339,7 @@ export const Explorer: React.FC = () => {
 					onRowClick={(row) => setIdsOfSelectedFiles([row.id])}
 					onRowDoubleClick={(row) => {
 						if (row.fileType === FILE_TYPE.DIRECTORY) {
-							navigationActions.changeDirectory(row.uri.path);
+							explorerActions.changeDirectory(row.uri.path);
 						} else if (row.fileType === FILE_TYPE.FILE) {
 							fileActions.openFile(row.uri);
 						}

@@ -8,7 +8,10 @@ import { useSelector } from 'vs/nex/platform/store/store';
 import { File, FILE_TYPE, PASTE_STATUS, Tag } from 'vs/nex/platform/file-types';
 import { objects } from 'vs/nex/base/utils/objects.util';
 
-export const useFileProviderCwd = () => useSelector((state) => state.fileProvider.cwd);
+export const useFileProviderExplorers = () => useSelector((state) => state.fileProvider.explorers);
+
+export const useFileProviderCwd = (explorerId: string) =>
+	useSelector((state) => state.fileProvider.explorers[explorerId].cwd);
 
 export const useFileProviderDraftPasteState = () =>
 	useSelector((state) => state.fileProvider.draftPasteState);
