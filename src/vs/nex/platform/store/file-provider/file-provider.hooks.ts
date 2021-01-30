@@ -13,6 +13,9 @@ export const useFileProviderExplorers = () => useSelector((state) => state.fileP
 export const useFileProviderCwd = (explorerId: string) =>
 	useSelector((state) => state.fileProvider.explorers[explorerId].cwd);
 
+export const useFileProviderFocusedExplorerId = () =>
+	useSelector((state) => state.fileProvider.focusedExplorerId);
+
 export const useFileProviderDraftPasteState = () =>
 	useSelector((state) => state.fileProvider.draftPasteState);
 

@@ -20,6 +20,7 @@ export type FileProviderState = {
 			urisOfFilesInCwd: UriComponents[];
 		};
 	};
+	focusedExplorerId: string;
 	files: FileMap;
 	draftPasteState?: {
 		pasteShouldMove: boolean;
@@ -54,13 +55,15 @@ type FinishPasteProcessPayload = {
 	id: string;
 };
 
+const initialExplorerId = uuid.generateUuid();
 const INITIAL_STATE: FileProviderState = {
 	explorers: {
-		[uuid.generateUuid()]: {
+		[initialExplorerId]: {
 			cwd: uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/').toJSON(),
 			urisOfFilesInCwd: [],
 		},
 	},
+	focusedExplorerId: initialExplorerId,
 	files: {},
 	pasteProcesses: [],
 };

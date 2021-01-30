@@ -7,9 +7,13 @@ type EventHandlers<E extends keyof WindowEventMap> = Array<{
 
 export function useWindowEvent<E extends keyof WindowEventMap>(
 	event: E,
-	eventHandlers: EventHandlers<E>,
+	eventHandlers: EventHandlers<E> | null,
 ) {
 	useEffect(() => {
+		if (eventHandlers === null) {
+			return;
+		}
+
 		const keyUpHandler = (e: WindowEventMap[E]) => {
 			const handlerToFire = eventHandlers.find((handler) => handler.condition(e))?.handler;
 			if (handlerToFire) {
