@@ -57,7 +57,9 @@ export function useFileActions() {
 		);
 
 		// update cwd content
-		await Promise.all(Object.values(explorers).map((explorer) => updateFilesOfCwd(explorer.cwd)));
+		await Promise.all(
+			Object.values(explorers).map((explorer) => updateFilesOfDirectory(explorer.cwd)),
+		);
 	}
 
 	async function cutOrCopyFiles(files: UriComponents[], cut: boolean) {
@@ -89,15 +91,15 @@ export function useFileActions() {
 		}
 	}
 
-	async function updateFilesOfCwd(cwd: UriComponents) {
+	async function updateFilesOfDirectory(directory: UriComponents) {
 		// resolve and dispatch files with metadata
-		const statsWithMetadata = await fileSystem.resolve(URI.from(cwd), {
+		const statsWithMetadata = await fileSystem.resolve(URI.from(directory), {
 			resolveMetadata: true,
 		});
 		if (statsWithMetadata.children) {
 			dispatch(
 				actions.updateStatsOfFiles({
-					directoryUri: cwd,
+					directory,
 					files: statsWithMetadata.children.map(mapFileStatToFile),
 				}),
 			);
@@ -189,7 +191,7 @@ export function useFileActions() {
 		openFile,
 		cutOrCopyFiles,
 		resolveDeep,
-		updateFilesOfCwd,
+		updateFilesOfDirectory,
 		addTags,
 		getTagsOfFile,
 		removeTags,

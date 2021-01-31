@@ -34,7 +34,7 @@ type ChangeCwdPayload = {
 };
 
 type UpdateStatsOfFilesPayload = {
-	directoryUri: UriComponents;
+	directory: UriComponents;
 	files: File[];
 };
 
@@ -110,9 +110,9 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			updateFilesOfDirectory(state, newCwd, files);
 		})
 		.addCase(actions.updateStatsOfFiles, (state, action) => {
-			const { directoryUri, files } = action.payload;
+			const { directory, files } = action.payload;
 
-			updateFilesOfDirectory(state, directoryUri, files);
+			updateFilesOfDirectory(state, directory, files);
 		})
 		.addCase(actions.changeFocusedExplorer, (state, action) => {
 			const { explorerId } = action.payload;

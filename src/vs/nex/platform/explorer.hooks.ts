@@ -73,11 +73,11 @@ export function useExplorerActions(explorerId: string) {
 			}),
 		);
 		dispatch(
-			actions.updateStatsOfFiles({ directoryUri: newCwd, files: children.map(mapFileStatToFile) }),
+			actions.updateStatsOfFiles({ directory: newCwd, files: children.map(mapFileStatToFile) }),
 		);
 
 		// then, resolve and dispatch files with metadata
-		return fileActions.updateFilesOfCwd(newCwd);
+		return fileActions.updateFilesOfDirectory(newCwd);
 	}
 
 	async function pasteFiles() {
@@ -186,7 +186,7 @@ export function useExplorerActions(explorerId: string) {
 		);
 
 		// update cwd content
-		return fileActions.updateFilesOfCwd(cwd);
+		return fileActions.updateFilesOfDirectory(cwd);
 	}
 
 	return {
