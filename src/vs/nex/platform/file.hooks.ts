@@ -9,7 +9,7 @@ import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
 import { useNexClipboard } from 'vs/nex/NexClipboard.provider';
 import { useNexStorage } from 'vs/nex/NexStorage.provider';
 import { useDispatch } from 'vs/nex/platform/store/store';
-import { File, FileStatMap, Tag } from 'vs/nex/platform/file-types';
+import { FileStatMap, Tag } from 'vs/nex/platform/file-types';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
 import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
@@ -17,13 +17,6 @@ import { useTagsActions } from 'vs/nex/platform/tag.hooks';
 import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
 import { useFileProviderExplorers } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
-
-export type FileForUI = File & {
-	name: string;
-	extension?: string;
-	tags: Tag[];
-	iconClasses: string[];
-};
 
 const logger = createLogger('file.hooks');
 

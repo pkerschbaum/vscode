@@ -6,6 +6,7 @@ import { useModelService } from 'vs/nex/ModelService.provider';
 import { useModeService } from 'vs/nex/ModeService.provider';
 import { useSelector } from 'vs/nex/platform/store/store';
 import { File, FILE_TYPE, PASTE_STATUS, Tag } from 'vs/nex/platform/file-types';
+import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { objects } from 'vs/nex/base/utils/objects.util';
 
 export const useFileProviderExplorers = () => useSelector((state) => state.fileProvider.explorers);
@@ -41,8 +42,7 @@ export const useFileProviderFiles = () => {
 	return Object.values(files)
 		.filter(objects.isNotNullish)
 		.map((file) => {
-			const baseName = extractBaseName(file.uri.path);
-			const { fileName, extension } = extractNameAndExtension(baseName, file.fileType);
+			const { fileName, extension } = uriHelper.extractNameAndExtension(file.uri);
 			const fileType = mapFileTypeToFileKind(file.fileType);
 
 			const iconClasses = getIconClasses(modelService, modeService, URI.from(file.uri), fileType);
@@ -57,37 +57,6 @@ export const useFileProviderFiles = () => {
 			return fileForUI;
 		});
 };
-
-function extractBaseName(filePath: string): string {
-	const extractFilename = /[^/]+$/g.exec(filePath);
-	if (!extractFilename) {
-		throw new Error(`could not extract file name from file path. path: ${filePath}`);
-	}
-
-	return extractFilename[0];
-}
-
-function extractNameAndExtension(
-	baseName: string,
-	fileType: FILE_TYPE,
-): { fileName: string; extension?: string } {
-	let fileName;
-	let extension;
-
-	if (fileType === FILE_TYPE.DIRECTORY) {
-		fileName = baseName;
-	} else {
-		const nameParts = baseName.split(/\.(?=[^.]*$)/g);
-		if (nameParts[0] === '') {
-			// e.g. baseName was ".backup"
-			fileName = `.${nameParts[1]}`; // ".backup"
-		} else {
-			[fileName, extension] = nameParts;
-		}
-	}
-
-	return { fileName, extension };
-}
 
 function mapFileTypeToFileKind(fileType: FILE_TYPE) {
 	if (fileType === FILE_TYPE.FILE) {

@@ -16,4 +16,12 @@ export const styles = {
 				outline: 0;
 			}
 		`,
+
+	tabPanel: (theme: Theme) => css`
+		border-right: 1px solid ${theme.palette.divider};
+	`,
+
+	tab: css`
+		text-transform: none;
+	`,
 };

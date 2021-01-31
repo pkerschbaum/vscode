@@ -10,7 +10,7 @@ import { actions } from 'vs/nex/platform/store/file-provider/file-provider.slice
 import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
 import { useClipboardResources } from 'vs/nex/NexClipboard.provider';
 import { useDispatch } from 'vs/nex/platform/store/store';
-import { File, PasteProcess, RESOURCES_SCHEME, Tag } from 'vs/nex/platform/file-types';
+import { PasteProcess, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
 import { objects } from 'vs/nex/base/utils/objects.util';
@@ -21,13 +21,6 @@ import {
 import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
-
-export type FileForUI = File & {
-	name: string;
-	extension?: string;
-	tags: Tag[];
-	iconClasses: string[];
-};
 
 const UPDATE_INTERVAL_MS = 300;
 const logger = createLogger('explorer.hooks');

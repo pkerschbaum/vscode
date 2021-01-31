@@ -8,10 +8,11 @@ import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { DataTable } from 'vs/nex/ui/elements/DataTable';
 import { PasteProcess } from 'vs/nex/ui/PasteProcess';
 import {
+	FileForUI,
 	useFileProviderFiles,
 	useFileProviderPasteProcesses,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { FileForUI, useFileActions } from 'vs/nex/platform/file.hooks';
+import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { horizontalScrollProps } from 'vs/nex/ui/utils/ui.util';
@@ -168,5 +169,5 @@ function formatFileName(file: FileForUI): string {
 		return file.name;
 	}
 
-	return `${file.name}.${file.extension}`;
+	return `${file.name}${file.extension}`;
 }

@@ -4,10 +4,11 @@ import { Button } from '@material-ui/core';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { AddTag } from 'vs/nex/ui/AddTag';
 import {
+	FileForUI,
 	useFileProviderDraftPasteState,
 	useFileProviderFocusedExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { FileForUI, useFileActions } from 'vs/nex/platform/file.hooks';
+import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
 import { useTagsActions } from 'vs/nex/platform/tag.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';

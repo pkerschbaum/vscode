@@ -6,11 +6,12 @@ import { URI } from 'vs/base/common/uri';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import {
+	FileForUI,
 	useFileProviderCwd,
 	useFileProviderFiles,
 	useFileProviderFocusedExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { FileForUI, useFileActions } from 'vs/nex/platform/file.hooks';
+import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS, MOUSE_BUTTONS } from 'vs/nex/ui/constants';
