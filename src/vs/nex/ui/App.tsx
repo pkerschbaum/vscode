@@ -7,28 +7,24 @@ import { styles } from 'vs/nex/ui/App.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { ExplorerPanel } from 'vs/nex/ui/ExplorerPanel';
-import { dispatch } from 'vs/nex/platform/store/store';
-import {
-	actions as fileProviderActions,
-	generateExplorerId,
-} from 'vs/nex/platform/store/file-provider/file-provider.slice';
 import {
 	useFileProviderCwd,
 	useFileProviderExplorers,
 	useFileProviderFocusedExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useAppActions } from 'vs/nex/platform/app.hooks';
-import { mapFileStatToFile, NexFileSystem } from 'vs/nex/platform/logic/file-system';
-import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
-import { RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
 
 export const App: React.FC = () => {
 	const explorers = useFileProviderExplorers();
 	const focusedExplorerId = useFileProviderFocusedExplorerId();
 	const appActions = useAppActions();
 
-	const fileSystem = useNexFileSystem();
+	// on mount, add first (initial) explorer panel
+	React.useEffect(() => {
+		appActions.addExplorerPanel();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	return (
 		<Box className="show-file-icons" css={[styles.container, commonStyles.fullHeight]}>
@@ -51,7 +47,7 @@ export const App: React.FC = () => {
 							/>
 						))}
 					</Tabs>
-					<Button onClick={() => addExplorerPanel(fileSystem)}>Add Tab</Button>
+					<Button onClick={appActions.addExplorerPanel}>Add Tab</Button>
 				</Stack>
 				<Box css={[commonStyles.fullHeight, commonStyles.flex.shrinkAndFitHorizontal]}>
 					{focusedExplorerId !== undefined &&
@@ -92,29 +88,3 @@ const TabPanel: React.FC<TabPanelProps> = ({ value, index, children }) => {
 		</Box>
 	);
 };
-
-export async function addExplorerPanel(fileSystem: NexFileSystem) {
-	const explorerId = generateExplorerId();
-	const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/home/pkerschbaum');
-	const stats = await fileSystem.resolve(parsedUri, { resolveMetadata: true });
-	if (!stats.isDirectory) {
-		throw Error(
-			`could not set intial directory, reason: uri is not a valid directory. uri: ${parsedUri}`,
-		);
-	}
-	const children = stats.children ?? [];
-
-	dispatch(
-		fileProviderActions.addExplorer({
-			explorerId,
-			cwd: parsedUri.toJSON(),
-		}),
-	);
-	dispatch(
-		fileProviderActions.changeCwd({
-			explorerId,
-			newCwd: parsedUri.toJSON(),
-			files: children.map(mapFileStatToFile),
-		}),
-	);
-}

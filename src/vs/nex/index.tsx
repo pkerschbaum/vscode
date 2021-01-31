@@ -11,7 +11,7 @@ import { NexFileSystem } from 'vs/nex/platform/logic/file-system';
 import { NexClipboard } from 'vs/nex/platform/logic/clipboard';
 import { NexStorage } from 'vs/nex/platform/logic/storage';
 import { createLogger } from 'vs/nex/base/logger/logger';
-import { addExplorerPanel, App } from 'vs/nex/ui/App';
+import { App } from 'vs/nex/ui/App';
 import { createTheme } from 'vs/nex/theme';
 import { ThemeProvider } from 'vs/nex/theme.provider';
 import { store } from 'vs/nex/platform/store/store';
@@ -33,10 +33,6 @@ export const createApp = (
 	storage: NexStorage,
 ) => ({
 	renderApp: async function (targetContainer: HTMLElement) {
-		// add first, initial explorer panel
-		await addExplorerPanel(fileSystem);
-
-		// render app
 		render(
 			<React.StrictMode>
 				<Root
