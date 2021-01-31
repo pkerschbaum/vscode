@@ -97,6 +97,7 @@ export function useFileActions() {
 		if (statsWithMetadata.children) {
 			dispatch(
 				actions.updateStatsOfFiles({
+					directoryUri: cwd,
 					files: statsWithMetadata.children.map(mapFileStatToFile),
 				}),
 			);

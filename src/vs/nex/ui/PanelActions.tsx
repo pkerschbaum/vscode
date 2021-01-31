@@ -37,7 +37,7 @@ export const PanelActions: React.FC<{
 	setFilterInput,
 }) => {
 	const cwd = useFileProviderCwd(explorerId);
-	const files = useFileProviderFiles();
+	const files = useFileProviderFiles(explorerId);
 	const focusedFileExplorerId = useFileProviderFocusedExplorerId();
 
 	const fileActions = useFileActions();

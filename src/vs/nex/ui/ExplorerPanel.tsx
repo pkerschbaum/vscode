@@ -23,7 +23,7 @@ import { ExplorerActions } from 'vs/nex/ui/ExplorerActions';
 import { PanelActions } from 'vs/nex/ui/PanelActions';
 
 export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) => {
-	const files = useFileProviderFiles();
+	const files = useFileProviderFiles(explorerId);
 	const pasteProcesses = useFileProviderPasteProcesses();
 
 	const fileActions = useFileActions();

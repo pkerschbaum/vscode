@@ -1,41 +1,45 @@
 import { createAction, createReducer } from '@reduxjs/toolkit';
 
-import { URI, UriComponents } from 'vs/base/common/uri';
 import * as uuid from 'vs/base/common/uuid';
+import { URI, UriComponents } from 'vs/base/common/uri';
 
 import { createLogger } from 'vs/nex/base/logger/logger';
-import { uriHelper } from 'vs/nex/base/utils/uri-helper';
-import {
-	File,
-	RESOURCES_SCHEME,
-	PASTE_STATUS,
-	FileMap,
-	PasteProcess,
-} from 'vs/nex/platform/file-types';
+import { File, PASTE_STATUS, FileMap, PasteProcess } from 'vs/nex/platform/file-types';
 
 export type FileProviderState = {
 	explorers: {
 		[id: string]: {
 			cwd: UriComponents;
-			urisOfFilesInCwd: UriComponents[];
 		};
 	};
-	focusedExplorerId: string;
-	files: FileMap;
+	focusedExplorerId?: string;
+	files: {
+		[directoryUri: string]: undefined | FileMap;
+	};
 	draftPasteState?: {
 		pasteShouldMove: boolean;
 	};
 	pasteProcesses: PasteProcess[];
 };
 
+type AddExplorerPayload = {
+	explorerId: string;
+	cwd: UriComponents;
+};
+
 type ChangeCwdPayload = {
 	explorerId: string;
-	newDir: UriComponents;
-	urisOfFilesInCwd: UriComponents[];
+	newCwd: UriComponents;
+	files: File[];
 };
 
 type UpdateStatsOfFilesPayload = {
+	directoryUri: UriComponents;
 	files: File[];
+};
+
+type ChangeFocusedExplorerPayload = {
+	explorerId: string;
 };
 
 type CutOrCopyFilesPayload = {
@@ -55,15 +59,8 @@ type FinishPasteProcessPayload = {
 	id: string;
 };
 
-const initialExplorerId = uuid.generateUuid();
 const INITIAL_STATE: FileProviderState = {
-	explorers: {
-		[initialExplorerId]: {
-			cwd: uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/').toJSON(),
-			urisOfFilesInCwd: [],
-		},
-	},
-	focusedExplorerId: initialExplorerId,
+	explorers: {},
 	files: {},
 	pasteProcesses: [],
 };
@@ -71,8 +68,10 @@ const INITIAL_STATE: FileProviderState = {
 const logger = createLogger('file-provider.slice');
 
 export const actions = {
+	addExplorer: createAction<AddExplorerPayload>('EXPLORER_ADDED'),
 	changeCwd: createAction<ChangeCwdPayload>('CWD_CHANGED'),
 	updateStatsOfFiles: createAction<UpdateStatsOfFilesPayload>('STATS_OF_FILES_UPDATED'),
+	changeFocusedExplorer: createAction<ChangeFocusedExplorerPayload>('FOCUSED_EXPLORER_CHANGED'),
 	cutOrCopyFiles: createAction<CutOrCopyFilesPayload>('FILES_CUT_OR_COPIED'),
 	addPasteProcess: createAction<AddPasteProcessPayload>('PASTE_PROCESS_ADDED'),
 	updatePasteProcess: createAction<UpdatePasteProcessPayload>('PASTE_PROCESS_UPDATED'),
@@ -81,26 +80,51 @@ export const actions = {
 };
 export const reducer = createReducer(INITIAL_STATE, (builder) =>
 	builder
-		.addCase(actions.changeCwd, (state, action) => {
-			const { explorerId, newDir, urisOfFilesInCwd } = action.payload;
+		.addCase(actions.addExplorer, (state, action) => {
+			const { explorerId, cwd } = action.payload;
 
-			state.explorers[explorerId] = { cwd: newDir, urisOfFilesInCwd };
-		})
-		.addCase(actions.updateStatsOfFiles, (state, action) => {
-			const { files } = action.payload;
-
-			// update existing files, add new files
-			for (const file of files) {
-				state.files[URI.from(file.uri).toString()] = file;
+			if (isExplorerIdPresent(state, explorerId)) {
+				throw new Error(
+					`event "EXPLORER_ADDED" must be dispatched with a new, unused explorerId, ` +
+						`but given explorerId is already used! explorerId=${explorerId}`,
+				);
 			}
 
-			// remove files which are not present anymore
-			Object.keys(state.files).forEach((stringifiedUri) => {
-				const foundElement = files.find((file) => URI.from(file.uri).toString() === stringifiedUri);
-				if (!foundElement) {
-					delete state.files[stringifiedUri];
-				}
-			});
+			state.explorers[explorerId] = { cwd };
+			if (state.focusedExplorerId === undefined) {
+				state.focusedExplorerId = explorerId;
+			}
+		})
+		.addCase(actions.changeCwd, (state, action) => {
+			const { explorerId, newCwd, files } = action.payload;
+
+			if (!isExplorerIdPresent(state, explorerId)) {
+				throw new Error(
+					`event "CWD_CHANGED" must be dispatched with an existing explorerId, ` +
+						`but given explorerId is not present in state! explorerId=${explorerId}`,
+				);
+			}
+
+			state.explorers[explorerId] = { cwd: newCwd };
+
+			updateFilesOfDirectory(state, newCwd, files);
+		})
+		.addCase(actions.updateStatsOfFiles, (state, action) => {
+			const { directoryUri, files } = action.payload;
+
+			updateFilesOfDirectory(state, directoryUri, files);
+		})
+		.addCase(actions.changeFocusedExplorer, (state, action) => {
+			const { explorerId } = action.payload;
+
+			if (!isExplorerIdPresent(state, explorerId)) {
+				throw new Error(
+					`event "FOCUSED_EXPLORER_CHANGED" must be dispatched with an existing explorerId, ` +
+						`but given explorerId is not present in state! explorerId=${explorerId}`,
+				);
+			}
+
+			state.focusedExplorerId = explorerId;
 		})
 		.addCase(actions.cutOrCopyFiles, (state, action) => {
 			state.draftPasteState = { pasteShouldMove: action.payload.cut };
@@ -133,3 +157,36 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			state.draftPasteState = undefined;
 		}),
 );
+
+export function generateExplorerId() {
+	return uuid.generateUuid();
+}
+
+function isExplorerIdPresent(state: FileProviderState, explorerId: string): boolean {
+	return !!Object.keys(state.explorers).find(
+		(existingExplorerId) => existingExplorerId === explorerId,
+	);
+}
+
+function updateFilesOfDirectory(
+	state: FileProviderState,
+	directoryUri: UriComponents,
+	files: File[],
+) {
+	const directoryFileMap = state.files[URI.from(directoryUri).toString()] ?? {};
+
+	// update existing files, add new files
+	for (const file of files) {
+		directoryFileMap[URI.from(file.uri).toString()] = file;
+	}
+
+	// remove files which are not present anymore
+	Object.keys(directoryFileMap).forEach((stringifiedUri) => {
+		const foundElement = files.find((file) => URI.from(file.uri).toString() === stringifiedUri);
+		if (!foundElement) {
+			delete directoryFileMap[stringifiedUri];
+		}
+	});
+
+	state.files[URI.from(directoryUri).toString()] = directoryFileMap;
+}

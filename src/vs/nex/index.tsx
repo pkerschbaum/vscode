@@ -7,17 +7,14 @@ import { enUS } from '@material-ui/core/locale';
 import { IModeService } from 'vs/editor/common/services/modeService';
 import { IModelService } from 'vs/editor/common/services/modelService';
 
-import { uriHelper } from 'vs/nex/base/utils/uri-helper';
-import { mapFileStatToFile, NexFileSystem } from 'vs/nex/platform/logic/file-system';
+import { NexFileSystem } from 'vs/nex/platform/logic/file-system';
 import { NexClipboard } from 'vs/nex/platform/logic/clipboard';
 import { NexStorage } from 'vs/nex/platform/logic/storage';
 import { createLogger } from 'vs/nex/base/logger/logger';
-import { App } from 'vs/nex/ui/App';
+import { addExplorerPanel, App } from 'vs/nex/ui/App';
 import { createTheme } from 'vs/nex/theme';
 import { ThemeProvider } from 'vs/nex/theme.provider';
-import { dispatch, store } from 'vs/nex/platform/store/store';
-import { actions as fileProviderActions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
-import { RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
+import { store } from 'vs/nex/platform/store/store';
 import { useDebounce } from 'vs/nex/platform/store/util/hooks.util';
 import { ModeServiceProvider } from 'vs/nex/ModeService.provider';
 import { ModelServiceProvider } from 'vs/nex/ModelService.provider';
@@ -36,28 +33,8 @@ export const createApp = (
 	storage: NexStorage,
 ) => ({
 	renderApp: async function (targetContainer: HTMLElement) {
-		// load initial directory with contents
-		const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/home/pkerschbaum');
-		const stats = await fileSystem.resolve(parsedUri, { resolveMetadata: true });
-		if (!stats.isDirectory) {
-			throw Error(
-				`could not set intial directory, reason: uri is not a valid directory. uri: ${parsedUri}`,
-			);
-		}
-		const children = stats.children ?? [];
-
-		dispatch(
-			fileProviderActions.changeCwd({
-				explorerId: Object.keys(store.getState().fileProvider.explorers)[0],
-				newDir: parsedUri.toJSON(),
-				urisOfFilesInCwd: children.map(mapFileStatToFile).map((file) => file.uri),
-			}),
-		);
-		dispatch(
-			fileProviderActions.updateStatsOfFiles({
-				files: children.map(mapFileStatToFile),
-			}),
-		);
+		// add first, initial explorer panel
+		await addExplorerPanel(fileSystem);
 
 		// render app
 		render(

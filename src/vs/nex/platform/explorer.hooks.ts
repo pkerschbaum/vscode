@@ -63,23 +63,21 @@ export function useExplorerActions(explorerId: string) {
 
 		// if newDir is not the current working directory, and is a valid directory => change to the new directory
 		// first, dispatch files without metadata
-		const newCmd = parsedUri.toJSON();
+		const newCwd = parsedUri.toJSON();
 		const children = stats.children ?? [];
 		dispatch(
 			actions.changeCwd({
 				explorerId,
-				newDir: newCmd,
-				urisOfFilesInCwd: children.map(mapFileStatToFile).map((file) => file.uri),
-			}),
-		);
-		dispatch(
-			actions.updateStatsOfFiles({
+				newCwd,
 				files: children.map(mapFileStatToFile),
 			}),
 		);
+		dispatch(
+			actions.updateStatsOfFiles({ directoryUri: newCwd, files: children.map(mapFileStatToFile) }),
+		);
 
 		// then, resolve and dispatch files with metadata
-		return fileActions.updateFilesOfCwd(newCmd);
+		return fileActions.updateFilesOfCwd(newCwd);
 	}
 
 	async function pasteFiles() {

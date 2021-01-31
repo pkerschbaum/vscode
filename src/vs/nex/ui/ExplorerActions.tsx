@@ -16,8 +16,22 @@ import { FILE_TYPE } from 'vs/nex/platform/file-types';
 export const ExplorerActions: React.FC<{
 	selectedFiles: FileForUI[];
 }> = ({ selectedFiles }) => {
-	const draftPasteState = useFileProviderDraftPasteState();
 	const focusedExplorerId = useFileProviderFocusedExplorerId();
+
+	if (focusedExplorerId === undefined) {
+		return null;
+	}
+
+	return (
+		<ExplorerActionsImpl selectedFiles={selectedFiles} focusedExplorerId={focusedExplorerId} />
+	);
+};
+
+const ExplorerActionsImpl: React.FC<{
+	selectedFiles: FileForUI[];
+	focusedExplorerId: string;
+}> = ({ selectedFiles, focusedExplorerId }) => {
+	const draftPasteState = useFileProviderDraftPasteState();
 
 	const fileActions = useFileActions();
 	const explorerActions = useExplorerActions(focusedExplorerId);

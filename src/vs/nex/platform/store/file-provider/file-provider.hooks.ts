@@ -33,11 +33,16 @@ export type FileForUI = File & {
 	tags: Tag[];
 	iconClasses: string[];
 };
-export const useFileProviderFiles = () => {
+export const useFileProviderFiles = (explorerId: string): FileForUI[] => {
 	const modelService = useModelService();
 	const modeService = useModeService();
 
-	const files = useSelector((state) => state.fileProvider.files);
+	const cwd = useSelector((state) => state.fileProvider.explorers[explorerId].cwd);
+	const files = useSelector((state) => state.fileProvider.files[URI.from(cwd).toString()]);
+
+	if (files === undefined) {
+		return [];
+	}
 
 	return Object.values(files)
 		.filter(objects.isNotNullish)
