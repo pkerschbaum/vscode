@@ -57,9 +57,7 @@ export function useFileActions() {
 		);
 
 		// update cwd content
-		await Promise.all(
-			Object.values(explorers).map((explorer) => updateFilesOfDirectory(explorer.cwd)),
-		);
+		await Promise.all(explorers.map((explorer) => updateFilesOfDirectory(explorer.cwd)));
 	}
 
 	async function cutOrCopyFiles(files: UriComponents[], cut: boolean) {

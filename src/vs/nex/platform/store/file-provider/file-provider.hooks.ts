@@ -9,7 +9,13 @@ import { File, FILE_TYPE, PASTE_STATUS, Tag } from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { objects } from 'vs/nex/base/utils/objects.util';
 
-export const useFileProviderExplorers = () => useSelector((state) => state.fileProvider.explorers);
+export const useFileProviderExplorers = () =>
+	Object.entries(useSelector((state) => state.fileProvider.explorers)).map(
+		([explorerId, value]) => ({
+			explorerId,
+			...value,
+		}),
+	);
 
 export const useFileProviderCwd = (explorerId: string) =>
 	useSelector((state) => state.fileProvider.explorers[explorerId].cwd);

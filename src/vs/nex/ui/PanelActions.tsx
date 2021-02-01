@@ -151,11 +151,11 @@ export const PanelActions: React.FC<{
 						handler: (e) => changeSelectedFile(e, KEYS.ARROW_DOWN),
 					},
 					{
-						condition: (e) => e.key === KEYS.PAGE_UP,
+						condition: (e) => !e.ctrlKey && e.key === KEYS.PAGE_UP,
 						handler: (e) => changeSelectedFile(e, KEYS.PAGE_UP),
 					},
 					{
-						condition: (e) => e.key === KEYS.PAGE_DOWN,
+						condition: (e) => !e.ctrlKey && e.key === KEYS.PAGE_DOWN,
 						handler: (e) => changeSelectedFile(e, KEYS.PAGE_DOWN),
 					},
 					{ condition: (e) => e.key === KEYS.ENTER, handler: openSelectedFiles },

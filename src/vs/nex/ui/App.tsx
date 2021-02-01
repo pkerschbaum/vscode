@@ -14,6 +14,8 @@ import {
 	useFileProviderFocusedExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useAppActions } from 'vs/nex/platform/app.hooks';
+import { KEYS } from 'vs/nex/ui/constants';
+import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 
 export const App: React.FC = () => {
@@ -27,9 +29,37 @@ export const App: React.FC = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	const explorersToShow = Object.entries(explorers)
-		.filter(([, value]) => !value.scheduledToRemove)
-		.map(([explorerId, value]) => ({ explorerId, ...value }));
+	function switchFocusedExplorer(direction: 'UP' | 'DOWN') {
+		const focusedExplorerIdx = explorers.findIndex(
+			(explorer) => explorer.explorerId === focusedExplorerId,
+		);
+
+		if (
+			focusedExplorerIdx === -1 ||
+			(direction === 'UP' && focusedExplorerIdx === 0) ||
+			(direction === 'DOWN' && focusedExplorerIdx === explorers.length - 1)
+		) {
+			return;
+		}
+
+		const explorerIdxToSwitchTo =
+			direction === 'UP' ? focusedExplorerIdx - 1 : focusedExplorerIdx + 1;
+
+		appActions.changeFocusedExplorer(explorers[explorerIdxToSwitchTo].explorerId);
+	}
+
+	useWindowEvent('keydown', [
+		{
+			condition: (e) => e.ctrlKey && e.key === KEYS.PAGE_UP,
+			handler: () => switchFocusedExplorer('UP'),
+		},
+		{
+			condition: (e) => e.ctrlKey && e.key === KEYS.PAGE_DOWN,
+			handler: () => switchFocusedExplorer('DOWN'),
+		},
+	]);
+
+	const explorersToShow = explorers.filter((explorer) => !explorer.scheduledToRemove);
 	const removeExplorerActionDisabled = explorersToShow.length < 2;
 
 	return (
