@@ -12,6 +12,7 @@ export const styles = {
 			 */
 			&&& input:focus,
 			&&& button:focus,
+			&&& [tabindex='0']:focus,
 			&&& [tabindex='-1']:focus {
 				outline: 0;
 			}

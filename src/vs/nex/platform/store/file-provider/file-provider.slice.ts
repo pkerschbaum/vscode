@@ -4,12 +4,20 @@ import * as uuid from 'vs/base/common/uuid';
 import { URI, UriComponents } from 'vs/base/common/uri';
 
 import { createLogger } from 'vs/nex/base/logger/logger';
-import { File, PASTE_STATUS, FileMap, PasteProcess } from 'vs/nex/platform/file-types';
+import {
+	File,
+	PASTE_STATUS,
+	FileMap,
+	PasteProcess,
+	RESOURCES_SCHEME,
+} from 'vs/nex/platform/file-types';
+import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 
 export type FileProviderState = {
 	explorers: {
 		[id: string]: {
 			cwd: UriComponents;
+			scheduledToRemove?: boolean;
 		};
 	};
 	focusedExplorerId?: string;
@@ -25,6 +33,10 @@ export type FileProviderState = {
 type AddExplorerPayload = {
 	explorerId: string;
 	cwd: UriComponents;
+};
+
+type RemoveExplorerPayload = {
+	explorerId: string;
 };
 
 type ChangeCwdPayload = {
@@ -69,6 +81,8 @@ const logger = createLogger('file-provider.slice');
 
 export const actions = {
 	addExplorer: createAction<AddExplorerPayload>('EXPLORER_ADDED'),
+	markExplorerForRemoval: createAction<RemoveExplorerPayload>('EXPLORER_MARKED_FOR_REMOVAL'),
+	removeExplorer: createAction<RemoveExplorerPayload>('EXPLORER_REMOVED'),
 	changeCwd: createAction<ChangeCwdPayload>('CWD_CHANGED'),
 	updateStatsOfFiles: createAction<UpdateStatsOfFilesPayload>('STATS_OF_FILES_UPDATED'),
 	changeFocusedExplorer: createAction<ChangeFocusedExplorerPayload>('FOCUSED_EXPLORER_CHANGED'),
@@ -94,6 +108,28 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			if (state.focusedExplorerId === undefined) {
 				state.focusedExplorerId = explorerId;
 			}
+		})
+		.addCase(actions.markExplorerForRemoval, (state, action) => {
+			const { explorerId } = action.payload;
+
+			state.explorers[explorerId].scheduledToRemove = true;
+
+			if (explorerId === state.focusedExplorerId) {
+				// focused explorer got removed --> focus another explorer
+
+				const activeExplorer = Object.entries(state.explorers)
+					.map(([explorerId, value]) => ({ explorerId, ...value }))
+					.find((explorer) => !explorer.scheduledToRemove);
+
+				if (activeExplorer !== undefined) {
+					state.focusedExplorerId = activeExplorer.explorerId;
+				}
+			}
+		})
+		.addCase(actions.removeExplorer, (state, action) => {
+			const { explorerId } = action.payload;
+
+			delete state.explorers[explorerId];
 		})
 		.addCase(actions.changeCwd, (state, action) => {
 			const { explorerId, newCwd, files } = action.payload;

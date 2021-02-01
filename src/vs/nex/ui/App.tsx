@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { Box, Tabs, Tab, Button } from '@material-ui/core';
+import { Box, Tabs, Tab, Button, IconButton, Tooltip } from '@material-ui/core';
+import RemoveCircleOutlineIcon from '@material-ui/icons/RemoveCircleOutline';
 
 import { URI } from 'vs/base/common/uri';
 
@@ -26,6 +27,11 @@ export const App: React.FC = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
+	const explorersToShow = Object.entries(explorers)
+		.filter(([, value]) => !value.scheduledToRemove)
+		.map(([explorerId, value]) => ({ explorerId, ...value }));
+	const removeExplorerActionDisabled = explorersToShow.length < 2;
+
 	return (
 		<Box className="show-file-icons" css={[styles.container, commonStyles.fullHeight]}>
 			<Stack stretchContainer alignItems="stretch" spacing={0}>
@@ -34,16 +40,38 @@ export const App: React.FC = () => {
 						css={styles.tabPanel}
 						orientation="vertical"
 						variant="scrollable"
-						selectionFollowsFocus
 						value={focusedExplorerId}
 						onChange={(_, newValue) => appActions.changeFocusedExplorer(newValue)}
 					>
-						{Object.entries(explorers).map(([explorerId, value]) => (
+						{explorersToShow.map((explorer) => (
 							<Tab
-								key={explorerId}
-								css={styles.tab}
-								label={uriHelper.extractNameAndExtension(value.cwd).fileName}
-								value={explorerId}
+								key={explorer.explorerId}
+								css={[styles.tab]}
+								component="div"
+								label={
+									<Stack css={commonStyles.fullWidth} justifyContent="space-between">
+										<Box component="span">
+											{uriHelper.extractNameAndExtension(explorer.cwd).fileName}
+										</Box>
+										<Tooltip
+											title={removeExplorerActionDisabled ? '' : 'Remove Tab'}
+											disableInteractive
+										>
+											<Box component="span">
+												<IconButton
+													disabled={removeExplorerActionDisabled}
+													style={{ padding: 8 }}
+													onClick={() => {
+														appActions.removeExplorerPanel(explorer.explorerId);
+													}}
+												>
+													<RemoveCircleOutlineIcon />
+												</IconButton>
+											</Box>
+										</Tooltip>
+									</Stack>
+								}
+								value={explorer.explorerId}
 							/>
 						))}
 					</Tabs>
@@ -51,7 +79,7 @@ export const App: React.FC = () => {
 				</Stack>
 				<Box css={[commonStyles.fullHeight, commonStyles.flex.shrinkAndFitHorizontal]}>
 					{focusedExplorerId !== undefined &&
-						Object.keys(explorers).map((explorerId) => (
+						explorersToShow.map(({ explorerId }) => (
 							<TabPanel key={explorerId} value={focusedExplorerId} index={explorerId}>
 								<ExplorerPanelContainer explorerId={explorerId} />
 							</TabPanel>

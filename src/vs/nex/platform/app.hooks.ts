@@ -39,12 +39,28 @@ export function useAppActions() {
 		);
 	}
 
+	function removeExplorerPanel(explorerId: string) {
+		/**
+		 * If the explorer gets removed immediately, redux subscriptions (e.g. useSelectors) currently
+		 * listening on that explorer will throw errors. So first, mark explorer for deletion, so that
+		 * the explorer gets unmounted from the UI and thus, from the React Tree. This will stop all
+		 * subscriptions on that explorer.
+		 *
+		 * After that, remove the explorer.
+		 */
+		dispatch(actions.markExplorerForRemoval({ explorerId }));
+		setTimeout(() => {
+			dispatch(actions.removeExplorer({ explorerId }));
+		});
+	}
+
 	function changeFocusedExplorer(newFocusedExplorerId: string) {
 		dispatch(actions.changeFocusedExplorer({ explorerId: newFocusedExplorerId }));
 	}
 
 	return {
 		addExplorerPanel,
+		removeExplorerPanel,
 		changeFocusedExplorer,
 	};
 }
