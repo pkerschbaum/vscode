@@ -48,7 +48,7 @@ function createCompile(src: string, build: boolean, emitError?: boolean) {
 	const compilation = tsb.create(projectPath, overrideOptions, false, err => reporter(err));
 
 	function pipeline(token?: util.ICancellationToken) {
-		const bom = require('gulp-bom') as typeof import('gulp-bom');
+		const bom = require('@pkerschbaum/gulp-tsb') as typeof import('gulp-bom');
 
 		const utf8Filter = util.filter(data => /(\/|\\)test(\/|\\).*utf8/.test(data.path));
 		const tsFilter = util.filter(data => /\.tsx?$/.test(data.path));
