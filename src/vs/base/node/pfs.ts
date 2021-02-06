@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as fs from 'fs';
+import * as stream from 'stream';
 import { tmpdir } from 'os';
 import { join } from 'vs/base/common/path';
 import { Queue } from 'vs/base/common/async';
@@ -585,8 +586,7 @@ interface ICopyPayload {
  * `false` to not preserve them and `true` otherwise.
  */
 export async function copy(source: string, target: string, options: { preserveSymlinks: boolean }, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void> {
-	// TODO Nex-App: how to track progress on byte-level per file?
-	return doCopy(source, target, { root: { source, target }, options, handledSourcePaths: new Set<string>() });
+	return doCopy(source, target, { root: { source, target }, options, handledSourcePaths: new Set<string>() }, progressCb);
 }
 
 // When copying a file or folder, we want to preserve the mode
@@ -595,7 +595,7 @@ export async function copy(source: string, target: string, options: { preserveSy
 // (https://github.com/nodejs/node-v0.x-archive/issues/3045#issuecomment-4862588)
 const COPY_MODE_MASK = 0o777;
 
-async function doCopy(source: string, target: string, payload: ICopyPayload): Promise<void> {
+async function doCopy(source: string, target: string, payload: ICopyPayload, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void> {
 
 	// Keep track of paths already copied to prevent
 	// cycles from symbolic links to cause issues
@@ -631,7 +631,7 @@ async function doCopy(source: string, target: string, payload: ICopyPayload): Pr
 
 	// File or file-like
 	else {
-		return doCopyFile(source, target, stat.mode & COPY_MODE_MASK);
+		return doCopyFile(source, target, stat.mode & COPY_MODE_MASK, progressCb);
 	}
 }
 
@@ -649,11 +649,55 @@ async function doCopyDirectory(source: string, target: string, mode: number, pay
 
 async function doCopyFile(source: string, target: string, mode: number, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void> {
 
-	// Copy file
-	await fs.promises.copyFile(source, target);
+	// Nex-App: instead of using fs.promises.copyFile, copy the file manually in order to be able to 
+	// track the progress on byte level
 
-	// restore mode (https://github.com/nodejs/node/issues/1104)
-	await fs.promises.chmod(target, mode);
+	return new Promise((resolve, reject) => {
+		const reader = fs.createReadStream(source);
+		const writer = fs.createWriteStream(target, { mode });
+		const sourceUri = URI.file(source);
+
+		let finished = false;
+		const finish = (error?: Error) => {
+			if (!finished) {
+				finished = true;
+
+				// in error cases, pass to callback
+				if (error) {
+					return reject(error);
+				}
+
+				// we need to explicitly chmod because of https://github.com/nodejs/node/issues/1104
+				fs.chmod(target, mode, error => error ? reject(error) : resolve());
+			}
+		};
+
+		// handle errors properly
+		reader.once('error', error => finish(error));
+		writer.once('error', error => finish(error));
+
+		// we are done (underlying fd has been closed)
+		writer.once('close', () => finish());
+
+		const progressWatcher = new stream.Transform({
+			transform(chunk: Buffer, _, callback) {
+				if (progressCb) {
+					progressCb(chunk.byteLength, sourceUri);
+				}
+				callback(undefined, chunk);
+			}
+		});
+
+		// start piping
+		reader.pipe(progressWatcher).pipe(writer);
+	});
+
+	// Nex-App: original code of vscode is here:
+	// Copy file
+	// await fs.promises.copyFile(source, target);
+
+	// // restore mode (https://github.com/nodejs/node/issues/1104)
+	// await fs.promises.chmod(target, mode);
 }
 
 async function doCopySymlink(source: string, target: string, payload: ICopyPayload): Promise<void> {
