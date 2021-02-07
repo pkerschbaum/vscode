@@ -16,7 +16,6 @@ import {
 import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
-import { horizontalScrollProps } from 'vs/nex/ui/utils/ui.util';
 import { strings } from 'vs/nex/base/utils/strings.util';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
@@ -184,7 +183,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 				/>
 			</Box>
 			{processes.length > 0 && (
-				<Box {...horizontalScrollProps}>
+				<Box>
 					<Stack css={[styles.processesArea, commonStyles.flex.disableShrinkChildren]} spacing={2}>
 						{processes.map((process) =>
 							process.type === 'paste' ? (
