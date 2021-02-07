@@ -148,8 +148,8 @@ export function useExplorerActions(explorerId: string) {
 
 					// Move/Copy File
 					const operation = draftPasteState.pasteShouldMove
-						? fileSystem.move(sourceFileURI, targetFileURI, undefined, progressCb)
-						: fileSystem.copy(sourceFileURI, targetFileURI, undefined, progressCb);
+						? fileSystem.move(sourceFileURI, targetFileURI, undefined, { progressCb })
+						: fileSystem.copy(sourceFileURI, targetFileURI, undefined, { progressCb });
 					await operation;
 
 					// Also copy tags to destination

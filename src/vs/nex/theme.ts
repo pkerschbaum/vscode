@@ -6,12 +6,20 @@ import {
 } from '@material-ui/core/styles';
 import { Localization } from '@material-ui/core/locale';
 
+import { PROCESS_STATUS } from 'vs/nex/platform/file-types';
+
 declare module '@material-ui/core/styles/createMuiTheme' {
 	interface Theme {
 		availableTagColors: string[];
+		processStatusColors: {
+			[status in PROCESS_STATUS]: string;
+		};
 	}
 	interface ThemeOptions {
 		availableTagColors: string[];
+		processStatusColors: {
+			[status in PROCESS_STATUS]: string;
+		};
 	}
 }
 
@@ -61,6 +69,13 @@ export const createTheme = (locale: Localization) => {
 			'#FDCFE8',
 			'#E6C9A8',
 		],
+
+		processStatusColors: {
+			[PROCESS_STATUS.PENDING_FOR_USER_INPUT]: '#FBBC04',
+			[PROCESS_STATUS.RUNNING]: '#FFFFFF',
+			[PROCESS_STATUS.SUCCESS]: '#B2E775',
+			[PROCESS_STATUS.FAILURE]: '#F28B82',
+		},
 	};
 
 	return createMuiTheme(theme, locale);

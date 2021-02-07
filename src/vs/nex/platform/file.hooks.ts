@@ -14,7 +14,7 @@ import {
 	useFileProviderProcesses,
 	useInvalidateFiles,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { DeleteProcess, DELETE_STATUS, FileStatMap, Tag } from 'vs/nex/platform/file-types';
+import { DeleteProcess, FileStatMap, PROCESS_STATUS, Tag } from 'vs/nex/platform/file-types';
 import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
 import { getDistinctParents } from 'vs/nex/platform/logic/file-system';
 import { createLogger } from 'vs/nex/base/logger/logger';
@@ -64,7 +64,7 @@ export function useFileActions() {
 			throw new Error(`coult not find delete process, deleteProcessId=${deleteProcessId}`);
 		}
 
-		dispatch(actions.updateDeleteProcess({ id: deleteProcessId, status: DELETE_STATUS.RUNNING }));
+		dispatch(actions.updateDeleteProcess({ id: deleteProcessId, status: PROCESS_STATUS.RUNNING }));
 
 		// move all files to trash (in parallel)
 		await Promise.all(
@@ -78,7 +78,7 @@ export function useFileActions() {
 			}),
 		);
 
-		dispatch(actions.updateDeleteProcess({ id: deleteProcessId, status: DELETE_STATUS.FINISHED }));
+		dispatch(actions.updateDeleteProcess({ id: deleteProcessId, status: PROCESS_STATUS.SUCCESS }));
 
 		// invalidate files of all affected directories
 		const distinctParents = getDistinctParents(deleteProcess.uris);

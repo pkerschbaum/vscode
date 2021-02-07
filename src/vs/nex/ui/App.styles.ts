@@ -38,7 +38,7 @@ export const styles = {
 	`,
 
 	processesArea: (theme: Theme) => css`
-		padding-bottom: ${theme.spacing(0.25)};
+		padding-bottom: ${theme.spacing()};
 		grid-area: processes;
 		overflow-x: auto;
 

@@ -6,10 +6,9 @@ import { UriComponents } from 'vs/base/common/uri';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import {
 	Process,
+	PROCESS_STATUS,
 	DeleteProcess,
 	PasteProcess,
-	DELETE_STATUS,
-	PASTE_STATUS,
 	RESOURCES_SCHEME,
 } from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
@@ -61,7 +60,7 @@ type AddDeleteProcessPayload = Omit<DeleteProcess, 'status'>;
 
 type UpdateDeleteProcessPayload = {
 	id: string;
-	status: DELETE_STATUS;
+	status: PROCESS_STATUS;
 };
 
 type FinishPasteProcessPayload = {
@@ -156,7 +155,7 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			state.draftPasteState = { pasteShouldMove: action.payload.cut };
 		})
 		.addCase(actions.addPasteProcess, (state, action) => {
-			state.processes.push({ ...action.payload, status: PASTE_STATUS.STARTED });
+			state.processes.push({ ...action.payload, status: PROCESS_STATUS.RUNNING });
 		})
 		.addCase(actions.updatePasteProcess, (state, action) => {
 			const process = state.processes.find((p) => p.id === action.payload.id);
@@ -169,7 +168,7 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			process.bytesProcessed = action.payload.bytesProcessed;
 		})
 		.addCase(actions.addDeleteProcess, (state, action) => {
-			state.processes.push({ ...action.payload, status: DELETE_STATUS.SCHEDULED });
+			state.processes.push({ ...action.payload, status: PROCESS_STATUS.PENDING_FOR_USER_INPUT });
 		})
 		.addCase(actions.updateDeleteProcess, (state, action) => {
 			const { id, status } = action.payload;
@@ -186,7 +185,7 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 		.addCase(actions.finishPasteProcess, (state, action) => {
 			const pasteProcess = state.processes.find((pp) => pp.id === action.payload.id);
 			if (pasteProcess) {
-				pasteProcess.status = PASTE_STATUS.FINISHED;
+				pasteProcess.status = PROCESS_STATUS.SUCCESS;
 				logger.debug(`FINISHED pasteProcess, id: ${pasteProcess.id}`);
 			} else {
 				logger.error('should update paste process, but could not find corresponding one');

@@ -10,24 +10,24 @@ export type IsJsonable<T> =
 	// (see https://github.com/microsoft/TypeScript/issues/29368#issuecomment-453529532)
 	[Extract<T, DefinitelyNotJsonable>] extends [never]
 		? // Non-jsonable type union was found empty
-			T extends primitive
+		  T extends primitive
 			? // Primitive is acceptable
-				T
+			  T
 			: // Otherwise check if array
 			T extends (infer U)[]
 			? // Arrays are special; just check array element type
-				IsJsonable<U>[]
+			  IsJsonable<U>[]
 			: // Otherwise check if object
 			T extends object
 			? // It's an object
-				{
+			  {
 					// Iterate over keys in object case
 					[P in keyof T]: IsJsonable<T[P]>; // Recursive call for children
-				}
+			  }
 			: // Otherwise any other non-object no bueno
-				never
+			  never
 		: // Otherwise non-jsonable type union was found not empty
-			never;
+		  never;
 
 export function assertUnreachable(_: never): never {
 	throw new Error('should be unreachable, but got here');
@@ -63,8 +63,8 @@ export type Range<FROM extends number, TO extends number> = Exclude<Enumerate<TO
 // discriminate unions
 // https://stackoverflow.com/a/50499316/1700319
 export type NarrowUnion<
-	DiscriminatorProperty extends keyof Union,
 	Union,
+	DiscriminatorProperty extends keyof Union,
 	DiscriminatorValue
 > = Union extends {
 	[prop in DiscriminatorProperty]: DiscriminatorValue;

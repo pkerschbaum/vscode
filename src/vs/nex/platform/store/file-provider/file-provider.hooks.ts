@@ -9,7 +9,7 @@ import { useModelService } from 'vs/nex/ModelService.provider';
 import { useModeService } from 'vs/nex/ModeService.provider';
 import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
 import { useSelector } from 'vs/nex/platform/store/store';
-import { File, FILE_TYPE, PASTE_STATUS, Tag } from 'vs/nex/platform/file-types';
+import { File, FILE_TYPE, PROCESS_STATUS, Tag } from 'vs/nex/platform/file-types';
 import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { objects } from 'vs/nex/base/utils/objects.util';
@@ -37,7 +37,7 @@ export const useFileProviderProcesses = () =>
 			return {
 				...process,
 				bytesProcessed:
-					process.status === PASTE_STATUS.FINISHED ? process.totalSize : process.bytesProcessed,
+					process.status === PROCESS_STATUS.SUCCESS ? process.totalSize : process.bytesProcessed,
 			};
 		}
 

@@ -1,4 +1,5 @@
 import { UriComponents } from 'vs/base/common/uri';
+import { NarrowUnion } from 'vs/nex/base/utils/types.util';
 import { IFileStatWithMetadata } from 'vs/platform/files/common/files';
 
 export enum FILE_TYPE {
@@ -12,34 +13,32 @@ export enum RESOURCES_SCHEME {
 	FILE_SYSTEM = 'file://',
 }
 
-export type Process = PasteProcess | DeleteProcess;
-
-export type PasteProcess = {
+export type Process = {
 	id: string;
-	type: 'paste';
-	status: PASTE_STATUS;
-	totalSize: number;
-	bytesProcessed: number;
-	destinationFolder: UriComponents;
-};
+	status: PROCESS_STATUS;
+} & (
+	| {
+			type: 'paste';
+			totalSize: number;
+			bytesProcessed: number;
+			destinationFolder: UriComponents;
+	  }
+	| {
+			type: 'delete';
+			uris: UriComponents[];
+	  }
+);
 
-export enum PASTE_STATUS {
-	STARTED = 'STARTED',
-	FINISHED = 'FINISHED',
-}
-
-export type DeleteProcess = {
-	id: string;
-	type: 'delete';
-	status: DELETE_STATUS;
-	uris: UriComponents[];
-};
-
-export enum DELETE_STATUS {
-	SCHEDULED = 'SCHEDULED',
+export enum PROCESS_STATUS {
+	PENDING_FOR_USER_INPUT = 'PENDING_FOR_USER_INPUT',
 	RUNNING = 'RUNNING',
-	FINISHED = 'FINISHED',
+	SUCCESS = 'SUCCESS',
+	FAILURE = 'FAILURE',
 }
+
+export type PasteProcess = NarrowUnion<Process, 'type', 'paste'>;
+
+export type DeleteProcess = NarrowUnion<Process, 'type', 'delete'>;
 
 export type FileMap = {
 	[stringifiedUri: string]: File | undefined;

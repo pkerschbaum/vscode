@@ -14,6 +14,7 @@ import { isEqualOrParent, isRootOrDriveLetter } from 'vs/base/common/extpath';
 import { generateUuid } from 'vs/base/common/uuid';
 import { normalizeNFC } from 'vs/base/common/normalization';
 import { URI } from 'vs/base/common/uri';
+import { CancellationToken } from 'vs/base/common/cancellation';
 
 //#region Constants
 
@@ -518,7 +519,7 @@ function ensureWriteOptions(options?: IWriteFileOptions): IEnsuredWriteFileOptio
  * - updates the `mtime` of the `source` after the operation
  * - allows to move across multiple disks
  */
-export async function move(source: string, target: string, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void> {
+export async function move(source: string, target: string, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<void> {
 	if (source === target) {
 		return;  // simulate node.js behaviour here and do a no-op if paths match
 	}
@@ -563,7 +564,7 @@ export async function move(source: string, target: string, progressCb?: (newByte
 		// 2.) The user tries to rename a file/folder that ends with a dot. This is not
 		// really possible to move then, at least on UNC devices.
 		if (source.toLowerCase() !== target.toLowerCase() && error.code === 'EXDEV' || source.endsWith('.')) {
-			await copy(source, target, { preserveSymlinks: false /* copying to another device */ });
+			await copy(source, target, { preserveSymlinks: false /* copying to another device */ }, additionalArgs);
 			await rimraf(source, RimRafMode.MOVE);
 			await updateMtime(target);
 		} else {
@@ -585,8 +586,8 @@ interface ICopyPayload {
  * links should be handled when encountered. Set to
  * `false` to not preserve them and `true` otherwise.
  */
-export async function copy(source: string, target: string, options: { preserveSymlinks: boolean }, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void> {
-	return doCopy(source, target, { root: { source, target }, options, handledSourcePaths: new Set<string>() }, progressCb);
+export async function copy(source: string, target: string, options: { preserveSymlinks: boolean }, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<void> {
+	return doCopy(source, target, { root: { source, target }, options, handledSourcePaths: new Set<string>() }, additionalArgs);
 }
 
 // When copying a file or folder, we want to preserve the mode
@@ -595,7 +596,7 @@ export async function copy(source: string, target: string, options: { preserveSy
 // (https://github.com/nodejs/node-v0.x-archive/issues/3045#issuecomment-4862588)
 const COPY_MODE_MASK = 0o777;
 
-async function doCopy(source: string, target: string, payload: ICopyPayload, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void> {
+async function doCopy(source: string, target: string, payload: ICopyPayload, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<void> {
 
 	// Keep track of paths already copied to prevent
 	// cycles from symbolic links to cause issues
@@ -631,7 +632,7 @@ async function doCopy(source: string, target: string, payload: ICopyPayload, pro
 
 	// File or file-like
 	else {
-		return doCopyFile(source, target, stat.mode & COPY_MODE_MASK, progressCb);
+		return doCopyFile(source, target, stat.mode & COPY_MODE_MASK, additionalArgs);
 	}
 }
 
@@ -647,10 +648,18 @@ async function doCopyDirectory(source: string, target: string, mode: number, pay
 	}
 }
 
-async function doCopyFile(source: string, target: string, mode: number, progressCb?: (newBytesRead: number, forSource: URI) => void): Promise<void> {
+async function doCopyFile(source: string, target: string, mode: number, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<void> {
 
-	// Nex-App: instead of using fs.promises.copyFile, copy the file manually in order to be able to 
-	// track the progress on byte level
+	/*
+	 * Nex-App: two modifications:
+	 * - instead of using fs.promises.copyFile, copy the file manually in order to be able to track 
+	 *   the progress on byte level
+	 * - if cancellation token got cancelled, abort
+	 */
+
+	if (!!additionalArgs?.token?.isCancellationRequested) {
+		return;
+	}
 
 	return new Promise((resolve, reject) => {
 		const reader = fs.createReadStream(source);
@@ -681,10 +690,14 @@ async function doCopyFile(source: string, target: string, mode: number, progress
 
 		const progressWatcher = new stream.Transform({
 			transform(chunk: Buffer, _, callback) {
-				if (progressCb) {
-					progressCb(chunk.byteLength, sourceUri);
+				if (additionalArgs?.progressCb) {
+					additionalArgs.progressCb(chunk.byteLength, sourceUri);
 				}
-				callback(undefined, chunk);
+				if (!!additionalArgs?.token?.isCancellationRequested) {
+					callback(new Error(`aborted doCopyFile due to cancellation`));
+				} else {
+					callback(undefined, chunk);
+				}
 			}
 		});
 
