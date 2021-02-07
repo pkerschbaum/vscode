@@ -1,11 +1,16 @@
-import { URI } from 'vs/base/common/uri';
+import * as React from 'react';
+import { useQuery, useQueryClient } from 'react-query';
+
+import { URI, UriComponents } from 'vs/base/common/uri';
 import { FileKind } from 'vs/platform/files/common/files';
 import { getIconClasses } from 'vs/editor/common/services/getIconClasses';
 
 import { useModelService } from 'vs/nex/ModelService.provider';
 import { useModeService } from 'vs/nex/ModeService.provider';
+import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
 import { useSelector } from 'vs/nex/platform/store/store';
 import { File, FILE_TYPE, PASTE_STATUS, Tag } from 'vs/nex/platform/file-types';
+import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { objects } from 'vs/nex/base/utils/objects.util';
 
@@ -33,6 +38,45 @@ export const useFileProviderPasteProcesses = () =>
 			process.status === PASTE_STATUS.FINISHED ? process.totalSize : process.bytesProcessed,
 	}));
 
+function useFiles({
+	directory,
+	resolveMetadata,
+}: {
+	directory: UriComponents;
+	resolveMetadata: boolean;
+}) {
+	const fileSystem = useNexFileSystem();
+
+	const filesQuery = useQuery(
+		['files', URI.from(directory).toString(), { resolveMetadata }],
+		async () => {
+			const statsWithMetadata = await fileSystem.resolve(URI.from(directory), { resolveMetadata });
+
+			if (!statsWithMetadata.children) {
+				return [];
+			}
+			return statsWithMetadata.children.map(mapFileStatToFile);
+		},
+		{
+			refetchOnWindowFocus: false,
+			refetchOnReconnect: false,
+			retry: false,
+		},
+	);
+
+	return filesQuery;
+}
+
+export function useInvalidateFiles() {
+	const queryClient = useQueryClient();
+	return React.useCallback(
+		async (directory: UriComponents) => {
+			await queryClient.invalidateQueries(['files', URI.from(directory).toString()]);
+		},
+		[queryClient],
+	);
+}
+
 export type FileForUI = File & {
 	name: string;
 	extension?: string;
@@ -44,13 +88,21 @@ export const useFileProviderFiles = (explorerId: string): FileForUI[] => {
 	const modeService = useModeService();
 
 	const cwd = useSelector((state) => state.fileProvider.explorers[explorerId].cwd);
-	const files = useSelector((state) => state.fileProvider.files[URI.from(cwd).toString()]);
+	const filesQueryWithoutMetadata = useFiles({ directory: cwd, resolveMetadata: false });
+	const filesQueryWithMetadata = useFiles({ directory: cwd, resolveMetadata: true });
 
-	if (files === undefined) {
-		return [];
+	let filesToUse;
+	if (filesQueryWithMetadata.data !== undefined) {
+		filesToUse = filesQueryWithMetadata.data;
 	}
 
-	return Object.values(files)
+	if (filesToUse === undefined && filesQueryWithoutMetadata.data !== undefined) {
+		filesToUse = filesQueryWithoutMetadata.data;
+	}
+
+	filesToUse = filesToUse ?? [];
+
+	return Object.values(filesToUse)
 		.filter(objects.isNotNullish)
 		.map((file) => {
 			const { fileName, extension } = uriHelper.extractNameAndExtension(file.uri);

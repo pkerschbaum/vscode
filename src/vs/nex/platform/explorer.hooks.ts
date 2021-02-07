@@ -17,10 +17,10 @@ import { objects } from 'vs/nex/base/utils/objects.util';
 import {
 	useFileProviderCwd,
 	useFileProviderDraftPasteState,
+	useInvalidateFiles,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
-import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
 
 const UPDATE_INTERVAL_MS = 300;
 const logger = createLogger('explorer.hooks');
@@ -33,6 +33,7 @@ export function useExplorerActions(explorerId: string) {
 	const fileSystem = useNexFileSystem();
 	const clipboardResources = useClipboardResources();
 
+	const invalidateFiles = useInvalidateFiles();
 	const fileActions = useFileActions();
 
 	async function changeDirectory(newDir: string) {
@@ -62,22 +63,8 @@ export function useExplorerActions(explorerId: string) {
 		}
 
 		// if newDir is not the current working directory, and is a valid directory => change to the new directory
-		// first, dispatch files without metadata
 		const newCwd = parsedUri.toJSON();
-		const children = stats.children ?? [];
-		dispatch(
-			actions.changeCwd({
-				explorerId,
-				newCwd,
-				files: children.map(mapFileStatToFile),
-			}),
-		);
-		dispatch(
-			actions.updateStatsOfFiles({ directory: newCwd, files: children.map(mapFileStatToFile) }),
-		);
-
-		// then, resolve and dispatch files with metadata
-		return fileActions.updateFilesOfDirectory(newCwd);
+		dispatch(actions.changeCwd({ explorerId, newCwd }));
 	}
 
 	async function pasteFiles() {
@@ -185,8 +172,8 @@ export function useExplorerActions(explorerId: string) {
 			}),
 		);
 
-		// update cwd content
-		return fileActions.updateFilesOfDirectory(cwd);
+		// invalidate files of the explorer
+		await invalidateFiles(cwd);
 	}
 
 	return {

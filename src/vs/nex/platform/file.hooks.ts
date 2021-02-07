@@ -9,25 +9,25 @@ import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
 import { useNexClipboard } from 'vs/nex/NexClipboard.provider';
 import { useNexStorage } from 'vs/nex/NexStorage.provider';
 import { useDispatch } from 'vs/nex/platform/store/store';
+import { useInvalidateFiles } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { FileStatMap, Tag } from 'vs/nex/platform/file-types';
+import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
+import { getDistinctParents } from 'vs/nex/platform/logic/file-system';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
-import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
 import { useTagsActions } from 'vs/nex/platform/tag.hooks';
 import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
-import { useFileProviderExplorers } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
 
 const logger = createLogger('file.hooks');
 
 export function useFileActions() {
 	const dispatch = useDispatch();
-	const explorers = useFileProviderExplorers();
 
 	const fileSystem = useNexFileSystem();
 	const clipboard = useNexClipboard();
 	const storage = useNexStorage();
 
+	const invalidateFiles = useInvalidateFiles();
 	const tagsActions = useTagsActions();
 
 	useRerenderOnEventFire(
@@ -52,12 +52,14 @@ export function useFileActions() {
 					await fileSystem.del(URI.from(uri), { useTrash: true, recursive: true });
 				} catch (err) {
 					logger.error(`could not move file to trash`, err);
+					throw err;
 				}
 			}),
 		);
 
-		// update cwd content
-		await Promise.all(explorers.map((explorer) => updateFilesOfDirectory(explorer.cwd)));
+		// invalidate files of all affected directories
+		const distinctParents = getDistinctParents(uris);
+		await Promise.all(distinctParents.map((directory) => invalidateFiles(directory)));
 	}
 
 	async function cutOrCopyFiles(files: UriComponents[], cut: boolean) {
@@ -84,21 +86,6 @@ export function useFileActions() {
 				targetStat.children.map(async (child) => {
 					const childStat = await fileSystem.resolve(child.resource, { resolveMetadata: true });
 					return resolveDeepRecursive(child.resource, childStat, resultMap);
-				}),
-			);
-		}
-	}
-
-	async function updateFilesOfDirectory(directory: UriComponents) {
-		// resolve and dispatch files with metadata
-		const statsWithMetadata = await fileSystem.resolve(URI.from(directory), {
-			resolveMetadata: true,
-		});
-		if (statsWithMetadata.children) {
-			dispatch(
-				actions.updateStatsOfFiles({
-					directory,
-					files: statsWithMetadata.children.map(mapFileStatToFile),
 				}),
 			);
 		}
@@ -189,7 +176,6 @@ export function useFileActions() {
 		openFile,
 		cutOrCopyFiles,
 		resolveDeep,
-		updateFilesOfDirectory,
 		addTags,
 		getTagsOfFile,
 		removeTags,

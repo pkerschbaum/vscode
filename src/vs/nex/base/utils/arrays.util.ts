@@ -26,8 +26,19 @@ function flatten<T>(array: T[][]): T[] {
 	}, []);
 }
 
-function uniqueValues<T>(array: T[]): T[] {
-	return [...new Set(array)] as T[];
+function uniqueValues<T, U>(array: T[], getPropToCompare?: (item: T) => U): T[] {
+	const result: T[] = [];
+	const getThingToCompare = getPropToCompare ?? ((item) => item);
+
+	for (const item of array) {
+		if (
+			!result.some((existingItem) => getThingToCompare(existingItem) === getThingToCompare(item))
+		) {
+			result.push(item);
+		}
+	}
+
+	return result;
 }
 
 function shallowCopy<T>(array: T[]): T[] {

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { render } from 'react-dom';
 import { Provider } from 'react-redux';
+import { QueryClient, QueryClientProvider } from 'react-query';
 import { CssBaseline } from '@material-ui/core';
 import { enUS } from '@material-ui/core/locale';
 
@@ -23,6 +24,7 @@ import { ClipboardResourcesContext, NexClipboardProvider } from 'vs/nex/NexClipb
 import { NexStorageProvider } from 'vs/nex/NexStorage.provider';
 
 const logger = createLogger('index');
+const queryClient = new QueryClient();
 const theme = createTheme(enUS);
 
 export const createApp = (
@@ -74,26 +76,28 @@ const Root: React.FC<{
 	});
 
 	return (
-		<RenderOnCountChange renderCount={debouncedRenderCount}>
-			<ModeServiceProvider value={modeService}>
-				<ModelServiceProvider value={modelService}>
-					<NexFileSystemProvider value={fileSystem}>
-						<NexClipboardProvider value={clipboard}>
-							<NexStorageProvider value={storage}>
-								<ClipboardResourcesContext>
-									<ThemeProvider theme={theme}>
-										<Provider store={store}>
-											<CssBaseline />
-											<App />
-										</Provider>
-									</ThemeProvider>
-								</ClipboardResourcesContext>
-							</NexStorageProvider>
-						</NexClipboardProvider>
-					</NexFileSystemProvider>
-				</ModelServiceProvider>
-			</ModeServiceProvider>
-		</RenderOnCountChange>
+		<QueryClientProvider client={queryClient}>
+			<RenderOnCountChange renderCount={debouncedRenderCount}>
+				<ModeServiceProvider value={modeService}>
+					<ModelServiceProvider value={modelService}>
+						<NexFileSystemProvider value={fileSystem}>
+							<NexClipboardProvider value={clipboard}>
+								<NexStorageProvider value={storage}>
+									<ClipboardResourcesContext>
+										<ThemeProvider theme={theme}>
+											<Provider store={store}>
+												<CssBaseline />
+												<App />
+											</Provider>
+										</ThemeProvider>
+									</ClipboardResourcesContext>
+								</NexStorageProvider>
+							</NexClipboardProvider>
+						</NexFileSystemProvider>
+					</ModelServiceProvider>
+				</ModeServiceProvider>
+			</RenderOnCountChange>
+		</QueryClientProvider>
 	);
 };
 

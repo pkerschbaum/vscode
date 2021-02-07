@@ -1,3 +1,5 @@
+import * as resources from 'vs/base/common/resources';
+import { URI, UriComponents } from 'vs/base/common/uri';
 import {
 	IFileService,
 	FileOperationError,
@@ -10,6 +12,7 @@ import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { File, FILE_TYPE, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
+import { arrays } from 'vs/nex/base/utils/arrays.util';
 
 const logger = createLogger('nexFileSystem');
 export const NexFileSystem = createDecorator<NexFileSystem>('nexFileSystem');
@@ -72,4 +75,11 @@ export function mapFileStatToFile(file: IFileStat): File {
 		mtime: file.mtime,
 		ctime: file.ctime,
 	};
+}
+
+export function getDistinctParents(files: UriComponents[]): UriComponents[] {
+	return arrays.uniqueValues(
+		files.map((file) => resources.dirname(URI.from(file))),
+		(item) => URI.from(item).toString(),
+	);
 }

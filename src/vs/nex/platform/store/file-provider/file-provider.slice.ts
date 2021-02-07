@@ -1,16 +1,10 @@
 import { createAction, createReducer } from '@reduxjs/toolkit';
 
 import * as uuid from 'vs/base/common/uuid';
-import { URI, UriComponents } from 'vs/base/common/uri';
+import { UriComponents } from 'vs/base/common/uri';
 
 import { createLogger } from 'vs/nex/base/logger/logger';
-import {
-	File,
-	PASTE_STATUS,
-	FileMap,
-	PasteProcess,
-	RESOURCES_SCHEME,
-} from 'vs/nex/platform/file-types';
+import { PASTE_STATUS, PasteProcess, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 
 export type FileProviderState = {
@@ -21,9 +15,6 @@ export type FileProviderState = {
 		};
 	};
 	focusedExplorerId?: string;
-	files: {
-		[directoryUri: string]: undefined | FileMap;
-	};
 	draftPasteState?: {
 		pasteShouldMove: boolean;
 	};
@@ -42,12 +33,6 @@ type RemoveExplorerPayload = {
 type ChangeCwdPayload = {
 	explorerId: string;
 	newCwd: UriComponents;
-	files: File[];
-};
-
-type UpdateStatsOfFilesPayload = {
-	directory: UriComponents;
-	files: File[];
 };
 
 type ChangeFocusedExplorerPayload = {
@@ -73,7 +58,6 @@ type FinishPasteProcessPayload = {
 
 const INITIAL_STATE: FileProviderState = {
 	explorers: {},
-	files: {},
 	pasteProcesses: [],
 };
 
@@ -84,7 +68,6 @@ export const actions = {
 	markExplorerForRemoval: createAction<RemoveExplorerPayload>('EXPLORER_MARKED_FOR_REMOVAL'),
 	removeExplorer: createAction<RemoveExplorerPayload>('EXPLORER_REMOVED'),
 	changeCwd: createAction<ChangeCwdPayload>('CWD_CHANGED'),
-	updateStatsOfFiles: createAction<UpdateStatsOfFilesPayload>('STATS_OF_FILES_UPDATED'),
 	changeFocusedExplorer: createAction<ChangeFocusedExplorerPayload>('FOCUSED_EXPLORER_CHANGED'),
 	cutOrCopyFiles: createAction<CutOrCopyFilesPayload>('FILES_CUT_OR_COPIED'),
 	addPasteProcess: createAction<AddPasteProcessPayload>('PASTE_PROCESS_ADDED'),
@@ -132,7 +115,7 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			delete state.explorers[explorerId];
 		})
 		.addCase(actions.changeCwd, (state, action) => {
-			const { explorerId, newCwd, files } = action.payload;
+			const { explorerId, newCwd } = action.payload;
 
 			if (!isExplorerIdPresent(state, explorerId)) {
 				throw new Error(
@@ -142,13 +125,6 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			}
 
 			state.explorers[explorerId] = { cwd: newCwd };
-
-			updateFilesOfDirectory(state, newCwd, files);
-		})
-		.addCase(actions.updateStatsOfFiles, (state, action) => {
-			const { directory, files } = action.payload;
-
-			updateFilesOfDirectory(state, directory, files);
 		})
 		.addCase(actions.changeFocusedExplorer, (state, action) => {
 			const { explorerId } = action.payload;
@@ -202,27 +178,4 @@ function isExplorerIdPresent(state: FileProviderState, explorerId: string): bool
 	return !!Object.keys(state.explorers).find(
 		(existingExplorerId) => existingExplorerId === explorerId,
 	);
-}
-
-function updateFilesOfDirectory(
-	state: FileProviderState,
-	directoryUri: UriComponents,
-	files: File[],
-) {
-	const directoryFileMap = state.files[URI.from(directoryUri).toString()] ?? {};
-
-	// update existing files, add new files
-	for (const file of files) {
-		directoryFileMap[URI.from(file.uri).toString()] = file;
-	}
-
-	// remove files which are not present anymore
-	Object.keys(directoryFileMap).forEach((stringifiedUri) => {
-		const foundElement = files.find((file) => URI.from(file.uri).toString() === stringifiedUri);
-		if (!foundElement) {
-			delete directoryFileMap[stringifiedUri];
-		}
-	});
-
-	state.files[URI.from(directoryUri).toString()] = directoryFileMap;
 }

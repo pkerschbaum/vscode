@@ -8837,6 +8837,14 @@ react-is@^16.13.1, react-is@^16.7.0, react-is@^16.8.1:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-17.0.1.tgz#5b3531bd76a645a4c9fb6e693ed36419e3301339"
   integrity sha512-NAnt2iGDXohE5LI7uBnLnqvLQMtzhkiAOLXTmv+qnF9Ky7xAPcX8Up/xWIhxvLVGJvuLiNc4xQLtuqDRzb4fSA==
 
+react-query@^3.8.1:
+  version "3.8.1"
+  resolved "https://registry.yarnpkg.com/react-query/-/react-query-3.8.1.tgz#c64f8cd27220058cd22a4aa69873c4d9b41f5cf6"
+  integrity sha512-hXGqWTBuirKQaD47B9O71jN/qKXLh9RlREuuyeJi0Y0AMLaEt5uA6bLxwJ4M8VYaSRe+hLzMlbvTl7UpeovQHA==
+  dependencies:
+    "@babel/runtime" "^7.5.5"
+    match-sorter "^6.0.2"
+
 react-redux@^7.2.2:
   version "7.2.2"
   resolved "https://registry.yarnpkg.com/react-redux/-/react-redux-7.2.2.tgz#03862e803a30b6b9ef8582dadcc810947f74b736"
