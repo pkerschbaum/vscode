@@ -8,6 +8,7 @@ export const arrays = {
 	flatten,
 	uniqueValues,
 	shallowCopy,
+	reverse,
 	pickElementAndRemove,
 	partitionArray,
 	wrap,
@@ -43,6 +44,10 @@ function uniqueValues<T, U>(array: T[], getPropToCompare?: (item: T) => U): T[] 
 
 function shallowCopy<T>(array: T[]): T[] {
 	return array.slice();
+}
+
+function reverse<T>(array: T[]): T[] {
+	return shallowCopy(array).reverse();
 }
 
 function pickElementAndRemove<T>(array: T[], elementIndex: number): T | undefined {

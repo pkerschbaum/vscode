@@ -8,8 +8,8 @@ import { styles } from 'vs/nex/ui/App.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { ExplorerPanel } from 'vs/nex/ui/ExplorerPanel';
-import { PasteProcess } from 'vs/nex/ui/PasteProcess';
-import { DeleteProcess } from 'vs/nex/ui/DeleteProcess';
+import { PasteProcess } from 'vs/nex/ui/process/PasteProcess';
+import { DeleteProcess } from 'vs/nex/ui/process/DeleteProcess';
 import {
 	useFileProviderCwd,
 	useFileProviderExplorers,
@@ -21,6 +21,7 @@ import { KEYS } from 'vs/nex/ui/constants';
 import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { assertUnreachable } from 'vs/nex/base/utils/types.util';
+import { arrays } from 'vs/nex/base/utils/arrays.util';
 
 export const App: React.FC = () => {
 	const explorers = useFileProviderExplorers();
@@ -130,15 +131,17 @@ export const App: React.FC = () => {
 
 			{processes.length > 0 && (
 				<Stack css={[styles.processesArea, commonStyles.flex.disableShrinkChildren]} spacing={2}>
-					{processes.map((process) =>
-						process.type === 'paste' ? (
-							<PasteProcess key={process.id} process={process} />
-						) : process.type === 'delete' ? (
-							<DeleteProcess key={process.id} process={process} />
-						) : (
-							assertUnreachable(process)
-						),
-					)}
+					{arrays
+						.reverse(processes)
+						.map((process) =>
+							process.type === 'paste' ? (
+								<PasteProcess key={process.id} process={process} />
+							) : process.type === 'delete' ? (
+								<DeleteProcess key={process.id} process={process} />
+							) : (
+								assertUnreachable(process)
+							),
+						)}
 				</Stack>
 			)}
 		</Box>
