@@ -2,7 +2,7 @@ import { byteSize, ByteUnit } from 'vs/nex/base/utils/byte-size.util';
 import { numbers } from 'vs/nex/base/utils/numbers.util';
 import { i18n } from 'vs/nex/base/domain/i18n';
 
-export const formatter = { bytes };
+export const formatter = { bytes, file };
 
 function bytes(numberOfBytes: number, options?: { unit: ByteUnit }): string {
 	let unitToUse = options?.unit;
@@ -18,4 +18,12 @@ function bytes(numberOfBytes: number, options?: { unit: ByteUnit }): string {
 		});
 
 	return `${formattedNumber} ${unitToUse}`;
+}
+
+function file(file: { name: string; extension?: string }): string {
+	if (file.extension === undefined) {
+		return file.name;
+	}
+
+	return `${file.name}${file.extension}`;
 }

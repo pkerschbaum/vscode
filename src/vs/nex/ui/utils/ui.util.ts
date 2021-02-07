@@ -6,9 +6,5 @@ export const horizontalScrollProps = {
 	},
 	css: css`
 		overflow-x: auto;
-
-		& > * {
-			pointer-events: none;
-		}
 	`,
 };

@@ -31,12 +31,18 @@ export const useFileProviderFocusedExplorerId = () =>
 export const useFileProviderDraftPasteState = () =>
 	useSelector((state) => state.fileProvider.draftPasteState);
 
-export const useFileProviderPasteProcesses = () =>
-	useSelector((state) => state.fileProvider.pasteProcesses).map((process) => ({
-		...process,
-		bytesProcessed:
-			process.status === PASTE_STATUS.FINISHED ? process.totalSize : process.bytesProcessed,
-	}));
+export const useFileProviderProcesses = () =>
+	useSelector((state) => state.fileProvider.processes).map((process) => {
+		if (process.type === 'paste') {
+			return {
+				...process,
+				bytesProcessed:
+					process.status === PASTE_STATUS.FINISHED ? process.totalSize : process.bytesProcessed,
+			};
+		}
+
+		return process;
+	});
 
 function useFiles({
 	directory,

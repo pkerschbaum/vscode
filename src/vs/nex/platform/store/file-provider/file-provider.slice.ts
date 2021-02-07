@@ -4,7 +4,14 @@ import * as uuid from 'vs/base/common/uuid';
 import { UriComponents } from 'vs/base/common/uri';
 
 import { createLogger } from 'vs/nex/base/logger/logger';
-import { PASTE_STATUS, PasteProcess, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
+import {
+	Process,
+	DeleteProcess,
+	PasteProcess,
+	DELETE_STATUS,
+	PASTE_STATUS,
+	RESOURCES_SCHEME,
+} from 'vs/nex/platform/file-types';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 
 export type FileProviderState = {
@@ -18,7 +25,7 @@ export type FileProviderState = {
 	draftPasteState?: {
 		pasteShouldMove: boolean;
 	};
-	pasteProcesses: PasteProcess[];
+	processes: Process[];
 };
 
 type AddExplorerPayload = {
@@ -43,13 +50,18 @@ type CutOrCopyFilesPayload = {
 	cut: boolean;
 };
 
-type AddPasteProcessPayload = Omit<PasteProcess, 'status'> & {
-	destinationFolder: UriComponents;
-};
+type AddPasteProcessPayload = Omit<PasteProcess, 'status'>;
 
 type UpdatePasteProcessPayload = {
 	id: string;
 	bytesProcessed: number;
+};
+
+type AddDeleteProcessPayload = Omit<DeleteProcess, 'status'>;
+
+type UpdateDeleteProcessPayload = {
+	id: string;
+	status: DELETE_STATUS;
 };
 
 type FinishPasteProcessPayload = {
@@ -58,7 +70,7 @@ type FinishPasteProcessPayload = {
 
 const INITIAL_STATE: FileProviderState = {
 	explorers: {},
-	pasteProcesses: [],
+	processes: [],
 };
 
 const logger = createLogger('file-provider.slice');
@@ -72,6 +84,8 @@ export const actions = {
 	cutOrCopyFiles: createAction<CutOrCopyFilesPayload>('FILES_CUT_OR_COPIED'),
 	addPasteProcess: createAction<AddPasteProcessPayload>('PASTE_PROCESS_ADDED'),
 	updatePasteProcess: createAction<UpdatePasteProcessPayload>('PASTE_PROCESS_UPDATED'),
+	addDeleteProcess: createAction<AddDeleteProcessPayload>('DELETE_PROCESS_ADDED'),
+	updateDeleteProcess: createAction<UpdateDeleteProcessPayload>('DELETE_PROCESS_UPDATED'),
 	finishPasteProcess: createAction<FinishPasteProcessPayload>('PASTE_PROCESS_FINISHED'),
 	clearDraftPasteState: createAction<void>('DRAFT_PASTE_STATE_CLEARED'),
 };
@@ -142,22 +156,35 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			state.draftPasteState = { pasteShouldMove: action.payload.cut };
 		})
 		.addCase(actions.addPasteProcess, (state, action) => {
-			logger.debug(`STARTED pasteProcess, id: ${action.payload.id}`);
-			state.pasteProcesses.push({ ...action.payload, status: PASTE_STATUS.STARTED });
+			state.processes.push({ ...action.payload, status: PASTE_STATUS.STARTED });
 		})
 		.addCase(actions.updatePasteProcess, (state, action) => {
-			const pasteProcess = state.pasteProcesses.find((pp) => pp.id === action.payload.id);
-			if (pasteProcess) {
-				pasteProcess.bytesProcessed = action.payload.bytesProcessed;
-				logger.debug(
-					`UPDATE pasteProcess, id: ${pasteProcess.id}, bytesRead: ${pasteProcess.bytesProcessed}`,
-				);
-			} else {
+			const process = state.processes.find((p) => p.id === action.payload.id);
+
+			if (!process || process.type !== 'paste') {
 				logger.error('should update paste process, but could not find corresponding one');
+				return;
 			}
+
+			process.bytesProcessed = action.payload.bytesProcessed;
+		})
+		.addCase(actions.addDeleteProcess, (state, action) => {
+			state.processes.push({ ...action.payload, status: DELETE_STATUS.SCHEDULED });
+		})
+		.addCase(actions.updateDeleteProcess, (state, action) => {
+			const { id, status } = action.payload;
+
+			const process = state.processes.find((p) => p.id === id);
+
+			if (!process || process.type !== 'delete') {
+				logger.error('should update delete process, but could not find corresponding one');
+				return;
+			}
+
+			process.status = status;
 		})
 		.addCase(actions.finishPasteProcess, (state, action) => {
-			const pasteProcess = state.pasteProcesses.find((pp) => pp.id === action.payload.id);
+			const pasteProcess = state.processes.find((pp) => pp.id === action.payload.id);
 			if (pasteProcess) {
 				pasteProcess.status = PASTE_STATUS.FINISHED;
 				logger.debug(`FINISHED pasteProcess, id: ${pasteProcess.id}`);

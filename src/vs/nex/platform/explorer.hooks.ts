@@ -107,7 +107,8 @@ export function useExplorerActions(explorerId: string) {
 
 				const fileStatMap = await fileActions.resolveDeep(sourceFileURI, sourceFileStat);
 
-				const pasteStatus: Omit<PasteProcess, 'status'> = {
+				const pasteProcess: Omit<PasteProcess, 'status'> = {
+					type: 'paste',
 					id: uuid.generateUuid(),
 					totalSize: 0,
 					bytesProcessed: 0,
@@ -118,17 +119,17 @@ export function useExplorerActions(explorerId: string) {
 				} = {};
 
 				Object.entries(fileStatMap).forEach(([uri, fileStat]) => {
-					pasteStatus.totalSize += fileStat.size;
+					pasteProcess.totalSize += fileStat.size;
 					statusPerFile[uri] = { bytesProcessed: 0 };
 				});
 
-				dispatch(actions.addPasteProcess(objects.deepCopyJson(pasteStatus)));
+				dispatch(actions.addPasteProcess(objects.deepCopyJson(pasteProcess)));
 
 				const intervalId = setInterval(function dispatchProgress() {
 					dispatch(
 						actions.updatePasteProcess({
-							id: pasteStatus.id,
-							bytesProcessed: pasteStatus.bytesProcessed,
+							id: pasteProcess.id,
+							bytesProcessed: pasteProcess.bytesProcessed,
 						}),
 					);
 				}, UPDATE_INTERVAL_MS);
@@ -141,7 +142,7 @@ export function useExplorerActions(explorerId: string) {
 					});
 
 					const progressCb = (newBytesRead: number, forSource: URI) => {
-						pasteStatus.bytesProcessed += newBytesRead;
+						pasteProcess.bytesProcessed += newBytesRead;
 						statusPerFile[forSource.toString()].bytesProcessed += newBytesRead;
 					};
 
@@ -165,7 +166,7 @@ export function useExplorerActions(explorerId: string) {
 						fileActions.removeTags([sourceFileURI], tagsOfSourceFile);
 					}
 
-					dispatch(actions.finishPasteProcess({ id: pasteStatus.id }));
+					dispatch(actions.finishPasteProcess({ id: pasteProcess.id }));
 				} finally {
 					clearInterval(intervalId);
 				}

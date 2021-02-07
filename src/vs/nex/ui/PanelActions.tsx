@@ -11,9 +11,7 @@ import {
 	useFileProviderFiles,
 	useFileProviderFocusedExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
-import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS, MOUSE_BUTTONS } from 'vs/nex/ui/constants';
 import { useWindowEvent, usePrevious } from 'vs/nex/ui/utils/events.hooks';
 import { functions } from 'vs/nex/base/utils/functions.util';
@@ -21,26 +19,37 @@ import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 
 const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
 
-export const PanelActions: React.FC<{
+type PanelActionsProps = {
 	explorerId: string;
 	filesToShow: FileForUI[];
 	idsOfSelectedFiles: string[];
 	setIdsOfSelectedFiles: (val: string[]) => void;
 	filterInput: string;
 	setFilterInput: (val: string) => void;
-}> = ({
+
+	openSelectedFiles: () => void;
+	scheduleDeleteSelectedFiles: () => void;
+	copySelectedFiles: () => void;
+	cutSelectedFiles: () => void;
+};
+
+export const PanelActions: React.FC<PanelActionsProps> = ({
 	explorerId,
 	filesToShow,
 	idsOfSelectedFiles,
 	setIdsOfSelectedFiles,
 	filterInput,
 	setFilterInput,
+
+	openSelectedFiles,
+	scheduleDeleteSelectedFiles,
+	copySelectedFiles,
+	cutSelectedFiles,
 }) => {
 	const cwd = useFileProviderCwd(explorerId);
 	const files = useFileProviderFiles(explorerId);
 	const focusedFileExplorerId = useFileProviderFocusedExplorerId();
 
-	const fileActions = useFileActions();
 	const explorerActions = useExplorerActions(explorerId);
 
 	const [cwdInput, setCwdInput] = React.useState(cwd.path);
@@ -60,29 +69,6 @@ export const PanelActions: React.FC<{
 	function navigateUp() {
 		explorerActions.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
 	}
-
-	const openSelectedFiles = () => {
-		if (selectedFiles.length === 1 && selectedFiles[0].fileType === FILE_TYPE.DIRECTORY) {
-			explorerActions.changeDirectory(selectedFiles[0].uri.path);
-		} else {
-			selectedFiles
-				.filter((selectedFile) => selectedFile.fileType === FILE_TYPE.FILE)
-				.forEach((selectedFile) => fileActions.openFile(selectedFile.uri));
-		}
-	};
-
-	const deleteSelectedFiles = async () => {
-		await fileActions.moveFilesToTrash(selectedFiles.map((file) => file.uri));
-	};
-
-	const cutOrCopySelectedFiles = (cut: boolean) => () => {
-		return fileActions.cutOrCopyFiles(
-			selectedFiles.map((file) => file.uri),
-			cut,
-		);
-	};
-	const copySelectedFiles = cutOrCopySelectedFiles(false);
-	const cutSelectedFiles = cutOrCopySelectedFiles(true);
 
 	/**
 	 * - If no file is selected, select the first file
@@ -159,7 +145,7 @@ export const PanelActions: React.FC<{
 						handler: (e) => changeSelectedFile(e, KEYS.PAGE_DOWN),
 					},
 					{ condition: (e) => e.key === KEYS.ENTER, handler: openSelectedFiles },
-					{ condition: (e) => e.key === KEYS.DELETE, handler: deleteSelectedFiles },
+					{ condition: (e) => e.key === KEYS.DELETE, handler: scheduleDeleteSelectedFiles },
 					{ condition: (e) => e.altKey && e.key === KEYS.ARROW_LEFT, handler: navigateUp },
 					{
 						condition: (e) =>

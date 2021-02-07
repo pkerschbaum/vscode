@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { shell } from 'electron';
 
+import * as uuid from 'vs/base/common/uuid';
 import { URI, UriComponents } from 'vs/base/common/uri';
 import { IFileStatWithMetadata } from 'vs/platform/files/common/files';
 
@@ -9,8 +10,11 @@ import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
 import { useNexClipboard } from 'vs/nex/NexClipboard.provider';
 import { useNexStorage } from 'vs/nex/NexStorage.provider';
 import { useDispatch } from 'vs/nex/platform/store/store';
-import { useInvalidateFiles } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { FileStatMap, Tag } from 'vs/nex/platform/file-types';
+import {
+	useFileProviderProcesses,
+	useInvalidateFiles,
+} from 'vs/nex/platform/store/file-provider/file-provider.hooks';
+import { DeleteProcess, DELETE_STATUS, FileStatMap, Tag } from 'vs/nex/platform/file-types';
 import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
 import { getDistinctParents } from 'vs/nex/platform/logic/file-system';
 import { createLogger } from 'vs/nex/base/logger/logger';
@@ -22,6 +26,7 @@ const logger = createLogger('file.hooks');
 
 export function useFileActions() {
 	const dispatch = useDispatch();
+	const processes = useFileProviderProcesses();
 
 	const fileSystem = useNexFileSystem();
 	const clipboard = useNexClipboard();
@@ -44,10 +49,26 @@ export function useFileActions() {
 		}
 	}
 
-	async function moveFilesToTrash(uris: UriComponents[]) {
+	function scheduleMoveFilesToTrash(uris: UriComponents[]) {
+		const deleteProcess: Omit<DeleteProcess, 'status'> = {
+			type: 'delete',
+			id: uuid.generateUuid(),
+			uris,
+		};
+		dispatch(actions.addDeleteProcess(deleteProcess));
+	}
+
+	async function runDeleteProcess(deleteProcessId: string) {
+		const deleteProcess = processes.find((process) => process.id === deleteProcessId);
+		if (!deleteProcess || deleteProcess.type !== 'delete') {
+			throw new Error(`coult not find delete process, deleteProcessId=${deleteProcessId}`);
+		}
+
+		dispatch(actions.updateDeleteProcess({ id: deleteProcessId, status: DELETE_STATUS.RUNNING }));
+
 		// move all files to trash (in parallel)
 		await Promise.all(
-			uris.map(async (uri) => {
+			deleteProcess.uris.map(async (uri) => {
 				try {
 					await fileSystem.del(URI.from(uri), { useTrash: true, recursive: true });
 				} catch (err) {
@@ -57,8 +78,10 @@ export function useFileActions() {
 			}),
 		);
 
+		dispatch(actions.updateDeleteProcess({ id: deleteProcessId, status: DELETE_STATUS.FINISHED }));
+
 		// invalidate files of all affected directories
-		const distinctParents = getDistinctParents(uris);
+		const distinctParents = getDistinctParents(deleteProcess.uris);
 		await Promise.all(distinctParents.map((directory) => invalidateFiles(directory)));
 	}
 
@@ -172,7 +195,8 @@ export function useFileActions() {
 	}
 
 	return {
-		moveFilesToTrash,
+		scheduleMoveFilesToTrash,
+		runDeleteProcess,
 		openFile,
 		cutOrCopyFiles,
 		resolveDeep,

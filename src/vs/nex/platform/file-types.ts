@@ -12,18 +12,34 @@ export enum RESOURCES_SCHEME {
 	FILE_SYSTEM = 'file://',
 }
 
-export enum PASTE_STATUS {
-	STARTED = 'STARTED',
-	FINISHED = 'FINISHED',
-}
+export type Process = PasteProcess | DeleteProcess;
 
 export type PasteProcess = {
 	id: string;
+	type: 'paste';
 	status: PASTE_STATUS;
 	totalSize: number;
 	bytesProcessed: number;
 	destinationFolder: UriComponents;
 };
+
+export enum PASTE_STATUS {
+	STARTED = 'STARTED',
+	FINISHED = 'FINISHED',
+}
+
+export type DeleteProcess = {
+	id: string;
+	type: 'delete';
+	status: DELETE_STATUS;
+	uris: UriComponents[];
+};
+
+export enum DELETE_STATUS {
+	SCHEDULED = 'SCHEDULED',
+	RUNNING = 'RUNNING',
+	FINISHED = 'FINISHED',
+}
 
 export type FileMap = {
 	[stringifiedUri: string]: File | undefined;

@@ -7,10 +7,11 @@ import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { DataTable } from 'vs/nex/ui/elements/DataTable';
 import { PasteProcess } from 'vs/nex/ui/PasteProcess';
+import { DeleteProcess } from 'vs/nex/ui/DeleteProcess';
 import {
 	FileForUI,
 	useFileProviderFiles,
-	useFileProviderPasteProcesses,
+	useFileProviderProcesses,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
@@ -21,10 +22,11 @@ import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
 import { ExplorerActions } from 'vs/nex/ui/ExplorerActions';
 import { PanelActions } from 'vs/nex/ui/PanelActions';
+import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 
 export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) => {
 	const files = useFileProviderFiles(explorerId);
-	const pasteProcesses = useFileProviderPasteProcesses();
+	const processes = useFileProviderProcesses();
 
 	const fileActions = useFileActions();
 	const explorerActions = useExplorerActions(explorerId);
@@ -33,6 +35,35 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 	const [filterInput, setFilterInput] = React.useState('');
 
 	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
+
+	const openSelectedFiles = () => {
+		if (selectedFiles.length === 1 && selectedFiles[0].fileType === FILE_TYPE.DIRECTORY) {
+			explorerActions.changeDirectory(selectedFiles[0].uri.path);
+		} else {
+			selectedFiles
+				.filter((selectedFile) => selectedFile.fileType === FILE_TYPE.FILE)
+				.forEach((selectedFile) => fileActions.openFile(selectedFile.uri));
+		}
+	};
+
+	const scheduleDeleteSelectedFiles = async () => {
+		await fileActions.scheduleMoveFilesToTrash(selectedFiles.map((file) => file.uri));
+	};
+
+	const cutOrCopySelectedFiles = (cut: boolean) => () => {
+		return fileActions.cutOrCopyFiles(
+			selectedFiles.map((file) => file.uri),
+			cut,
+		);
+	};
+	const copySelectedFiles = cutOrCopySelectedFiles(false);
+	const cutSelectedFiles = cutOrCopySelectedFiles(true);
+	const fileEditActions = {
+		openSelectedFiles,
+		scheduleDeleteSelectedFiles,
+		copySelectedFiles,
+		cutSelectedFiles,
+	};
 
 	/*
 	 * Compute files to show:
@@ -94,9 +125,10 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 					setIdsOfSelectedFiles={setIdsOfSelectedFiles}
 					filterInput={filterInput}
 					setFilterInput={setFilterInput}
+					{...fileEditActions}
 				/>
 				<Divider orientation="vertical" flexItem />
-				<ExplorerActions selectedFiles={selectedFiles} />
+				<ExplorerActions selectedFiles={selectedFiles} {...fileEditActions} />
 			</Stack>
 			<Box
 				css={[
@@ -116,7 +148,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 									className={row.iconClasses.join(' ')}
 									alignItems="center"
 								>
-									<Box component="span">{formatFileName(row)}</Box>
+									<Box component="span">{formatter.file(row)}</Box>
 									{row.tags.map((tag) => (
 										<Chip
 											key={tag.id}
@@ -151,23 +183,21 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 					}}
 				/>
 			</Box>
-			{pasteProcesses.length > 0 && (
+			{processes.length > 0 && (
 				<Box {...horizontalScrollProps}>
 					<Stack css={[styles.processesArea, commonStyles.flex.disableShrinkChildren]} spacing={2}>
-						{pasteProcesses.map((process) => (
-							<PasteProcess key={process.id} process={process} />
-						))}
+						{processes.map((process) =>
+							process.type === 'paste' ? (
+								<PasteProcess key={process.id} process={process} />
+							) : process.type === 'delete' ? (
+								<DeleteProcess key={process.id} process={process} />
+							) : (
+								assertUnreachable(process)
+							),
+						)}
 					</Stack>
 				</Box>
 			)}
 		</Stack>
 	);
 };
-
-function formatFileName(file: FileForUI): string {
-	if (file.extension === undefined) {
-		return file.name;
-	}
-
-	return `${file.name}${file.extension}`;
-}

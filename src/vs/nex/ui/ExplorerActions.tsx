@@ -13,52 +13,37 @@ import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
 import { useTagsActions } from 'vs/nex/platform/tag.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 
-export const ExplorerActions: React.FC<{
+type ExplorerActionsProps = {
 	selectedFiles: FileForUI[];
-}> = ({ selectedFiles }) => {
+	openSelectedFiles: () => void;
+	scheduleDeleteSelectedFiles: () => void;
+	copySelectedFiles: () => void;
+	cutSelectedFiles: () => void;
+};
+
+export const ExplorerActions: React.FC<ExplorerActionsProps> = (props) => {
 	const focusedExplorerId = useFileProviderFocusedExplorerId();
 
 	if (focusedExplorerId === undefined) {
 		return null;
 	}
 
-	return (
-		<ExplorerActionsImpl selectedFiles={selectedFiles} focusedExplorerId={focusedExplorerId} />
-	);
+	return <ExplorerActionsImpl {...props} focusedExplorerId={focusedExplorerId} />;
 };
 
-const ExplorerActionsImpl: React.FC<{
-	selectedFiles: FileForUI[];
-	focusedExplorerId: string;
-}> = ({ selectedFiles, focusedExplorerId }) => {
+const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: string }> = ({
+	selectedFiles,
+	focusedExplorerId,
+	openSelectedFiles,
+	scheduleDeleteSelectedFiles,
+	copySelectedFiles,
+	cutSelectedFiles,
+}) => {
 	const draftPasteState = useFileProviderDraftPasteState();
 
 	const fileActions = useFileActions();
 	const explorerActions = useExplorerActions(focusedExplorerId);
 	const tagActions = useTagsActions();
-
-	const openSelectedFiles = () => {
-		if (selectedFiles.length === 1 && selectedFiles[0].fileType === FILE_TYPE.DIRECTORY) {
-			explorerActions.changeDirectory(selectedFiles[0].uri.path);
-		} else {
-			selectedFiles
-				.filter((selectedFile) => selectedFile.fileType === FILE_TYPE.FILE)
-				.forEach((selectedFile) => fileActions.openFile(selectedFile.uri));
-		}
-	};
-
-	const deleteSelectedFiles = async () => {
-		await fileActions.moveFilesToTrash(selectedFiles.map((file) => file.uri));
-	};
-
-	const cutOrCopySelectedFiles = (cut: boolean) => () => {
-		return fileActions.cutOrCopyFiles(
-			selectedFiles.map((file) => file.uri),
-			cut,
-		);
-	};
-	const copySelectedFiles = cutOrCopySelectedFiles(false);
-	const cutSelectedFiles = cutOrCopySelectedFiles(true);
 
 	const singleFileActionsDisabled = selectedFiles.length !== 1;
 	const multipleFilesActionsDisabled = selectedFiles.length < 1;
@@ -83,7 +68,7 @@ const ExplorerActionsImpl: React.FC<{
 			>
 				Paste
 			</Button>
-			<Button onClick={deleteSelectedFiles} disabled={multipleFilesActionsDisabled}>
+			<Button onClick={scheduleDeleteSelectedFiles} disabled={multipleFilesActionsDisabled}>
 				Delete
 			</Button>
 			<AddTag
