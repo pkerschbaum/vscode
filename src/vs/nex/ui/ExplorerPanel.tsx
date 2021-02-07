@@ -6,12 +6,9 @@ import { styles } from 'vs/nex/ui/ExplorerPanel.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { DataTable } from 'vs/nex/ui/elements/DataTable';
-import { PasteProcess } from 'vs/nex/ui/PasteProcess';
-import { DeleteProcess } from 'vs/nex/ui/DeleteProcess';
 import {
 	FileForUI,
 	useFileProviderFiles,
-	useFileProviderProcesses,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
@@ -21,11 +18,9 @@ import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
 import { ExplorerActions } from 'vs/nex/ui/ExplorerActions';
 import { PanelActions } from 'vs/nex/ui/PanelActions';
-import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 
 export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) => {
 	const files = useFileProviderFiles(explorerId);
-	const processes = useFileProviderProcesses();
 
 	const fileActions = useFileActions();
 	const explorerActions = useExplorerActions(explorerId);
@@ -116,7 +111,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 
 	return (
 		<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
-			<Stack css={styles.explorerSection}>
+			<Stack>
 				<PanelActions
 					explorerId={explorerId}
 					filesToShow={filesToShow}
@@ -129,13 +124,8 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 				<Divider orientation="vertical" flexItem />
 				<ExplorerActions selectedFiles={selectedFiles} {...fileEditActions} />
 			</Stack>
-			<Box
-				css={[
-					styles.explorerSection,
-					commonStyles.fullHeight,
-					commonStyles.flex.shrinkAndFitVertical,
-				]}
-			>
+
+			<Box css={[commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical]}>
 				<DataTable
 					rows={rowsToShow}
 					headCells={[
@@ -182,21 +172,6 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 					}}
 				/>
 			</Box>
-			{processes.length > 0 && (
-				<Box>
-					<Stack css={[styles.processesArea, commonStyles.flex.disableShrinkChildren]} spacing={2}>
-						{processes.map((process) =>
-							process.type === 'paste' ? (
-								<PasteProcess key={process.id} process={process} />
-							) : process.type === 'delete' ? (
-								<DeleteProcess key={process.id} process={process} />
-							) : (
-								assertUnreachable(process)
-							),
-						)}
-					</Stack>
-				</Box>
-			)}
 		</Stack>
 	);
 };

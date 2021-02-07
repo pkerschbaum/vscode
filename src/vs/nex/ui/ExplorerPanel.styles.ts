@@ -1,12 +1,6 @@
-import { css, Theme } from '@emotion/react';
+import { css } from '@emotion/react';
 
 export const styles = {
-	explorerSection: (theme: Theme) =>
-		css`
-			padding-left: ${theme.spacing()};
-			padding-right: ${theme.spacing()};
-		`,
-
 	fileIcon: css`
 		::before {
 			/* icon-theme.ts sets a unwanted font-size, use !important to overrule that*/
@@ -24,15 +18,6 @@ export const styles = {
 			background-size: 24px 1em;
 			background-repeat: no-repeat;
 			-webkit-font-smoothing: antialiased;
-		}
-	`,
-
-	processesArea: (theme: Theme) => css`
-		& > *:first-of-type {
-			margin-left: ${theme.spacing()};
-		}
-		& > *:last-of-type {
-			margin-right: ${theme.spacing()};
 		}
 	`,
 };

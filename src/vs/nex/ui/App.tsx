@@ -8,19 +8,25 @@ import { styles } from 'vs/nex/ui/App.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { ExplorerPanel } from 'vs/nex/ui/ExplorerPanel';
+import { PasteProcess } from 'vs/nex/ui/PasteProcess';
+import { DeleteProcess } from 'vs/nex/ui/DeleteProcess';
 import {
 	useFileProviderCwd,
 	useFileProviderExplorers,
 	useFileProviderFocusedExplorerId,
+	useFileProviderProcesses,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useAppActions } from 'vs/nex/platform/app.hooks';
 import { KEYS } from 'vs/nex/ui/constants';
 import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
+import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 
 export const App: React.FC = () => {
 	const explorers = useFileProviderExplorers();
 	const focusedExplorerId = useFileProviderFocusedExplorerId();
+	const processes = useFileProviderProcesses();
+
 	const appActions = useAppActions();
 
 	// on mount, add first (initial) explorer panel
@@ -64,58 +70,77 @@ export const App: React.FC = () => {
 
 	return (
 		<Box className="show-file-icons" css={[styles.container, commonStyles.fullHeight]}>
-			<Stack stretchContainer alignItems="stretch" spacing={0}>
-				<Stack direction="column" alignItems="stretch">
-					<Tabs
-						css={styles.tabPanel}
-						orientation="vertical"
-						variant="scrollable"
-						value={focusedExplorerId}
-						onChange={(_, newValue) => appActions.changeFocusedExplorer(newValue)}
-					>
-						{explorersToShow.map((explorer) => (
-							<Tab
-								key={explorer.explorerId}
-								css={[styles.tab]}
-								component="div"
-								label={
-									<Stack css={commonStyles.fullWidth} justifyContent="space-between">
+			<Stack css={styles.tabsArea} direction="column" alignItems="stretch">
+				<Tabs
+					css={styles.tabsPanel}
+					orientation="vertical"
+					variant="scrollable"
+					value={focusedExplorerId}
+					onChange={(_, newValue) => appActions.changeFocusedExplorer(newValue)}
+				>
+					{explorersToShow.map((explorer) => (
+						<Tab
+							key={explorer.explorerId}
+							css={[styles.tab]}
+							component="div"
+							label={
+								<Stack css={commonStyles.fullWidth} justifyContent="space-between">
+									<Box component="span">
+										{uriHelper.extractNameAndExtension(explorer.cwd).fileName}
+									</Box>
+									<Tooltip
+										title={removeExplorerActionDisabled ? '' : 'Remove Tab'}
+										disableInteractive
+									>
 										<Box component="span">
-											{uriHelper.extractNameAndExtension(explorer.cwd).fileName}
+											<IconButton
+												disabled={removeExplorerActionDisabled}
+												style={{ padding: 8 }}
+												onClick={() => {
+													appActions.removeExplorerPanel(explorer.explorerId);
+												}}
+											>
+												<RemoveCircleOutlineIcon />
+											</IconButton>
 										</Box>
-										<Tooltip
-											title={removeExplorerActionDisabled ? '' : 'Remove Tab'}
-											disableInteractive
-										>
-											<Box component="span">
-												<IconButton
-													disabled={removeExplorerActionDisabled}
-													style={{ padding: 8 }}
-													onClick={() => {
-														appActions.removeExplorerPanel(explorer.explorerId);
-													}}
-												>
-													<RemoveCircleOutlineIcon />
-												</IconButton>
-											</Box>
-										</Tooltip>
-									</Stack>
-								}
-								value={explorer.explorerId}
-							/>
-						))}
-					</Tabs>
-					<Button onClick={appActions.addExplorerPanel}>Add Tab</Button>
-				</Stack>
-				<Box css={[commonStyles.fullHeight, commonStyles.flex.shrinkAndFitHorizontal]}>
-					{focusedExplorerId !== undefined &&
-						explorersToShow.map(({ explorerId }) => (
-							<TabPanel key={explorerId} value={focusedExplorerId} index={explorerId}>
-								<ExplorerPanelContainer explorerId={explorerId} />
-							</TabPanel>
-						))}
-				</Box>
+									</Tooltip>
+								</Stack>
+							}
+							value={explorer.explorerId}
+						/>
+					))}
+				</Tabs>
+				<Button onClick={appActions.addExplorerPanel}>Add Tab</Button>
 			</Stack>
+
+			<Box
+				css={[
+					styles.activeExplorerArea,
+					commonStyles.fullHeight,
+					commonStyles.flex.shrinkAndFitHorizontal,
+				]}
+			>
+				{focusedExplorerId !== undefined &&
+					explorersToShow.map(({ explorerId }) => (
+						<TabPanel key={explorerId} value={focusedExplorerId} index={explorerId}>
+							<ExplorerPanelContainer explorerId={explorerId} />
+						</TabPanel>
+					))}
+			</Box>
+
+			{processes.length > 0 && (
+				<Stack css={[styles.processesArea, commonStyles.flex.disableShrinkChildren]} spacing={2}>
+					{processes.map((process) =>
+						process.type === 'paste' ? (
+							<PasteProcess key={process.id} process={process} />
+						) : process.type === 'delete' ? (
+							<DeleteProcess key={process.id} process={process} />
+						) : (
+							assertUnreachable(process)
+						),
+					)}
+				</Stack>
+			)}
 		</Box>
 	);
 };
