@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box } from '@material-ui/core';
+import { Box, Button } from '@material-ui/core';
 
 import { styles } from 'vs/nex/ui/process/PasteProcess.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
@@ -21,6 +21,10 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
+			{process.status === PROCESS_STATUS.RUNNING && (
+				<Button onClick={() => process.cancellationTokenSource.cancel()}>Cancel</Button>
+			)}
+
 			<Box>Destination: {formatter.file({ name: fileName, extension })}</Box>
 
 			<Stack spacing={0.5}>

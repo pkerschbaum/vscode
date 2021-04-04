@@ -2,6 +2,7 @@ import { createAction, createReducer } from '@reduxjs/toolkit';
 
 import * as uuid from 'vs/base/common/uuid';
 import { UriComponents } from 'vs/base/common/uri';
+import { CancellationTokenSource } from 'vs/base/common/cancellation';
 
 import { createLogger } from 'vs/nex/base/logger/logger';
 import {
@@ -53,7 +54,8 @@ type AddPasteProcessPayload = Omit<PasteProcess, 'status'>;
 
 type UpdatePasteProcessPayload = {
 	id: string;
-	bytesProcessed: number;
+	bytesProcessed?: number;
+	status?: PROCESS_STATUS;
 };
 
 type AddDeleteProcessPayload = Omit<DeleteProcess, 'status'>;
@@ -61,10 +63,6 @@ type AddDeleteProcessPayload = Omit<DeleteProcess, 'status'>;
 type UpdateDeleteProcessPayload = {
 	id: string;
 	status: PROCESS_STATUS;
-};
-
-type FinishPasteProcessPayload = {
-	id: string;
 };
 
 const INITIAL_STATE: FileProviderState = {
@@ -85,7 +83,6 @@ export const actions = {
 	updatePasteProcess: createAction<UpdatePasteProcessPayload>('PASTE_PROCESS_UPDATED'),
 	addDeleteProcess: createAction<AddDeleteProcessPayload>('DELETE_PROCESS_ADDED'),
 	updateDeleteProcess: createAction<UpdateDeleteProcessPayload>('DELETE_PROCESS_UPDATED'),
-	finishPasteProcess: createAction<FinishPasteProcessPayload>('PASTE_PROCESS_FINISHED'),
 	clearDraftPasteState: createAction<void>('DRAFT_PASTE_STATE_CLEARED'),
 };
 export const reducer = createReducer(INITIAL_STATE, (builder) =>
@@ -165,7 +162,19 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 				return;
 			}
 
-			process.bytesProcessed = action.payload.bytesProcessed;
+			if (action.payload.bytesProcessed !== undefined) {
+				process.bytesProcessed = action.payload.bytesProcessed;
+			}
+			if (action.payload.status !== undefined) {
+				process.status = action.payload.status;
+
+				if (
+					action.payload.status === PROCESS_STATUS.SUCCESS ||
+					action.payload.status === PROCESS_STATUS.FAILURE
+				) {
+					process.cancellationTokenSource.dispose();
+				}
+			}
 		})
 		.addCase(actions.addDeleteProcess, (state, action) => {
 			state.processes.push({ ...action.payload, status: PROCESS_STATUS.PENDING_FOR_USER_INPUT });
@@ -181,15 +190,6 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			}
 
 			process.status = status;
-		})
-		.addCase(actions.finishPasteProcess, (state, action) => {
-			const pasteProcess = state.processes.find((pp) => pp.id === action.payload.id);
-			if (pasteProcess) {
-				pasteProcess.status = PROCESS_STATUS.SUCCESS;
-				logger.debug(`FINISHED pasteProcess, id: ${pasteProcess.id}`);
-			} else {
-				logger.error('should update paste process, but could not find corresponding one');
-			}
 		})
 		.addCase(actions.clearDraftPasteState, (state) => {
 			state.draftPasteState = undefined;

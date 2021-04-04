@@ -4,16 +4,16 @@ import { extname, basename } from 'vs/base/common/path';
 import { Constants } from 'vs/base/common/uint';
 import { isLinux } from 'vs/base/common/platform';
 import { URI, UriComponents } from 'vs/base/common/uri';
+import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { IFileStat } from 'vs/platform/files/common/files';
 
 import { actions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
 import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
 import { useClipboardResources } from 'vs/nex/NexClipboard.provider';
 import { useDispatch } from 'vs/nex/platform/store/store';
-import { PasteProcess, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
+import { PROCESS_STATUS, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
-import { objects } from 'vs/nex/base/utils/objects.util';
 import {
 	useFileProviderCwd,
 	useFileProviderDraftPasteState,
@@ -21,6 +21,7 @@ import {
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
+import { objects } from 'vs/nex/base/utils/objects.util';
 
 const UPDATE_INTERVAL_MS = 300;
 const logger = createLogger('explorer.hooks');
@@ -73,83 +74,112 @@ export function useExplorerActions(explorerId: string) {
 		}
 
 		const destinationFolder = URI.from(cwd);
-		const targetFolderStat = await fileSystem.resolve(destinationFolder);
+		const destinationFolderStat = await fileSystem.resolve(destinationFolder);
 
 		// clear draft paste state (neither cut&paste nor copy&paste is designed to be repeatable)
 		dispatch(actions.clearDraftPasteState());
 
-		await Promise.all(
-			clipboardResources.map(async (sourceFile) => {
-				const sourceFileURI = URI.from(sourceFile);
+		// for each file/folder to paste, check for some required conditions and prepare target URI
+		const pasteInfos = (
+			await Promise.all(
+				clipboardResources.map(async (sourceFile) => {
+					const sourceFileURI = URI.from(sourceFile);
 
-				// Destination folder must not be a subfolder of any source file/folder. Imagine copying
-				// a folder "test" and paste it (and its content) *into* itself, that would not work.
-				if (
-					destinationFolder.toString() !== sourceFileURI.toString() &&
-					resources.isEqualOrParent(destinationFolder, sourceFileURI, !isLinux /* ignorecase */)
-				) {
-					throw new CustomError('The destination folder is a subfolder of the source file', {
-						destinationFolder,
-						sourceFile,
+					// Destination folder must not be a subfolder of any source file/folder. Imagine copying
+					// a folder "test" and paste it (and its content) *into* itself, that would not work.
+					if (
+						destinationFolder.toString() !== sourceFileURI.toString() &&
+						resources.isEqualOrParent(destinationFolder, sourceFileURI, !isLinux /* ignorecase */)
+					) {
+						throw new CustomError('The destination folder is a subfolder of the source file', {
+							destinationFolder,
+							sourceFile,
+						});
+					}
+
+					let sourceFileStat;
+					try {
+						sourceFileStat = await fileSystem.resolve(sourceFileURI, { resolveMetadata: true });
+					} catch (err: unknown) {
+						logger.error(
+							'error during file paste process, source file was probably deleted or moved meanwhile',
+							err,
+						);
+						return;
+					}
+
+					const targetFileURI = findValidPasteFileTarget(destinationFolderStat, {
+						resource: sourceFileURI,
+						isDirectory: sourceFileStat.isDirectory,
+						allowOverwrite: false,
 					});
-				}
 
-				let sourceFileStat;
-				try {
-					sourceFileStat = await fileSystem.resolve(sourceFileURI, { resolveMetadata: true });
-				} catch (err: unknown) {
-					logger.error(
-						'error during file paste process, source file was probably deleted or moved meanwhile',
-						err,
-					);
-					return;
-				}
+					return { sourceFileURI, sourceFileStat, targetFileURI };
+				}),
+			)
+		).filter(objects.isNotNullish);
+
+		// after target URI got prepared, initialize paste status fields and gather totalSize
+		const id = uuid.generateUuid();
+		let totalSize = 0;
+		let bytesProcessed = 0;
+		let cancellationTokenSource = new CancellationTokenSource();
+		const statusPerFile: {
+			[uri: string]: { bytesProcessed: number };
+		} = {};
+
+		await Promise.all(
+			pasteInfos.map(async (pasteInfo) => {
+				const { sourceFileURI, sourceFileStat } = pasteInfo;
 
 				const fileStatMap = await fileActions.resolveDeep(sourceFileURI, sourceFileStat);
 
-				const pasteProcess: Omit<PasteProcess, 'status'> = {
-					type: 'paste',
-					id: uuid.generateUuid(),
-					totalSize: 0,
-					bytesProcessed: 0,
-					destinationFolder: destinationFolder.toJSON(),
-				};
-				const statusPerFile: {
-					[uri: string]: { bytesProcessed: number };
-				} = {};
-
 				Object.entries(fileStatMap).forEach(([uri, fileStat]) => {
-					pasteProcess.totalSize += fileStat.size;
+					totalSize += fileStat.size;
 					statusPerFile[uri] = { bytesProcessed: 0 };
 				});
+			}),
+		);
 
-				dispatch(actions.addPasteProcess(objects.deepCopyJson(pasteProcess)));
+		// dispatch infos about the paste process about to start
+		dispatch(
+			actions.addPasteProcess({
+				type: 'paste',
+				id,
+				totalSize,
+				bytesProcessed,
+				destinationFolder: destinationFolder.toJSON(),
+				cancellationTokenSource,
+			}),
+		);
 
-				const intervalId = setInterval(function dispatchProgress() {
-					dispatch(
-						actions.updatePasteProcess({
-							id: pasteProcess.id,
-							bytesProcessed: pasteProcess.bytesProcessed,
-						}),
-					);
-				}, UPDATE_INTERVAL_MS);
+		// perform paste
+		let errorOccured = false;
+		function progressCb(newBytesRead: number, forSource: URI) {
+			bytesProcessed += newBytesRead;
+			statusPerFile[forSource.toString()].bytesProcessed += newBytesRead;
+		}
+		const intervalId = setInterval(function dispatchProgress() {
+			dispatch(actions.updatePasteProcess({ id, bytesProcessed }));
+		}, UPDATE_INTERVAL_MS);
 
-				try {
-					const targetFileURI = findValidPasteFileTarget(targetFolderStat, {
-						resource: sourceFileURI,
-						isDirectory: sourceFileStat.isDirectory,
-						allowOverwrite: draftPasteState.pasteShouldMove,
-					});
+		try {
+			cancellationTokenSource.token.onCancellationRequested(() => clearInterval(intervalId));
 
-					const progressCb = (newBytesRead: number, forSource: URI) => {
-						pasteProcess.bytesProcessed += newBytesRead;
-						statusPerFile[forSource.toString()].bytesProcessed += newBytesRead;
-					};
+			await Promise.all(
+				pasteInfos.filter(objects.isNotNullish).map(async (pasteInfo) => {
+					const { sourceFileURI, sourceFileStat, targetFileURI } = pasteInfo;
 
 					// Move/Copy File
 					const operation = draftPasteState.pasteShouldMove
-						? fileSystem.move(sourceFileURI, targetFileURI, undefined, { progressCb })
-						: fileSystem.copy(sourceFileURI, targetFileURI, undefined, { progressCb });
+						? fileSystem.move(sourceFileURI, targetFileURI, undefined, {
+								token: cancellationTokenSource.token,
+								progressCb,
+						  })
+						: fileSystem.copy(sourceFileURI, targetFileURI, undefined, {
+								token: cancellationTokenSource.token,
+								progressCb,
+						  });
 					await operation;
 
 					// Also copy tags to destination
@@ -165,15 +195,38 @@ export function useExplorerActions(explorerId: string) {
 					if (draftPasteState.pasteShouldMove) {
 						fileActions.removeTags([sourceFileURI], tagsOfSourceFile);
 					}
+				}),
+			);
 
-					dispatch(actions.finishPasteProcess({ id: pasteProcess.id }));
-				} finally {
-					clearInterval(intervalId);
-				}
-			}),
-		);
+			dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.SUCCESS }));
+		} catch (err) {
+			errorOccured = true;
+			dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.FAILURE }));
+		} finally {
+			clearInterval(intervalId);
+			cancellationTokenSource.dispose();
+		}
 
-		// invalidate files of the explorer
+		/*
+		 * If an error occured or cancellation was requested, perform cleanup.
+		 * We can just permanently delete all target file URIs (and, if it's a folder, its contents),
+		 * since "findValidPasteFileTarget" makes sure that the paste target URIs are new, without conflict.
+		 */
+		const cleanupNecessary = errorOccured || cancellationTokenSource.token.isCancellationRequested;
+		if (cleanupNecessary) {
+			await Promise.all(
+				pasteInfos.map(async (pasteInfo) => {
+					const { targetFileURI } = pasteInfo;
+					try {
+						await fileSystem.del(targetFileURI, { useTrash: false, recursive: true });
+					} catch {
+						// ignore
+					}
+				}),
+			);
+		}
+
+		// invalidate files of the target directory
 		await invalidateFiles(cwd);
 	}
 
@@ -222,7 +275,7 @@ function incrementFileName(name: string, isFolder: boolean): string {
 	const suffixRegex = /^(.+ copy)( \d+)?$/;
 	if (suffixRegex.test(namePrefix)) {
 		return (
-			namePrefix.replace(suffixRegex, (match, g1?, g2?) => {
+			namePrefix.replace(suffixRegex, (_, g1?, g2?) => {
 				const number = g2 ? parseInt(g2) : 1;
 				return number === 0
 					? `${g1}`

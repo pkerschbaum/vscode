@@ -4,7 +4,7 @@ import { Box, Button } from '@material-ui/core';
 import { URI } from 'vs/base/common/uri';
 
 import { Stack } from 'vs/nex/ui/layouts/Stack';
-import { DeleteProcess as DeleteProcessType } from 'vs/nex/platform/file-types';
+import { DeleteProcess as DeleteProcessType, PROCESS_STATUS } from 'vs/nex/platform/file-types';
 import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
@@ -14,7 +14,9 @@ export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ proces
 
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
-			<Button onClick={() => fileActions.runDeleteProcess(process.id)}>Run</Button>
+			{process.status !== PROCESS_STATUS.SUCCESS && (
+				<Button onClick={() => fileActions.runDeleteProcess(process.id)}>Run</Button>
+			)}
 
 			<Box>{process.status}</Box>
 

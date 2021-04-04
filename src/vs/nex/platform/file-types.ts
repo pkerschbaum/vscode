@@ -1,4 +1,6 @@
 import { UriComponents } from 'vs/base/common/uri';
+import { CancellationTokenSource } from 'vs/base/common/cancellation';
+
 import { NarrowUnion } from 'vs/nex/base/utils/types.util';
 import { IFileStatWithMetadata } from 'vs/platform/files/common/files';
 
@@ -22,6 +24,7 @@ export type Process = {
 			totalSize: number;
 			bytesProcessed: number;
 			destinationFolder: UriComponents;
+			cancellationTokenSource: CancellationTokenSource;
 	  }
 	| {
 			type: 'delete';
