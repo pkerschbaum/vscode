@@ -14,7 +14,7 @@ export function useAppActions() {
 
 	async function addExplorerPanel() {
 		const explorerId = generateExplorerId();
-		const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/home/pkerschbaum');
+		const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, '/home/pkerschbaum/TEMP');
 		const stats = await fileSystem.resolve(parsedUri);
 		if (!stats.isDirectory) {
 			throw Error(

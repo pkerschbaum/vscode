@@ -94,7 +94,8 @@ export const App: React.FC = () => {
 										<Box component="span">
 											<IconButton
 												disabled={removeExplorerActionDisabled}
-												onClick={() => {
+												onClick={(e) => {
+													e.stopPropagation();
 													appActions.removeExplorerPanel(explorer.explorerId);
 												}}
 											>
