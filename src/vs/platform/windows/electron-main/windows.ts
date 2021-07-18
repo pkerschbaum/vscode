@@ -15,6 +15,47 @@ import { Rectangle, BrowserWindow, WebContents } from 'electron';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { CancellationToken } from 'vs/base/common/cancellation';
 
+export const enum LoadReason {
+
+	/**
+	 * The window is loaded for the first time.
+	 */
+	INITIAL = 1,
+
+	/**
+	 * The window is loaded into a different workspace context.
+	 */
+	LOAD,
+
+	/**
+	 * The window is reloaded.
+	 */
+	RELOAD
+}
+
+export const enum UnloadReason {
+
+	/**
+	 * The window is closed.
+	 */
+	CLOSE = 1,
+
+	/**
+	 * All windows unload because the application quits.
+	 */
+	QUIT,
+
+	/**
+	 * The window is reloaded.
+	 */
+	RELOAD,
+
+	/**
+	 * The window is loaded into a different workspace context.
+	 */
+	LOAD
+}
+
 export const enum OpenContext {
 
 	// opening when running from the command line
@@ -45,6 +86,14 @@ export interface IWindowState {
 	display?: number;
 }
 
+export const defaultWindowState = function (mode = WindowMode.Normal): IWindowState {
+	return {
+		width: 1024,
+		height: 768,
+		mode
+	};
+};
+
 export const enum WindowMode {
 	Maximized,
 	Normal,
@@ -52,17 +101,22 @@ export const enum WindowMode {
 	Fullscreen
 }
 
+export interface ILoadEvent {
+	workspace: IWorkspaceIdentifier | ISingleFolderWorkspaceIdentifier | undefined;
+	reason: LoadReason;
+}
+
 export interface ICodeWindow extends IDisposable {
 
-	readonly onLoad: Event<void>;
-	readonly onReady: Event<void>;
-	readonly onClose: Event<void>;
-	readonly onDestroy: Event<void>;
+	readonly onWillLoad: Event<ILoadEvent>;
+	readonly onDidSignalReady: Event<void>;
+	readonly onDidClose: Event<void>;
+	readonly onDidDestroy: Event<void>;
 
 	readonly whenClosedOrLoaded: Promise<void>;
 
 	readonly id: number;
-	readonly win: BrowserWindow;
+	readonly win: BrowserWindow | null; /* `null` after being disposed */
 	readonly config: INativeWindowConfiguration | undefined;
 
 	readonly openedWorkspace?: IWorkspaceIdentifier | ISingleFolderWorkspaceIdentifier;
@@ -113,6 +167,24 @@ export interface ICodeWindow extends IDisposable {
 	serializeWindowState(): IWindowState;
 }
 
+export const enum WindowError {
+
+	/**
+	 * Maps to the `unresponsive` event on a `BrowserWindow`.
+	 */
+	UNRESPONSIVE = 1,
+
+	/**
+	 * Maps to the `render-proces-gone` event on a `WebContents`.
+	 */
+	CRASHED = 2,
+
+	/**
+	 * Maps to the `did-fail-load` event on a `WebContents`.
+	 */
+	LOAD = 3
+}
+
 export const IWindowsMainService = createDecorator<IWindowsMainService>('windowsMainService');
 
 export interface IWindowsCountChangedEvent {
@@ -124,11 +196,11 @@ export interface IWindowsMainService {
 
 	readonly _serviceBrand: undefined;
 
-	readonly onWindowsCountChanged: Event<IWindowsCountChangedEvent>;
+	readonly onDidChangeWindowsCount: Event<IWindowsCountChangedEvent>;
 
-	readonly onWindowOpened: Event<ICodeWindow>;
-	readonly onWindowReady: Event<ICodeWindow>;
-	readonly onWindowDestroyed: Event<ICodeWindow>;
+	readonly onDidOpenWindow: Event<ICodeWindow>;
+	readonly onDidSignalReadyWindow: Event<ICodeWindow>;
+	readonly onDidDestroyWindow: Event<ICodeWindow>;
 
 	open(openConfig: IOpenConfiguration): ICodeWindow[];
 	openEmptyWindow(openConfig: IOpenEmptyConfiguration, options?: IOpenEmptyWindowOptions): ICodeWindow[];
@@ -167,6 +239,12 @@ export interface IOpenConfiguration extends IBaseOpenConfiguration {
 	readonly gotoLineMode?: boolean;
 	readonly initialStartup?: boolean;
 	readonly noRecentEntry?: boolean;
+	/**
+	 * The remote authority to use when windows are opened with either
+	 * - no workspace (empty window)
+	 * - a workspace that is neither `file://` nor `vscode-remote://`
+	 */
+	readonly remoteAuthority?: string;
 }
 
 export interface IOpenEmptyConfiguration extends IBaseOpenConfiguration { }

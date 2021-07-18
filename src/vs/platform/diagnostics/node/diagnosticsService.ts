@@ -4,34 +4,20 @@
  *--------------------------------------------------------------------------------------------*/
 import * as osLib from 'os';
 import { virtualMachineHint } from 'vs/base/node/id';
-import { IMachineInfo, WorkspaceStats, WorkspaceStatItem, PerformanceInfo, SystemInfo, IRemoteDiagnosticInfo, IRemoteDiagnosticError, isRemoteDiagnosticError, IWorkspaceInformation } from 'vs/platform/diagnostics/common/diagnostics';
-import { exists, readFile } from 'fs';
+import { IDiagnosticsService, IMachineInfo, WorkspaceStats, WorkspaceStatItem, PerformanceInfo, SystemInfo, IRemoteDiagnosticInfo, IRemoteDiagnosticError, isRemoteDiagnosticError, IWorkspaceInformation } from 'vs/platform/diagnostics/common/diagnostics';
 import { join, basename } from 'vs/base/common/path';
 import { parse, ParseError, getNodeType } from 'vs/base/common/json';
 import { listProcesses } from 'vs/base/node/ps';
-import product from 'vs/platform/product/common/product';
+import { IProductService } from 'vs/platform/product/common/productService';
 import { isWindows, isLinux } from 'vs/base/common/platform';
 import { URI } from 'vs/base/common/uri';
 import { ProcessItem } from 'vs/base/common/processes';
-import { IMainProcessInfo } from 'vs/platform/launch/node/launch';
+import { IMainProcessInfo } from 'vs/platform/launch/common/launch';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { Iterable } from 'vs/base/common/iterator';
 import { Schemas } from 'vs/base/common/network';
 import { ByteSize } from 'vs/platform/files/common/files';
-import { IDirent, readdir } from 'vs/base/node/pfs';
-
-export const ID = 'diagnosticsService';
-export const IDiagnosticsService = createDecorator<IDiagnosticsService>(ID);
-
-export interface IDiagnosticsService {
-	readonly _serviceBrand: undefined;
-
-	getPerformanceInfo(mainProcessInfo: IMainProcessInfo, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<PerformanceInfo>;
-	getSystemInfo(mainProcessInfo: IMainProcessInfo, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<SystemInfo>;
-	getDiagnostics(mainProcessInfo: IMainProcessInfo, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<string>;
-	reportWorkspaceStats(workspace: IWorkspaceInformation): Promise<void>;
-}
+import { IDirent, Promises } from 'vs/base/node/pfs';
 
 export interface VersionInfo {
 	vscodeVersion: string;
@@ -83,7 +69,7 @@ export async function collectWorkspaceStats(folder: string, filter: string[]): P
 		return new Promise(async resolve => {
 			let files: IDirent[];
 			try {
-				files = await readdir(dir, { withFileTypes: true });
+				files = await Promises.readdir(dir, { withFileTypes: true });
 			} catch (error) {
 				// Ignore folders that can't be read
 				resolve();
@@ -181,52 +167,47 @@ export function getMachineInfo(): IMachineInfo {
 	return machineInfo;
 }
 
-export function collectLaunchConfigs(folder: string): Promise<WorkspaceStatItem[]> {
-	let launchConfigs = new Map<string, number>();
+export async function collectLaunchConfigs(folder: string): Promise<WorkspaceStatItem[]> {
+	try {
+		const launchConfigs = new Map<string, number>();
+		const launchConfig = join(folder, '.vscode', 'launch.json');
 
-	let launchConfig = join(folder, '.vscode', 'launch.json');
-	return new Promise((resolve, reject) => {
-		exists(launchConfig, (doesExist) => {
-			if (doesExist) {
-				readFile(launchConfig, (err, contents) => {
-					if (err) {
-						return resolve([]);
+		const contents = await Promises.readFile(launchConfig);
+
+		const errors: ParseError[] = [];
+		const json = parse(contents.toString(), errors);
+		if (errors.length) {
+			console.log(`Unable to parse ${launchConfig}`);
+			return [];
+		}
+
+		if (getNodeType(json) === 'object' && json['configurations']) {
+			for (const each of json['configurations']) {
+				const type = each['type'];
+				if (type) {
+					if (launchConfigs.has(type)) {
+						launchConfigs.set(type, launchConfigs.get(type)! + 1);
+					} else {
+						launchConfigs.set(type, 1);
 					}
-
-					const errors: ParseError[] = [];
-					const json = parse(contents.toString(), errors);
-					if (errors.length) {
-						console.log(`Unable to parse ${launchConfig}`);
-						return resolve([]);
-					}
-
-					if (getNodeType(json) === 'object' && json['configurations']) {
-						for (const each of json['configurations']) {
-							const type = each['type'];
-							if (type) {
-								if (launchConfigs.has(type)) {
-									launchConfigs.set(type, launchConfigs.get(type)! + 1);
-								} else {
-									launchConfigs.set(type, 1);
-								}
-							}
-						}
-					}
-
-					return resolve(asSortedItems(launchConfigs));
-				});
-			} else {
-				return resolve([]);
+				}
 			}
-		});
-	});
+		}
+
+		return asSortedItems(launchConfigs);
+	} catch (error) {
+		return [];
+	}
 }
 
 export class DiagnosticsService implements IDiagnosticsService {
 
 	declare readonly _serviceBrand: undefined;
 
-	constructor(@ITelemetryService private readonly telemetryService: ITelemetryService) { }
+	constructor(
+		@ITelemetryService private readonly telemetryService: ITelemetryService,
+		@IProductService private readonly productService: IProductService
+	) { }
 
 	private formatMachineInfo(info: IMachineInfo): string {
 		const output: string[] = [];
@@ -240,7 +221,7 @@ export class DiagnosticsService implements IDiagnosticsService {
 
 	private formatEnvironment(info: IMainProcessInfo): string {
 		const output: string[] = [];
-		output.push(`Version:          ${product.nameShort} ${product.version} (${product.commit || 'Commit unknown'}, ${product.date || 'Date unknown'})`);
+		output.push(`Version:          ${this.productService.nameShort} ${this.productService.version} (${this.productService.commit || 'Commit unknown'}, ${this.productService.date || 'Date unknown'})`);
 		output.push(`OS Version:       ${osLib.type()} ${osLib.arch()} ${osLib.release()}`);
 		const cpus = osLib.cpus();
 		if (cpus && cpus.length > 0) {
@@ -494,7 +475,7 @@ export class DiagnosticsService implements IDiagnosticsService {
 		// Format name with indent
 		let name: string;
 		if (isRoot) {
-			name = item.pid === mainPid ? `${product.applicationName} main` : 'remote agent';
+			name = item.pid === mainPid ? `${this.productService.applicationName} main` : 'remote agent';
 		} else {
 			name = `${'  '.repeat(indent)} ${item.name}`;
 

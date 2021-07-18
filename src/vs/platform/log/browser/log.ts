@@ -5,8 +5,21 @@
 
 import { DEFAULT_LOG_LEVEL, LogLevel, AdapterLogger, ILogger } from 'vs/platform/log/common/log';
 
-interface IAutomatedWindow {
+export interface IAutomatedWindow {
 	codeAutomationLog(type: string, args: any[]): void;
+	codeAutomationExit(code: number): void;
+}
+
+function logLevelToString(level: LogLevel): string {
+	switch (level) {
+		case LogLevel.Trace: return 'trace';
+		case LogLevel.Debug: return 'debug';
+		case LogLevel.Info: return 'info';
+		case LogLevel.Warning: return 'warn';
+		case LogLevel.Error: return 'error';
+		case LogLevel.Critical: return 'error';
+	}
+	return 'info';
 }
 
 /**
@@ -19,7 +32,7 @@ export class ConsoleLogInAutomationLogger extends AdapterLogger implements ILogg
 	declare codeAutomationLog: any;
 
 	constructor(logLevel: LogLevel = DEFAULT_LOG_LEVEL) {
-		super({ log: (type, args) => this.consoleLog(type, args) }, logLevel);
+		super({ log: (level, args) => this.consoleLog(logLevelToString(level), args) }, logLevel);
 	}
 
 	private consoleLog(type: string, args: any[]): void {
