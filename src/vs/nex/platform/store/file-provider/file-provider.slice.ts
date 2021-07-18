@@ -2,17 +2,9 @@ import { createAction, createReducer } from '@reduxjs/toolkit';
 
 import * as uuid from 'vs/base/common/uuid';
 import { UriComponents } from 'vs/base/common/uri';
-import { CancellationTokenSource } from 'vs/base/common/cancellation';
 
 import { createLogger } from 'vs/nex/base/logger/logger';
-import {
-	Process,
-	PROCESS_STATUS,
-	DeleteProcess,
-	PasteProcess,
-	RESOURCES_SCHEME,
-} from 'vs/nex/platform/file-types';
-import { uriHelper } from 'vs/nex/base/utils/uri-helper';
+import { Process, PROCESS_STATUS, DeleteProcess, PasteProcess } from 'vs/nex/platform/file-types';
 
 export type FileProviderState = {
 	explorers: {
