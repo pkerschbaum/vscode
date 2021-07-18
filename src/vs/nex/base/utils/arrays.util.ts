@@ -1,10 +1,7 @@
 import { matchSorter, MatchSorterOptions } from 'match-sorter';
 
-import * as vsArraysUtils from 'vs/base/common/arrays';
-
 export const arrays = {
 	isNullishOrEmpty,
-	stableSort: vsArraysUtils.mergeSort,
 	flatten,
 	uniqueValues,
 	shallowCopy,
@@ -95,7 +92,7 @@ function wrap<T>(array: T[]) {
 	let currentVal = array;
 	const wrapper = {
 		stableSort: (compareFn: (a: T, b: T) => number) => {
-			currentVal = vsArraysUtils.mergeSort(currentVal, compareFn);
+			currentVal = currentVal.sort(compareFn);
 			return wrapper;
 		},
 		matchSort: (value: string, options?: MatchSorterOptions<T>) => {
