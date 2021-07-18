@@ -135,7 +135,11 @@ export const AddTag: React.FC<{
 			<Dialog open={open} onClose={handleClose}>
 				<form onSubmit={handleSubmit}>
 					<DialogTitle>Add a new tag</DialogTitle>
-					<DialogContent>
+					<DialogContent
+						css={css`
+							overflow-y: initial;
+						`}
+					>
 						<Stack direction="column" alignItems="start">
 							<Stack>
 								<Button

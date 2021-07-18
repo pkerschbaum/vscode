@@ -1,6 +1,6 @@
 import {
 	// https://github.com/mui-org/material-ui/issues/13394
-	unstable_createMuiStrictModeTheme as createMuiTheme,
+	createTheme as createMuiTheme,
 	ThemeOptions as MuiThemeOptions,
 	Theme as MuiTheme,
 } from '@material-ui/core/styles';
@@ -8,7 +8,7 @@ import { Localization } from '@material-ui/core/locale';
 
 import { PROCESS_STATUS } from 'vs/nex/platform/file-types';
 
-declare module '@material-ui/core/styles/createMuiTheme' {
+declare module '@material-ui/core/styles/createTheme' {
 	interface Theme {
 		availableTagColors: string[];
 		processStatusColors: {
@@ -49,7 +49,6 @@ export const createTheme = (locale: Localization) => {
 				styleOverrides: {
 					root: {
 						color: primaryColor,
-						padding: 4,
 					},
 				},
 			},

@@ -62,7 +62,7 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 				Cut
 			</Button>
 			<Button
-				variant={draftPasteState === undefined ? 'outlined' : 'contained'}
+				variant={draftPasteState === undefined ? undefined : 'contained'}
 				onClick={explorerActions.pasteFiles}
 				disabled={draftPasteState === undefined}
 			>

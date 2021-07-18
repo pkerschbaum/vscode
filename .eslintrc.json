@@ -1010,7 +1010,8 @@
 				"src/vs/nex/**/*.{ts,tsx}"
 			],
 			"rules": {
-				"code-no-unexternalized-strings": "off"
+				"code-no-unexternalized-strings": "off",
+				"header/header": "off"
 			}
 		},
 		{

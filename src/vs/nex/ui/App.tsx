@@ -94,7 +94,6 @@ export const App: React.FC = () => {
 										<Box component="span">
 											<IconButton
 												disabled={removeExplorerActionDisabled}
-												style={{ padding: 8 }}
 												onClick={() => {
 													appActions.removeExplorerPanel(explorer.explorerId);
 												}}
