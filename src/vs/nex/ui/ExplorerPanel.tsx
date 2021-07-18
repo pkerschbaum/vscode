@@ -5,7 +5,12 @@ import { matchSorter } from 'match-sorter';
 import { styles } from 'vs/nex/ui/ExplorerPanel.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
-import { DataTable } from 'vs/nex/ui/elements/DataTable';
+import { Cell } from 'vs/nex/ui/elements/DataTable/Cell';
+import { DataTable } from 'vs/nex/ui/elements/DataTable/DataTable';
+import { HeadCell } from 'vs/nex/ui/elements/DataTable/HeadCell';
+import { Row } from 'vs/nex/ui/elements/DataTable/Row';
+import { TableBody } from 'vs/nex/ui/elements/DataTable/TableBody';
+import { TableHead } from 'vs/nex/ui/elements/DataTable/TableHead';
 import {
 	FileForUI,
 	useFileProviderFiles,
@@ -126,51 +131,56 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 			</Stack>
 
 			<Box css={[commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical]}>
-				<DataTable
-					rows={rowsToShow}
-					headCells={[
-						{
-							label: 'Name',
-							format: (row) => (
-								<Stack
-									css={styles.fileIcon}
-									className={row.iconClasses.join(' ')}
-									alignItems="center"
-								>
-									<Box component="span">{formatter.file(row)}</Box>
-									{row.tags.map((tag) => (
-										<Chip
-											key={tag.id}
-											style={{ backgroundColor: tag.colorHex }}
-											variant="outlined"
-											size="small"
-											label={tag.name}
-											onDelete={() => fileActions.removeTags([row.uri], [tag.id])}
-										/>
-									))}
-								</Stack>
-							),
-						},
-						{
-							label: 'Size',
-							format: (row) => {
-								if (row.fileType !== FILE_TYPE.FILE || row.size === undefined) {
-									return;
-								}
+				<DataTable>
+					<TableHead>
+						<HeadCell>Name</HeadCell>
+						<HeadCell>Size</HeadCell>
+					</TableHead>
 
-								return formatter.bytes(row.size);
-							},
-						},
-					]}
-					onRowClick={(row) => setIdsOfSelectedFiles([row.id])}
-					onRowDoubleClick={(row) => {
-						if (row.fileType === FILE_TYPE.DIRECTORY) {
-							explorerActions.changeDirectory(row.uri.path);
-						} else if (row.fileType === FILE_TYPE.FILE) {
-							fileActions.openFile(row.uri);
-						}
-					}}
-				/>
+					{rowsToShow.length > 0 && (
+						<TableBody>
+							{rowsToShow.map((row) => (
+								<Row
+									key={row.id}
+									onClick={() => setIdsOfSelectedFiles([row.id])}
+									onDoubleClick={() => {
+										if (row.data.fileType === FILE_TYPE.DIRECTORY) {
+											explorerActions.changeDirectory(row.data.uri.path);
+										} else if (row.data.fileType === FILE_TYPE.FILE) {
+											fileActions.openFile(row.data.uri);
+										}
+									}}
+									selected={row.selected}
+								>
+									<Cell>
+										<Stack
+											css={styles.fileIcon}
+											className={row.data.iconClasses.join(' ')}
+											alignItems="center"
+										>
+											<Box component="span">{formatter.file(row.data)}</Box>
+											{row.data.tags.map((tag) => (
+												<Chip
+													key={tag.id}
+													style={{ backgroundColor: tag.colorHex }}
+													variant="outlined"
+													size="small"
+													label={tag.name}
+													onDelete={() => fileActions.removeTags([row.data.uri], [tag.id])}
+												/>
+											))}
+										</Stack>
+									</Cell>
+									<Cell>
+										{row.data.fileType === FILE_TYPE.FILE &&
+											row.data.size !== undefined &&
+											formatter.bytes(row.data.size)}
+									</Cell>
+								</Row>
+							))}
+						</TableBody>
+					)}
+				</DataTable>
 			</Box>
 		</Stack>
 	);

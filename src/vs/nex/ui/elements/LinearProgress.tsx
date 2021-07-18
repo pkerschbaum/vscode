@@ -1,11 +1,11 @@
 // taken from: https://material-ui.com/components/progress/#linear-with-label
+import * as React from 'react';
 import {
 	Box,
 	LinearProgress as MuiLinearProgress,
 	LinearProgressProps as MuiLinearProgressProps,
 	Typography,
 } from '@material-ui/core';
-import * as React from 'react';
 
 type LinearProgressProps = Omit<MuiLinearProgressProps, 'variant'> & {
 	value: number;
