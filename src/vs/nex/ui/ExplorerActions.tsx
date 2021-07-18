@@ -3,6 +3,7 @@ import { Button } from '@material-ui/core';
 
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { AddTag } from 'vs/nex/ui/AddTag';
+import { CreateFolder } from 'vs/nex/ui/CreateFolder';
 import {
 	FileForUI,
 	useFileProviderDraftPasteState,
@@ -71,6 +72,7 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 			<Button onClick={scheduleDeleteSelectedFiles} disabled={multipleFilesActionsDisabled}>
 				Delete
 			</Button>
+			<CreateFolder onSubmit={explorerActions.createFolder} />
 			<AddTag
 				options={Object.entries(tagActions.getTags()).map(([id, otherValues]) => ({
 					...otherValues,

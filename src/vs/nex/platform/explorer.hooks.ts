@@ -230,9 +230,19 @@ export function useExplorerActions(explorerId: string) {
 		await invalidateFiles(cwd);
 	}
 
+	async function createFolder(folderName: string) {
+		// create folder
+		const folderUri = URI.joinPath(URI.from(cwd), folderName);
+		await fileSystem.createFolder(folderUri);
+
+		// invalidate files of the target directory
+		await invalidateFiles(cwd);
+	}
+
 	return {
 		changeDirectory,
 		pasteFiles,
+		createFolder,
 	};
 }
 

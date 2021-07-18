@@ -29,13 +29,21 @@ type WithInput<T> = T & {
 
 const autocompleteDefaultFilter = createFilterOptions<WithInput<Tag>>();
 
-export const AddTag: React.FC<{
+type AddTagProps = {
 	options: Tag[];
 	onValueCreated: (value: Omit<Tag, 'id'>) => Tag;
 	onValueChosen: (value: Tag) => void;
 	onValueDeleted: (value: Tag) => void;
 	disabled?: boolean;
-}> = ({ options, onValueCreated, onValueChosen, onValueDeleted, disabled }) => {
+};
+
+export const AddTag: React.FC<AddTagProps> = ({
+	options,
+	onValueCreated,
+	onValueChosen,
+	onValueDeleted,
+	disabled,
+}) => {
 	const { availableTagColors } = useTheme();
 	const defaultTag = {
 		inputValue: '',
@@ -151,7 +159,6 @@ export const AddTag: React.FC<{
 								<TextField
 									css={styles.tagNameInput}
 									autoFocus
-									margin="none"
 									label="Name of tag"
 									value={dialogValue.name}
 									onChange={(event) =>

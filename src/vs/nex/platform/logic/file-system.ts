@@ -18,7 +18,10 @@ const logger = createLogger('nexFileSystem');
 export const NexFileSystem = createDecorator<NexFileSystem>('nexFileSystem');
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type NexFileSystem = Pick<IFileService, 'resolve' | 'del' | 'copy' | 'move'> & {
+export type NexFileSystem = Pick<
+	IFileService,
+	'resolve' | 'del' | 'copy' | 'move' | 'createFolder'
+> & {
 	_serviceBrand: undefined;
 
 	checkDirectory(path: string): Promise<boolean>;
@@ -33,6 +36,7 @@ export class NexFileSystemImpl implements NexFileSystem {
 	public del = this.fileService.del.bind(this.fileService);
 	public copy = this.fileService.copy.bind(this.fileService);
 	public move = this.fileService.move.bind(this.fileService);
+	public createFolder = this.fileService.createFolder.bind(this.fileService);
 
 	public checkDirectory = async (path: string) => {
 		try {

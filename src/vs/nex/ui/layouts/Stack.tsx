@@ -17,7 +17,7 @@ type StackProps = {
 	stretchContainer?: boolean;
 	children: React.ReactNode;
 	className?: string;
-	boxProps?: BoxProps;
+	sx?: BoxProps['sx'];
 };
 
 export const Stack = React.forwardRef<HTMLElement, StackProps>(
@@ -33,7 +33,6 @@ export const Stack = React.forwardRef<HTMLElement, StackProps>(
 			spacing,
 			stretchContainer = false,
 			children,
-			boxProps,
 			...rest
 		},
 		ref,
@@ -57,7 +56,6 @@ export const Stack = React.forwardRef<HTMLElement, StackProps>(
 						(direction === 'column' ? commonStyles.fullWidth : commonStyles.fullHeight),
 				]}
 				ref={ref}
-				{...boxProps}
 				/* we spread any additional props onto the box to support the Tooltip component
 				 * see https://material-ui.com/components/tooltips/#custom-child-element
 				 */
