@@ -15,7 +15,15 @@ export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ proces
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
 			{process.status !== PROCESS_STATUS.SUCCESS && (
-				<Button onClick={() => fileActions.runDeleteProcess(process.id)}>Run</Button>
+				<>
+					<Button onClick={() => fileActions.runDeleteProcess(process.id, { useTrash: true })}>
+						Move to trash
+					</Button>
+					<Button onClick={() => fileActions.runDeleteProcess(process.id, { useTrash: false })}>
+						Delete permanently
+					</Button>
+					<Button onClick={() => fileActions.removeProcess(process.id)}>Abort</Button>
+				</>
 			)}
 
 			<Box>{process.status}</Box>

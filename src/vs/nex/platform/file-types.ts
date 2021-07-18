@@ -20,14 +20,14 @@ export type Process = {
 	status: PROCESS_STATUS;
 } & (
 	| {
-			type: 'paste';
+			type: PROCESS_TYPE.PASTE;
 			totalSize: number;
 			bytesProcessed: number;
 			destinationFolder: UriComponents;
 			cancellationTokenSource: CancellationTokenSource;
 	  }
 	| {
-			type: 'delete';
+			type: PROCESS_TYPE.DELETE;
 			uris: UriComponents[];
 	  }
 );
@@ -39,9 +39,14 @@ export enum PROCESS_STATUS {
 	FAILURE = 'FAILURE',
 }
 
-export type PasteProcess = NarrowUnion<Process, 'type', 'paste'>;
+export enum PROCESS_TYPE {
+	PASTE = 'PASTE',
+	DELETE = 'DELETE',
+}
 
-export type DeleteProcess = NarrowUnion<Process, 'type', 'delete'>;
+export type PasteProcess = NarrowUnion<Process, 'type', PROCESS_TYPE.PASTE>;
+
+export type DeleteProcess = NarrowUnion<Process, 'type', PROCESS_TYPE.DELETE>;
 
 export type FileMap = {
 	[stringifiedUri: string]: File | undefined;

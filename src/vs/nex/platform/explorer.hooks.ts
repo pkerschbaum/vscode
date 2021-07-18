@@ -11,7 +11,7 @@ import { actions } from 'vs/nex/platform/store/file-provider/file-provider.slice
 import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
 import { useClipboardResources } from 'vs/nex/NexClipboard.provider';
 import { useDispatch } from 'vs/nex/platform/store/store';
-import { PROCESS_STATUS, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
+import { PROCESS_STATUS, PROCESS_TYPE, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
 import {
@@ -144,7 +144,7 @@ export function useExplorerActions(explorerId: string) {
 		// dispatch infos about the paste process about to start
 		dispatch(
 			actions.addPasteProcess({
-				type: 'paste',
+				type: PROCESS_TYPE.PASTE,
 				id,
 				totalSize,
 				bytesProcessed,

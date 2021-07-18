@@ -4,7 +4,14 @@ import * as uuid from 'vs/base/common/uuid';
 import { UriComponents } from 'vs/base/common/uri';
 
 import { createLogger } from 'vs/nex/base/logger/logger';
-import { Process, PROCESS_STATUS, DeleteProcess, PasteProcess } from 'vs/nex/platform/file-types';
+import {
+	Process,
+	PROCESS_STATUS,
+	DeleteProcess,
+	PasteProcess,
+	PROCESS_TYPE,
+} from 'vs/nex/platform/file-types';
+import { arrays } from 'vs/nex/base/utils/arrays.util';
 
 export type FileProviderState = {
 	explorers: {
@@ -57,6 +64,11 @@ type UpdateDeleteProcessPayload = {
 	status: PROCESS_STATUS;
 };
 
+type RemoveProcessPayload = {
+	id: string;
+	type: PROCESS_TYPE;
+};
+
 const INITIAL_STATE: FileProviderState = {
 	explorers: {},
 	processes: [],
@@ -75,6 +87,7 @@ export const actions = {
 	updatePasteProcess: createAction<UpdatePasteProcessPayload>('PASTE_PROCESS_UPDATED'),
 	addDeleteProcess: createAction<AddDeleteProcessPayload>('DELETE_PROCESS_ADDED'),
 	updateDeleteProcess: createAction<UpdateDeleteProcessPayload>('DELETE_PROCESS_UPDATED'),
+	removeProcess: createAction<RemoveProcessPayload>('PROCESS_REMOVED'),
 	clearDraftPasteState: createAction<void>('DRAFT_PASTE_STATE_CLEARED'),
 };
 export const reducer = createReducer(INITIAL_STATE, (builder) =>
@@ -149,7 +162,7 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 		.addCase(actions.updatePasteProcess, (state, action) => {
 			const process = state.processes.find((p) => p.id === action.payload.id);
 
-			if (!process || process.type !== 'paste') {
+			if (!process || process.type !== PROCESS_TYPE.PASTE) {
 				logger.error('should update paste process, but could not find corresponding one');
 				return;
 			}
@@ -176,12 +189,32 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 
 			const process = state.processes.find((p) => p.id === id);
 
-			if (!process || process.type !== 'delete') {
-				logger.error('should update delete process, but could not find corresponding one');
+			if (!process || process.type !== PROCESS_TYPE.DELETE) {
+				logger.error(
+					'should update delete process, but could not find corresponding one',
+					undefined,
+					{
+						id,
+					},
+				);
 				return;
 			}
 
 			process.status = status;
+		})
+		.addCase(actions.removeProcess, (state, action) => {
+			const { id } = action.payload;
+
+			const processIdx = state.processes.findIndex((p) => p.id === id);
+
+			if (processIdx < 0) {
+				logger.error('should delete process, but could not find corresponding one', undefined, {
+					id,
+				});
+				return;
+			}
+
+			arrays.pickElementAndRemove(state.processes, processIdx);
 		})
 		.addCase(actions.clearDraftPasteState, (state) => {
 			state.draftPasteState = undefined;

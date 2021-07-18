@@ -9,7 +9,7 @@ import { useModelService } from 'vs/nex/ModelService.provider';
 import { useModeService } from 'vs/nex/ModeService.provider';
 import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
 import { useSelector } from 'vs/nex/platform/store/store';
-import { File, FILE_TYPE, PROCESS_STATUS, Tag } from 'vs/nex/platform/file-types';
+import { File, FILE_TYPE, PROCESS_STATUS, PROCESS_TYPE, Tag } from 'vs/nex/platform/file-types';
 import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { objects } from 'vs/nex/base/utils/objects.util';
@@ -33,7 +33,7 @@ export const useFileProviderDraftPasteState = () =>
 
 export const useFileProviderProcesses = () =>
 	useSelector((state) => state.fileProvider.processes).map((process) => {
-		if (process.type === 'paste') {
+		if (process.type === PROCESS_TYPE.PASTE) {
 			return {
 				...process,
 				bytesProcessed:
