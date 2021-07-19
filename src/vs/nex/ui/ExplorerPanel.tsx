@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, Chip, Divider } from '@material-ui/core';
+import { Box, Chip, Divider, TextField } from '@material-ui/core';
 import { matchSorter } from 'match-sorter';
 
 import { styles } from 'vs/nex/ui/ExplorerPanel.styles';
@@ -32,8 +32,13 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 
 	const [idsOfSelectedFiles, setIdsOfSelectedFiles] = React.useState<string[]>([]);
 	const [filterInput, setFilterInput] = React.useState('');
+	const [fileToRenameId, setFileToRenameId] = React.useState<string | undefined>();
 
 	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
+	let fileToRename: FileForUI | undefined;
+	if (fileToRenameId) {
+		fileToRename = files.find((file) => file.id === fileToRenameId);
+	}
 
 	const openSelectedFiles = () => {
 		if (selectedFiles.length === 1 && selectedFiles[0].fileType === FILE_TYPE.DIRECTORY) {
@@ -45,8 +50,8 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 		}
 	};
 
-	const scheduleDeleteSelectedFiles = async () => {
-		await fileActions.scheduleMoveFilesToTrash(selectedFiles.map((file) => file.uri));
+	const scheduleDeleteSelectedFiles = () => {
+		fileActions.scheduleMoveFilesToTrash(selectedFiles.map((file) => file.uri));
 	};
 
 	const cutOrCopySelectedFiles = (cut: boolean) => () => {
@@ -57,11 +62,20 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 	};
 	const copySelectedFiles = cutOrCopySelectedFiles(false);
 	const cutSelectedFiles = cutOrCopySelectedFiles(true);
+
+	const triggerRenameForSelectedFiles = () => {
+		if (selectedFiles.length !== 1) {
+			return;
+		}
+		setFileToRenameId(selectedFiles[0].id);
+	};
+
 	const fileEditActions = {
 		openSelectedFiles,
 		scheduleDeleteSelectedFiles,
 		copySelectedFiles,
 		cutSelectedFiles,
+		triggerRenameForSelectedFiles,
 	};
 
 	/*
@@ -108,11 +122,9 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 			.getValue();
 	}
 
-	const rowsToShow = filesToShow.map((fileToShow) => ({
-		id: fileToShow.id,
-		data: fileToShow,
-		selected: !!selectedFiles.find((file) => file.id === fileToShow.id),
-	}));
+	function abortRename() {
+		setFileToRenameId(undefined);
+	}
 
 	return (
 		<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
@@ -137,51 +149,95 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 						<HeadCell>Size</HeadCell>
 					</TableHead>
 
-					{rowsToShow.length > 0 && (
+					{filesToShow.length > 0 && (
 						<TableBody>
-							{rowsToShow.map((row) => (
-								<Row
-									key={row.id}
-									onClick={() => setIdsOfSelectedFiles([row.id])}
-									onDoubleClick={() => {
-										if (row.data.fileType === FILE_TYPE.DIRECTORY) {
-											explorerActions.changeDirectory(row.data.uri.path);
-										} else if (row.data.fileType === FILE_TYPE.FILE) {
-											fileActions.openFile(row.data.uri);
-										}
-									}}
-									selected={row.selected}
-								>
-									<Cell>
-										<Stack
-											css={styles.fileIcon}
-											className={row.data.iconClasses.join(' ')}
-											alignItems="center"
-										>
-											<Box component="span">{formatter.file(row.data)}</Box>
-											{row.data.tags.map((tag) => (
-												<Chip
-													key={tag.id}
-													style={{ backgroundColor: tag.colorHex }}
-													variant="outlined"
-													size="small"
-													label={tag.name}
-													onDelete={() => fileActions.removeTags([row.data.uri], [tag.id])}
-												/>
-											))}
-										</Stack>
-									</Cell>
-									<Cell>
-										{row.data.fileType === FILE_TYPE.FILE &&
-											row.data.size !== undefined &&
-											formatter.bytes(row.data.size)}
-									</Cell>
-								</Row>
-							))}
+							{filesToShow.map((fileToShow) => {
+								const selected = !!selectedFiles.find((file) => file.id === fileToShow.id);
+
+								function selectRow() {
+									setIdsOfSelectedFiles([fileToShow.id]);
+								}
+
+								function openFileOrDirectory() {
+									if (fileToShow.fileType === FILE_TYPE.DIRECTORY) {
+										explorerActions.changeDirectory(fileToShow.uri.path);
+									} else {
+										fileActions.openFile(fileToShow.uri);
+									}
+								}
+
+								async function renameFile(newName: string) {
+									await fileActions.renameFile(fileToShow.uri, newName);
+									setFileToRenameId(undefined);
+								}
+
+								return (
+									<Row
+										key={fileToShow.id}
+										onClick={selectRow}
+										onDoubleClick={openFileOrDirectory}
+										selected={selected}
+									>
+										<Cell>
+											<Stack
+												css={styles.fileIcon}
+												className={fileToShow.iconClasses.join(' ')}
+												alignItems="center"
+											>
+												{fileToRename && fileToRename.id === fileToShow.id ? (
+													<RenameInput
+														file={fileToShow}
+														onSubmit={renameFile}
+														onBlur={abortRename}
+													/>
+												) : (
+													<Box component="span">{formatter.file(fileToShow)}</Box>
+												)}
+												{fileToShow.tags.map((tag) => (
+													<Chip
+														key={tag.id}
+														style={{ backgroundColor: tag.colorHex }}
+														variant="outlined"
+														size="small"
+														label={tag.name}
+														onDelete={() => fileActions.removeTags([fileToShow.uri], [tag.id])}
+													/>
+												))}
+											</Stack>
+										</Cell>
+										<Cell>
+											{fileToShow.fileType === FILE_TYPE.FILE &&
+												fileToShow.size !== undefined &&
+												formatter.bytes(fileToShow.size)}
+										</Cell>
+									</Row>
+								);
+							})}
 						</TableBody>
 					)}
 				</DataTable>
 			</Box>
 		</Stack>
+	);
+};
+
+type RenameInputProps = {
+	file: FileForUI;
+	onSubmit: (newName: string) => void;
+	onBlur: () => void;
+};
+
+const RenameInput: React.FC<RenameInputProps> = ({ file, onSubmit, onBlur }) => {
+	const [value, setValue] = React.useState(formatter.file(file));
+
+	return (
+		<form onSubmit={() => onSubmit(value)} onBlur={onBlur}>
+			<TextField
+				autoFocus
+				label="Rename"
+				value={value}
+				onChange={(e) => setValue(e.target.value)}
+			/>
+		</form>
 	);
 };

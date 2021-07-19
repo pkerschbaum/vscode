@@ -1,4 +1,3 @@
-import * as resources from 'vs/base/common/resources';
 import { URI, UriComponents } from 'vs/base/common/uri';
 import {
 	IFileService,
@@ -83,7 +82,7 @@ export function mapFileStatToFile(file: IFileStat): File {
 
 export function getDistinctParents(files: UriComponents[]): UriComponents[] {
 	return arrays.uniqueValues(
-		files.map((file) => resources.dirname(URI.from(file))),
-		(item) => URI.from(item).toString(),
+		files.map((file) => URI.joinPath(URI.from(file), '..')),
+		(item) => item.toString(),
 	);
 }

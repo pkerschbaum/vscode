@@ -3,6 +3,7 @@ import { shell } from 'electron';
 
 import * as uuid from 'vs/base/common/uuid';
 import { URI, UriComponents } from 'vs/base/common/uri';
+import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { IFileStatWithMetadata } from 'vs/platform/files/common/files';
 
 import { actions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
@@ -22,13 +23,15 @@ import {
 	Tag,
 } from 'vs/nex/platform/file-types';
 import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
-import { getDistinctParents } from 'vs/nex/platform/logic/file-system';
+import { getDistinctParents, NexFileSystem } from 'vs/nex/platform/logic/file-system';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
 import { useTagsActions } from 'vs/nex/platform/tag.hooks';
 import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
 
 const logger = createLogger('file.hooks');
+
+export type FileActions = ReturnType<typeof useFileActions>;
 
 export function useFileActions() {
 	const dispatch = useDispatch();
@@ -98,6 +101,27 @@ export function useFileActions() {
 	async function cutOrCopyFiles(files: UriComponents[], cut: boolean) {
 		await clipboard.writeResources(files.map((file) => URI.from(file)));
 		dispatch(actions.cutOrCopyFiles({ cut }));
+	}
+
+	async function renameFile(sourceFileURI: UriComponents, newName: string) {
+		const sourceFileStat = await fileSystem.resolve(URI.from(sourceFileURI), {
+			resolveMetadata: true,
+		});
+		const targetFileURI = URI.joinPath(URI.from(sourceFileURI), '..', newName);
+		await executeCopyOrMove({
+			sourceFileURI: URI.from(sourceFileURI),
+			sourceFileStat,
+			targetFileURI,
+			pasteShouldMove: true,
+			fileTagActions: {
+				getTagsOfFile,
+				addTags,
+				removeTags,
+			},
+			fileSystem,
+		});
+		const distinctParents = getDistinctParents([sourceFileURI, targetFileURI]);
+		await Promise.all(distinctParents.map((directory) => invalidateFiles(directory)));
 	}
 
 	async function resolveDeep(targetToResolve: UriComponents, targetStat: IFileStatWithMetadata) {
@@ -210,9 +234,60 @@ export function useFileActions() {
 		removeProcess,
 		openFile,
 		cutOrCopyFiles,
+		renameFile,
 		resolveDeep,
 		addTags,
 		getTagsOfFile,
 		removeTags,
 	};
+}
+
+export async function executeCopyOrMove({
+	sourceFileURI,
+	sourceFileStat,
+	targetFileURI,
+	pasteShouldMove,
+	cancellationTokenSource,
+	progressCb,
+	fileTagActions,
+	fileSystem,
+}: {
+	sourceFileURI: URI;
+	targetFileURI: URI;
+	sourceFileStat: IFileStatWithMetadata;
+	pasteShouldMove: boolean;
+	cancellationTokenSource?: CancellationTokenSource;
+	progressCb?: (newBytesRead: number, forSource: URI) => void;
+	fileTagActions: {
+		getTagsOfFile: FileActions['getTagsOfFile'];
+		addTags: FileActions['addTags'];
+		removeTags: FileActions['removeTags'];
+	};
+	fileSystem: NexFileSystem;
+}) {
+	// Move/Copy File
+	const operation = pasteShouldMove
+		? fileSystem.move(sourceFileURI, targetFileURI, false, {
+				token: cancellationTokenSource?.token,
+				progressCb,
+		  })
+		: fileSystem.copy(sourceFileURI, targetFileURI, false, {
+				token: cancellationTokenSource?.token,
+				progressCb,
+		  });
+	await operation;
+
+	// Also copy tags to destination
+	const tagsOfSourceFile = fileTagActions
+		.getTagsOfFile({
+			uri: sourceFileURI,
+			ctime: sourceFileStat.ctime,
+		})
+		.map((t) => t.id);
+	await fileTagActions.addTags([targetFileURI], tagsOfSourceFile);
+
+	// If move operation was performed, remove tags from source URI
+	if (pasteShouldMove) {
+		fileTagActions.removeTags([sourceFileURI], tagsOfSourceFile);
+	}
 }

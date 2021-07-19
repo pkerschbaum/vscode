@@ -19,7 +19,7 @@ import {
 	useFileProviderDraftPasteState,
 	useInvalidateFiles,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { useFileActions } from 'vs/nex/platform/file.hooks';
+import { useFileActions, executeCopyOrMove } from 'vs/nex/platform/file.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { objects } from 'vs/nex/base/utils/objects.util';
 
@@ -167,35 +167,16 @@ export function useExplorerActions(explorerId: string) {
 			cancellationTokenSource.token.onCancellationRequested(() => clearInterval(intervalId));
 
 			await Promise.all(
-				pasteInfos.filter(objects.isNotNullish).map(async (pasteInfo) => {
-					const { sourceFileURI, sourceFileStat, targetFileURI } = pasteInfo;
-
-					// Move/Copy File
-					const operation = draftPasteState.pasteShouldMove
-						? fileSystem.move(sourceFileURI, targetFileURI, undefined, {
-								token: cancellationTokenSource.token,
-								progressCb,
-						  })
-						: fileSystem.copy(sourceFileURI, targetFileURI, undefined, {
-								token: cancellationTokenSource.token,
-								progressCb,
-						  });
-					await operation;
-
-					// Also copy tags to destination
-					const tagsOfSourceFile = fileActions
-						.getTagsOfFile({
-							uri: sourceFileURI,
-							ctime: sourceFileStat.ctime,
-						})
-						.map((t) => t.id);
-					await fileActions.addTags([targetFileURI], tagsOfSourceFile);
-
-					// If move operation was performed, remove tags from source URI
-					if (draftPasteState.pasteShouldMove) {
-						fileActions.removeTags([sourceFileURI], tagsOfSourceFile);
-					}
-				}),
+				pasteInfos.map((pasteInfo) =>
+					executeCopyOrMove({
+						...pasteInfo,
+						pasteShouldMove: draftPasteState.pasteShouldMove,
+						cancellationTokenSource,
+						progressCb,
+						fileTagActions: fileActions,
+						fileSystem,
+					}),
+				),
 			);
 
 			dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.SUCCESS }));

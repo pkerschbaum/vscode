@@ -20,6 +20,7 @@ type ExplorerActionsProps = {
 	scheduleDeleteSelectedFiles: () => void;
 	copySelectedFiles: () => void;
 	cutSelectedFiles: () => void;
+	triggerRenameForSelectedFiles: () => void;
 };
 
 export const ExplorerActions: React.FC<ExplorerActionsProps> = (props) => {
@@ -39,6 +40,7 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 	scheduleDeleteSelectedFiles,
 	copySelectedFiles,
 	cutSelectedFiles,
+	triggerRenameForSelectedFiles,
 }) => {
 	const draftPasteState = useFileProviderDraftPasteState();
 
@@ -68,6 +70,9 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 				disabled={draftPasteState === undefined}
 			>
 				Paste
+			</Button>
+			<Button onClick={triggerRenameForSelectedFiles} disabled={singleFileActionsDisabled}>
+				Rename
 			</Button>
 			<Button onClick={scheduleDeleteSelectedFiles} disabled={multipleFilesActionsDisabled}>
 				Delete
