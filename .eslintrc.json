@@ -5,12 +5,15 @@
 		"ecmaVersion": 6,
 		"sourceType": "module"
 	},
-	"extends": "react-app",
 	"plugins": [
 		"@typescript-eslint",
-		"jsdoc", 
+		"jsdoc",
 		"header",
 		"react-hooks"
+	],
+	"extends": [
+		"react-app",
+		"plugin:react/recommended"
 	],
 	"rules": {
 		"constructor-super": "warn",
@@ -1011,7 +1014,8 @@
 			],
 			"rules": {
 				"code-no-unexternalized-strings": "off",
-				"header/header": "off"
+				"header/header": "off",
+				"react/prop-types": "off"
 			}
 		},
 		{

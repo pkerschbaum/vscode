@@ -1,0 +1,19 @@
+{
+	"autorun": true,
+	"terminals": [
+		{
+			"name": "build and watch",
+			"cwd": "[cwd]",
+			"execute": false,
+			"recycle": true,
+			"commands": ["yarn watch"]
+		},
+		{
+			"name": "start app",
+			"cwd": "[cwd]",
+			"execute": false,
+			"recycle": true,
+			"commands": ["./scripts/code.sh"]
+		}
+	]
+}
