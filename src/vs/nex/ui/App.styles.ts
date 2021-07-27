@@ -1,8 +1,11 @@
 import { css, Theme } from '@emotion/react';
 
+import { BACKGROUND_COLOR } from 'vs/nex/theme';
+
 export const styles = {
 	container: (theme: Theme) =>
 		css`
+			background-color: ${BACKGROUND_COLOR};
 			padding-top: ${theme.spacing()};
 
 			display: grid;
@@ -34,7 +37,7 @@ export const styles = {
 	activeExplorerArea: (theme: Theme) => css`
 		grid-area: active-explorer-panel;
 		padding-right: ${theme.spacing()};
-		padding-bottom: ${theme.spacing()};
+		padding-bottom: ${theme.spacing(2)};
 	`,
 
 	processesArea: (theme: Theme) => css`

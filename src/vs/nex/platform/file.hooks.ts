@@ -76,16 +76,26 @@ export function useFileActions() {
 		dispatch(actions.updateDeleteProcess({ id: deleteProcessId, status: PROCESS_STATUS.RUNNING }));
 
 		// delete all files (in parallel)
-		await Promise.all(
-			deleteProcess.uris.map(async (uri) => {
-				try {
-					await fileSystem.del(URI.from(uri), { useTrash: options.useTrash, recursive: true });
-				} catch (err) {
-					logger.error(`could not delete files`, err);
-					throw err;
-				}
-			}),
-		);
+		try {
+			await Promise.all(
+				deleteProcess.uris.map(async (uri) => {
+					try {
+						await fileSystem.del(URI.from(uri), { useTrash: options.useTrash, recursive: true });
+					} catch (err) {
+						logger.error(`could not delete files`, err);
+						throw err;
+					}
+				}),
+			);
+		} catch (err: unknown) {
+			dispatch(
+				actions.updateDeleteProcess({
+					id: deleteProcessId,
+					status: PROCESS_STATUS.FAILURE,
+					error: err instanceof Error ? err.message : `Unknown error occured`,
+				}),
+			);
+		}
 
 		dispatch(actions.updateDeleteProcess({ id: deleteProcessId, status: PROCESS_STATUS.SUCCESS }));
 

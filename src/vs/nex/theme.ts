@@ -5,6 +5,7 @@ import {
 	Theme as MuiTheme,
 } from '@material-ui/core/styles';
 import { Localization } from '@material-ui/core/locale';
+import { css } from '@emotion/react';
 
 import { PROCESS_STATUS } from 'vs/nex/platform/file-types';
 
@@ -28,37 +29,40 @@ declare module '@emotion/react/types' {
 	interface ThemeOptions extends MuiThemeOptions {}
 }
 
-export const createTheme = (locale: Localization) => {
-	const primaryColor = '#202932';
+export const BACKGROUND_COLOR = '#241F1A';
+const PAPER_COLOR = '#2F2A26';
 
+export const createTheme = (locale: Localization) => {
 	const theme: MuiThemeOptions = {
 		components: {
-			MuiDivider: {
-				styleOverrides: {
-					root: { backgroundColor: 'rgba(0, 0, 0, 0.25)' },
-				},
-			},
-
 			MuiButton: {
 				defaultProps: { variant: 'outlined', type: 'button' },
 			},
 
 			MuiTextField: { defaultProps: { size: 'small' } },
 
-			MuiIconButton: {
+			MuiTableCell: {
 				styleOverrides: {
-					root: {
-						color: primaryColor,
-					},
+					root: css`
+						font-size: 1rem;
+					`,
 				},
 			},
 		},
 
-		palette: { primary: { main: primaryColor }, secondary: { main: '#581c0c' } },
+		typography: {
+			fontFamily: ['Segoe UI Variable', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'].join(','),
+		},
+
+		palette: {
+			mode: 'dark',
+			background: { default: BACKGROUND_COLOR, paper: PAPER_COLOR },
+			primary: { main: '#30E5FF' },
+		},
 
 		availableTagColors: [
 			'#F28B82',
-			'#B2E775',
+			'#5B7E2F',
 			'#FBBC04',
 			'#FFF475',
 			'#3bd4c5',
@@ -70,10 +74,10 @@ export const createTheme = (locale: Localization) => {
 		],
 
 		processStatusColors: {
-			[PROCESS_STATUS.PENDING_FOR_USER_INPUT]: '#FBBC04',
-			[PROCESS_STATUS.RUNNING]: '#FFFFFF',
-			[PROCESS_STATUS.SUCCESS]: '#B2E775',
-			[PROCESS_STATUS.FAILURE]: '#F28B82',
+			[PROCESS_STATUS.PENDING_FOR_USER_INPUT]: '#A88518',
+			[PROCESS_STATUS.RUNNING]: PAPER_COLOR,
+			[PROCESS_STATUS.SUCCESS]: '#5B7E2F',
+			[PROCESS_STATUS.FAILURE]: '#B35C54',
 		},
 	};
 

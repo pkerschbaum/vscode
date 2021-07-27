@@ -65,7 +65,7 @@ export type Range<FROM extends number, TO extends number> = Exclude<Enumerate<TO
 export type NarrowUnion<
 	Union,
 	DiscriminatorProperty extends keyof Union,
-	DiscriminatorValue
+	DiscriminatorValue,
 > = Union extends {
 	[prop in DiscriminatorProperty]: DiscriminatorValue;
 }
@@ -119,7 +119,7 @@ export function typedPath<Shape>() {
 		D extends keyof FlattenUnion<FlattenUnion<FlattenUnion<FlattenUnion<Shape>[A]>[B]>[C]>,
 		E extends keyof FlattenUnion<
 			FlattenUnion<FlattenUnion<FlattenUnion<FlattenUnion<Shape>[A]>[B]>[C]>[D]
-		>
+		>,
 	>(...props: [A, B?, C?, D?, E?]) {
 		return props.join('.');
 	};

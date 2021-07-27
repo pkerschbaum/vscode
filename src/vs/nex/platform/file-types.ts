@@ -17,9 +17,9 @@ export enum RESOURCES_SCHEME {
 
 export type Process = {
 	id: string;
-	status: PROCESS_STATUS;
 } & (
 	| {
+			status: PROCESS_STATUS.RUNNING | PROCESS_STATUS.SUCCESS;
 			type: PROCESS_TYPE.PASTE;
 			totalSize: number;
 			bytesProcessed: number;
@@ -27,8 +27,27 @@ export type Process = {
 			cancellationTokenSource: CancellationTokenSource;
 	  }
 	| {
+			status: PROCESS_STATUS.FAILURE;
+			type: PROCESS_TYPE.PASTE;
+			totalSize: number;
+			bytesProcessed: number;
+			destinationFolder: UriComponents;
+			cancellationTokenSource: CancellationTokenSource;
+			error: string;
+	  }
+	| {
+			status:
+				| PROCESS_STATUS.PENDING_FOR_USER_INPUT
+				| PROCESS_STATUS.RUNNING
+				| PROCESS_STATUS.SUCCESS;
 			type: PROCESS_TYPE.DELETE;
 			uris: UriComponents[];
+	  }
+	| {
+			status: PROCESS_STATUS.FAILURE;
+			type: PROCESS_TYPE.DELETE;
+			uris: UriComponents[];
+			error: string;
 	  }
 );
 

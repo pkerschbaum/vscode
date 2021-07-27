@@ -128,7 +128,11 @@ export const App: React.FC = () => {
 			</Box>
 
 			{processes.length > 0 && (
-				<Stack css={[styles.processesArea, commonStyles.flex.disableShrinkChildren]} spacing={2}>
+				<Stack
+					css={[styles.processesArea, commonStyles.flex.disableShrinkChildren]}
+					spacing={2}
+					alignItems="flex-start"
+				>
 					{arrays.reverse(processes).map((process) => (
 						<ProcessCard key={process.id} process={process} />
 					))}

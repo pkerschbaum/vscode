@@ -17,7 +17,7 @@ type DataTableProps = {
 	footer?: React.ReactNode;
 };
 
-export function DataTable(props: DataTableProps): React.ReactElement<DataTableProps> {
+export const DataTable: React.FC<DataTableProps> = (props) => {
 	const {
 		renderNoDataPresentMessage,
 		labels,
@@ -66,4 +66,4 @@ export function DataTable(props: DataTableProps): React.ReactElement<DataTablePr
 			{footer}
 		</Stack>
 	);
-}
+};

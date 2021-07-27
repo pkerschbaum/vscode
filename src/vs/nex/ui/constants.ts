@@ -11,6 +11,7 @@ export const KEYS = {
 	DELETE: 'Delete',
 	ENTER: 'Enter',
 	BACKSPACE: 'Backspace',
+	SHIFT: 'Shift',
 } as const;
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type KEYS = typeof KEYS;

@@ -10,7 +10,9 @@ import {
 	DeleteProcess,
 	PasteProcess,
 	PROCESS_TYPE,
+	RESOURCES_SCHEME,
 } from 'vs/nex/platform/file-types';
+import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 
 export type FileProviderState = {
@@ -51,18 +53,30 @@ type CutOrCopyFilesPayload = {
 
 type AddPasteProcessPayload = Omit<PasteProcess, 'status'>;
 
-type UpdatePasteProcessPayload = {
-	id: string;
-	bytesProcessed?: number;
-	status?: PROCESS_STATUS;
-};
+type UpdatePasteProcessPayload =
+	| {
+			id: string;
+			bytesProcessed?: number;
+			status?: PROCESS_STATUS.RUNNING | PROCESS_STATUS.SUCCESS;
+	  }
+	| {
+			id: string;
+			status?: PROCESS_STATUS.FAILURE;
+			error: string;
+	  };
 
 type AddDeleteProcessPayload = Omit<DeleteProcess, 'status'>;
 
-type UpdateDeleteProcessPayload = {
-	id: string;
-	status: PROCESS_STATUS;
-};
+type UpdateDeleteProcessPayload =
+	| {
+			id: string;
+			status: PROCESS_STATUS.RUNNING | PROCESS_STATUS.SUCCESS;
+	  }
+	| {
+			id: string;
+			status: PROCESS_STATUS.FAILURE;
+			error: string;
+	  };
 
 type RemoveProcessPayload = {
 	id: string;
@@ -167,9 +181,10 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 				return;
 			}
 
-			if (action.payload.bytesProcessed !== undefined) {
+			if ('bytesProcessed' in action.payload && action.payload.bytesProcessed !== undefined) {
 				process.bytesProcessed = action.payload.bytesProcessed;
 			}
+
 			if (action.payload.status !== undefined) {
 				process.status = action.payload.status;
 
@@ -179,28 +194,38 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 				) {
 					process.cancellationTokenSource.dispose();
 				}
+				if (
+					process.status === PROCESS_STATUS.FAILURE &&
+					action.payload.status === PROCESS_STATUS.FAILURE
+				) {
+					process.error = action.payload.error;
+				}
 			}
 		})
 		.addCase(actions.addDeleteProcess, (state, action) => {
 			state.processes.push({ ...action.payload, status: PROCESS_STATUS.PENDING_FOR_USER_INPUT });
 		})
 		.addCase(actions.updateDeleteProcess, (state, action) => {
-			const { id, status } = action.payload;
-
-			const process = state.processes.find((p) => p.id === id);
+			const process = state.processes.find((p) => p.id === action.payload.id);
 
 			if (!process || process.type !== PROCESS_TYPE.DELETE) {
 				logger.error(
 					'should update delete process, but could not find corresponding one',
 					undefined,
 					{
-						id,
+						id: action.payload.id,
 					},
 				);
 				return;
 			}
 
-			process.status = status;
+			process.status = action.payload.status;
+			if (
+				process.status === PROCESS_STATUS.FAILURE &&
+				action.payload.status === PROCESS_STATUS.FAILURE
+			) {
+				process.error = action.payload.error;
+			}
 		})
 		.addCase(actions.removeProcess, (state, action) => {
 			const { id } = action.payload;

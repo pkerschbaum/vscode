@@ -150,6 +150,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 					{
 						condition: (e) =>
 							e.key !== KEYS.BACKSPACE &&
+							e.key !== KEYS.SHIFT &&
 							!e.altKey &&
 							!e.ctrlKey &&
 							filterInputRef.current !== null,

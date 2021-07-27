@@ -48,6 +48,7 @@ export const CreateFolder: React.FC<CreateFolderProps> = ({ onSubmit }) => {
 					vertical: 'top',
 					horizontal: 'center',
 				}}
+				BackdropProps={{ invisible: false }}
 			>
 				<form onSubmit={handleSubmit}>
 					<Stack direction="column" alignItems="stretch" sx={{ padding: 1.5 }}>

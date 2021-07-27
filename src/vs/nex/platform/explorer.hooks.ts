@@ -180,9 +180,15 @@ export function useExplorerActions(explorerId: string) {
 			);
 
 			dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.SUCCESS }));
-		} catch (err) {
+		} catch (err: unknown) {
 			errorOccured = true;
-			dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.FAILURE }));
+			dispatch(
+				actions.updatePasteProcess({
+					id,
+					status: PROCESS_STATUS.FAILURE,
+					error: err instanceof Error ? err.message : `Unknown error occured`,
+				}),
+			);
 		} finally {
 			clearInterval(intervalId);
 			cancellationTokenSource.dispose();
