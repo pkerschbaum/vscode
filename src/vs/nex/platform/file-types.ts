@@ -21,6 +21,7 @@ export type Process = {
 	| {
 			status: PROCESS_STATUS.RUNNING | PROCESS_STATUS.SUCCESS;
 			type: PROCESS_TYPE.PASTE;
+			sourceUris: UriComponents[];
 			totalSize: number;
 			bytesProcessed: number;
 			destinationFolder: UriComponents;
@@ -29,6 +30,7 @@ export type Process = {
 	| {
 			status: PROCESS_STATUS.FAILURE;
 			type: PROCESS_TYPE.PASTE;
+			sourceUris: UriComponents[];
 			totalSize: number;
 			bytesProcessed: number;
 			destinationFolder: UriComponents;

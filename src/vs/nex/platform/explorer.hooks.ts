@@ -82,9 +82,7 @@ export function useExplorerActions(explorerId: string) {
 		// for each file/folder to paste, check for some required conditions and prepare target URI
 		const pasteInfos = (
 			await Promise.all(
-				clipboardResources.map(async (sourceFile) => {
-					const sourceFileURI = URI.from(sourceFile);
-
+				clipboardResources.map(async (sourceFileURI) => {
 					// Destination folder must not be a subfolder of any source file/folder. Imagine copying
 					// a folder "test" and paste it (and its content) *into* itself, that would not work.
 					if (
@@ -93,7 +91,7 @@ export function useExplorerActions(explorerId: string) {
 					) {
 						throw new CustomError('The destination folder is a subfolder of the source file', {
 							destinationFolder,
-							sourceFile,
+							sourceFileURI,
 						});
 					}
 
@@ -145,6 +143,7 @@ export function useExplorerActions(explorerId: string) {
 		dispatch(
 			actions.addPasteProcess({
 				type: PROCESS_TYPE.PASTE,
+				sourceUris: clipboardResources.map((resource) => resource.toJSON()),
 				id,
 				totalSize,
 				bytesProcessed,
