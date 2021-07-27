@@ -525,7 +525,7 @@
 
 "@eslint/eslintrc@^0.4.3":
   version "0.4.3"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@eslint/eslintrc/-/eslintrc-0.4.3.tgz#9e42981ef035beb3dd49add17acb96e8ff6f394c"
+  resolved "https://registry.yarnpkg.com/@eslint/eslintrc/-/eslintrc-0.4.3.tgz#9e42981ef035beb3dd49add17acb96e8ff6f394c"
   integrity sha512-J6KFFz5QCYUJq3pf0mjEcCJVERbzv71PUIDczuh9JkwGEzced6CO5ADLHB1rbf/+oPBtoPfMYNOpGDzCANlbXw==
   dependencies:
     ajv "^6.12.4"
@@ -559,7 +559,7 @@
 
 "@humanwhocodes/config-array@^0.5.0":
   version "0.5.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@humanwhocodes/config-array/-/config-array-0.5.0.tgz#1407967d4c6eecd7388f83acf1eaf4d0c6e58ef9"
+  resolved "https://registry.yarnpkg.com/@humanwhocodes/config-array/-/config-array-0.5.0.tgz#1407967d4c6eecd7388f83acf1eaf4d0c6e58ef9"
   integrity sha512-FagtKFz74XrTl7y6HCzQpwDfXP0yhxe9lHLD1UZxjvZIcbyRz8zTFF/yYNfSfzU414eDwZ1SrO0Qvtyf+wFMQg==
   dependencies:
     "@humanwhocodes/object-schema" "^1.2.0"
@@ -568,7 +568,7 @@
 
 "@humanwhocodes/object-schema@^1.2.0":
   version "1.2.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@humanwhocodes/object-schema/-/object-schema-1.2.0.tgz#87de7af9c231826fdd68ac7258f77c429e0e5fcf"
+  resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.0.tgz#87de7af9c231826fdd68ac7258f77c429e0e5fcf"
   integrity sha512-wdppn25U8z/2yiaT6YGquE6X8sSv7hNMWSXYSSU1jGv/yd6XqjXgTDJ8KP4NgjTXfJ3GbRjeeb8RTV7a/VpM+w==
 
 "@istanbuljs/schema@^0.1.2":
@@ -585,7 +585,7 @@
 
 "@material-ui/core@^5.0.0-beta.1":
   version "5.0.0-beta.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@material-ui/core/-/core-5.0.0-beta.1.tgz#60d07e7a86510c6ed015b7214ac35140f39e439f"
+  resolved "https://registry.yarnpkg.com/@material-ui/core/-/core-5.0.0-beta.1.tgz#60d07e7a86510c6ed015b7214ac35140f39e439f"
   integrity sha512-54NejmECo/q3n3/bAqJFDEu4sK72d1QUBzKQUItYuJypNmTtjYS0ONxEXmDOZBhfK21HwrO3wHpvARFUTLeHWQ==
   dependencies:
     "@babel/runtime" "^7.4.4"
@@ -604,14 +604,14 @@
 
 "@material-ui/icons@^5.0.0-beta.1":
   version "5.0.0-beta.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@material-ui/icons/-/icons-5.0.0-beta.1.tgz#9ba10a6a4481bf20d36fdb7600eb89ce774cf9a3"
+  resolved "https://registry.yarnpkg.com/@material-ui/icons/-/icons-5.0.0-beta.1.tgz#9ba10a6a4481bf20d36fdb7600eb89ce774cf9a3"
   integrity sha512-HMxEXok46a5xAr+26LpJUX+bX7WfaPi5Yi3Bbh1Agskw0nD5SHUbZizNxxuB8QbHhRNOZF9y9viEDNbSf+r+yg==
   dependencies:
     "@babel/runtime" "^7.4.4"
 
 "@material-ui/private-theming@5.0.0-beta.1":
   version "5.0.0-beta.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@material-ui/private-theming/-/private-theming-5.0.0-beta.1.tgz#fd56a7fda7bc9f0a49c4c0acb8c2a98f4d99e9f6"
+  resolved "https://registry.yarnpkg.com/@material-ui/private-theming/-/private-theming-5.0.0-beta.1.tgz#fd56a7fda7bc9f0a49c4c0acb8c2a98f4d99e9f6"
   integrity sha512-iilGWRRlLX2DOXz06SIanhiMVBgMAZivxyBC3mPOOSjH0P7jQ6hVOvgoUdXzt9h54Y1gZkdUPzUe+iMTd+zKRw==
   dependencies:
     "@babel/runtime" "^7.4.4"
@@ -620,7 +620,7 @@
 
 "@material-ui/styled-engine@5.0.0-beta.1":
   version "5.0.0-beta.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@material-ui/styled-engine/-/styled-engine-5.0.0-beta.1.tgz#27e257c1bbe58abdce8073332fc3c10e8449db27"
+  resolved "https://registry.yarnpkg.com/@material-ui/styled-engine/-/styled-engine-5.0.0-beta.1.tgz#27e257c1bbe58abdce8073332fc3c10e8449db27"
   integrity sha512-BSVsgVQ1cv+Eaf2FFhVahaEw7UeBaLBn0yAM8uWbLxi+LhuNN+HVv/Echv70MDMLW4fna3L2S6u1NXUoGd+7Hw==
   dependencies:
     "@babel/runtime" "^7.4.4"
@@ -629,7 +629,7 @@
 
 "@material-ui/system@5.0.0-beta.1":
   version "5.0.0-beta.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@material-ui/system/-/system-5.0.0-beta.1.tgz#51a6679697435d2ce9dd74a6e6db76045e44bbdd"
+  resolved "https://registry.yarnpkg.com/@material-ui/system/-/system-5.0.0-beta.1.tgz#51a6679697435d2ce9dd74a6e6db76045e44bbdd"
   integrity sha512-ux82AWvgo5HPS/qGLKMbrRasDhOGYTTbVEidr7rQAF6KuSoQLSGq5967hOvEykW9hMcTQuU0dTfpu2/L8pU23A==
   dependencies:
     "@babel/runtime" "^7.4.4"
@@ -643,12 +643,12 @@
 
 "@material-ui/types@6.0.1":
   version "6.0.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@material-ui/types/-/types-6.0.1.tgz#bfcdcd3bb5091e5feac2b191db516543d84e26af"
+  resolved "https://registry.yarnpkg.com/@material-ui/types/-/types-6.0.1.tgz#bfcdcd3bb5091e5feac2b191db516543d84e26af"
   integrity sha512-t53C2BZE59e8ao38EDIZdM2smPDSEo5Xx9XxQ/MNM9Ph63Mu4vj5pmECiXkYp0y2OrvFiiZhcqRWV34SBOA18g==
 
 "@material-ui/unstyled@5.0.0-alpha.40":
   version "5.0.0-alpha.40"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@material-ui/unstyled/-/unstyled-5.0.0-alpha.40.tgz#61eff7b7f64036b0bb5e9f69d3f0b13b70595b79"
+  resolved "https://registry.yarnpkg.com/@material-ui/unstyled/-/unstyled-5.0.0-alpha.40.tgz#61eff7b7f64036b0bb5e9f69d3f0b13b70595b79"
   integrity sha512-neiApWSiZRBHRVniSMkqsx4iP+4qsmP5k9Uljc9qjx6gqADmg9bRq5GDYljsBa07Lvtx6lIgfQmcia+DPcbvag==
   dependencies:
     "@babel/runtime" "^7.4.4"
@@ -660,7 +660,7 @@
 
 "@material-ui/utils@5.0.0-beta.0":
   version "5.0.0-beta.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@material-ui/utils/-/utils-5.0.0-beta.0.tgz#2b2083b356a98618de73c9bd29f271f9143a07a2"
+  resolved "https://registry.yarnpkg.com/@material-ui/utils/-/utils-5.0.0-beta.0.tgz#2b2083b356a98618de73c9bd29f271f9143a07a2"
   integrity sha512-eBBqd+53NBUCgTU6TFGlhN0GsAPmnrHwdVBW6y4t/jP6sEXgDjVaJm5FKSYKkkCl+iRfZEAfdYyCeAn04eummw==
   dependencies:
     "@babel/runtime" "^7.4.4"
@@ -812,12 +812,12 @@
 
 "@popperjs/core@^2.4.4":
   version "2.9.2"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@popperjs/core/-/core-2.9.2.tgz#adea7b6953cbb34651766b0548468e743c6a2353"
+  resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.9.2.tgz#adea7b6953cbb34651766b0548468e743c6a2353"
   integrity sha512-VZMYa7+fXHdwIq1TDhSXoVmSPEGM/aa+6Aiq3nVVJ9bXr24zScr+NlKFKC3iPljA7ho/GAZr+d2jOf5GIRC30Q==
 
 "@reduxjs/toolkit@^1.6.1":
   version "1.6.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@reduxjs/toolkit/-/toolkit-1.6.1.tgz#7bc83b47352a663bf28db01e79d17ba54b98ade9"
+  resolved "https://registry.yarnpkg.com/@reduxjs/toolkit/-/toolkit-1.6.1.tgz#7bc83b47352a663bf28db01e79d17ba54b98ade9"
   integrity sha512-pa3nqclCJaZPAyBhruQtiRwtTjottRrVJqziVZcWzI73i6L3miLTtUyWfauwv08HWtiXLx1xGyGt+yLFfW/d0A==
   dependencies:
     immer "^9.0.1"
@@ -1009,7 +1009,7 @@
 
 "@types/json-schema@^7.0.7":
   version "7.0.8"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@types/json-schema/-/json-schema-7.0.8.tgz#edf1bf1dbf4e04413ca8e5b17b3b7d7d54b59818"
+  resolved "https://registry.yarnpkg.com/@types/json-schema/-/json-schema-7.0.8.tgz#edf1bf1dbf4e04413ca8e5b17b3b7d7d54b59818"
   integrity sha512-YSBPTLTVm2e2OoQIDYx8HaeWJ5tTToLH67kXR7zYNGupXMEHa2++G8k+DczX2cFVgalypqtyZIcU19AFcmOpmg==
 
 "@types/json5@^0.0.29":
@@ -1071,7 +1071,7 @@
 
 "@types/prop-types@^15.7.3":
   version "15.7.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@types/prop-types/-/prop-types-15.7.4.tgz#fcf7205c25dff795ee79af1e30da2c9790808f11"
+  resolved "https://registry.yarnpkg.com/@types/prop-types/-/prop-types-15.7.4.tgz#fcf7205c25dff795ee79af1e30da2c9790808f11"
   integrity sha512-rZ5drC/jWjrArrS8BR6SIr4cWpW09RNTYt9AMZo3Jwwif+iacXAqgVjm0B0Bv/S1jhDXKHqRVNCbACkJ89RAnQ==
 
 "@types/q@^1.5.1":
@@ -1088,7 +1088,7 @@
 
 "@types/react-is@^16.7.1 || ^17.0.0":
   version "17.0.2"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@types/react-is/-/react-is-17.0.2.tgz#abc4d910bff5b0bc6b3e1bec57575f6b63fd4e05"
+  resolved "https://registry.yarnpkg.com/@types/react-is/-/react-is-17.0.2.tgz#abc4d910bff5b0bc6b3e1bec57575f6b63fd4e05"
   integrity sha512-2+L0ilcAEG8udkDnvx8B0upwXFBbNnVwOsSCTxW3SDOkmar9NyEeLG0ZLa3uOEw9zyYf/fQapcnfXAVmDKlyHw==
   dependencies:
     "@types/react" "*"
@@ -1243,7 +1243,7 @@
 
 "@typescript-eslint/eslint-plugin@^4.28.4":
   version "4.28.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@typescript-eslint/eslint-plugin/-/eslint-plugin-4.28.4.tgz#e73c8cabbf3f08dee0e1bda65ed4e622ae8f8921"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/eslint-plugin/-/eslint-plugin-4.28.4.tgz#e73c8cabbf3f08dee0e1bda65ed4e622ae8f8921"
   integrity sha512-s1oY4RmYDlWMlcV0kKPBaADn46JirZzvvH7c2CtAqxCY96S538JRBAzt83RrfkDheV/+G/vWNK0zek+8TB3Gmw==
   dependencies:
     "@typescript-eslint/experimental-utils" "4.28.4"
@@ -1256,7 +1256,7 @@
 
 "@typescript-eslint/experimental-utils@4.28.4":
   version "4.28.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@typescript-eslint/experimental-utils/-/experimental-utils-4.28.4.tgz#9c70c35ebed087a5c70fb0ecd90979547b7fec96"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/experimental-utils/-/experimental-utils-4.28.4.tgz#9c70c35ebed087a5c70fb0ecd90979547b7fec96"
   integrity sha512-OglKWOQRWTCoqMSy6pm/kpinEIgdcXYceIcH3EKWUl4S8xhFtN34GQRaAvTIZB9DD94rW7d/U7tUg3SYeDFNHA==
   dependencies:
     "@types/json-schema" "^7.0.7"
@@ -1268,7 +1268,7 @@
 
 "@typescript-eslint/parser@^4.28.4":
   version "4.28.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@typescript-eslint/parser/-/parser-4.28.4.tgz#bc462dc2779afeefdcf49082516afdc3e7b96fab"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/parser/-/parser-4.28.4.tgz#bc462dc2779afeefdcf49082516afdc3e7b96fab"
   integrity sha512-4i0jq3C6n+og7/uCHiE6q5ssw87zVdpUj1k6VlVYMonE3ILdFApEzTWgppSRG4kVNB/5jxnH+gTeKLMNfUelQA==
   dependencies:
     "@typescript-eslint/scope-manager" "4.28.4"
@@ -1278,7 +1278,7 @@
 
 "@typescript-eslint/scope-manager@4.28.4":
   version "4.28.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@typescript-eslint/scope-manager/-/scope-manager-4.28.4.tgz#bdbce9b6a644e34f767bd68bc17bb14353b9fe7f"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/scope-manager/-/scope-manager-4.28.4.tgz#bdbce9b6a644e34f767bd68bc17bb14353b9fe7f"
   integrity sha512-ZJBNs4usViOmlyFMt9X9l+X0WAFcDH7EdSArGqpldXu7aeZxDAuAzHiMAeI+JpSefY2INHrXeqnha39FVqXb8w==
   dependencies:
     "@typescript-eslint/types" "4.28.4"
@@ -1286,12 +1286,12 @@
 
 "@typescript-eslint/types@4.28.4":
   version "4.28.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@typescript-eslint/types/-/types-4.28.4.tgz#41acbd79b5816b7c0dd7530a43d97d020d3aeb42"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/types/-/types-4.28.4.tgz#41acbd79b5816b7c0dd7530a43d97d020d3aeb42"
   integrity sha512-3eap4QWxGqkYuEmVebUGULMskR6Cuoc/Wii0oSOddleP4EGx1tjLnZQ0ZP33YRoMDCs5O3j56RBV4g14T4jvww==
 
 "@typescript-eslint/typescript-estree@4.28.4":
   version "4.28.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@typescript-eslint/typescript-estree/-/typescript-estree-4.28.4.tgz#252e6863278dc0727244be9e371eb35241c46d00"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/typescript-estree/-/typescript-estree-4.28.4.tgz#252e6863278dc0727244be9e371eb35241c46d00"
   integrity sha512-z7d8HK8XvCRyN2SNp+OXC2iZaF+O2BTquGhEYLKLx5k6p0r05ureUtgEfo5f6anLkhCxdHtCf6rPM1p4efHYDQ==
   dependencies:
     "@typescript-eslint/types" "4.28.4"
@@ -1304,7 +1304,7 @@
 
 "@typescript-eslint/visitor-keys@4.28.4":
   version "4.28.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/@typescript-eslint/visitor-keys/-/visitor-keys-4.28.4.tgz#92dacfefccd6751cbb0a964f06683bfd72d0c4d3"
+  resolved "https://registry.yarnpkg.com/@typescript-eslint/visitor-keys/-/visitor-keys-4.28.4.tgz#92dacfefccd6751cbb0a964f06683bfd72d0c4d3"
   integrity sha512-NIAXAdbz1XdOuzqkJHjNKXKj8QQ4cv5cxR/g0uQhCYf/6//XrmfpaYsM7PnBcNbfvTDLUkqQ5TPNm1sozDdTWg==
   dependencies:
     "@typescript-eslint/types" "4.28.4"
@@ -1694,7 +1694,7 @@ ajv@^6.1.0, ajv@^6.10.0, ajv@^6.10.2, ajv@^6.12.3, ajv@^6.12.4, ajv@^6.12.5, ajv
 
 ajv@^8.0.1:
   version "8.6.2"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/ajv/-/ajv-8.6.2.tgz#2fb45e0e5fcbc0813326c1c3da535d1881bb0571"
+  resolved "https://registry.yarnpkg.com/ajv/-/ajv-8.6.2.tgz#2fb45e0e5fcbc0813326c1c3da535d1881bb0571"
   integrity sha512-9807RlWAgT564wT+DjeyU5OFMPjmzxVobvDFmNAhY+5zD6A2ly3jDp6sgnfyDtlIQ+7H97oc/DGCzzfu9rjw9w==
   dependencies:
     fast-deep-equal "^3.1.1"
@@ -2028,7 +2028,7 @@ array-unique@^0.3.2:
 
 array.prototype.flat@^1.2.4:
   version "1.2.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/array.prototype.flat/-/array.prototype.flat-1.2.4.tgz#6ef638b43312bd401b4c6199fdec7e2dc9e9a123"
+  resolved "https://registry.yarnpkg.com/array.prototype.flat/-/array.prototype.flat-1.2.4.tgz#6ef638b43312bd401b4c6199fdec7e2dc9e9a123"
   integrity sha512-4470Xi3GAPAjZqFcljX2xzckv1qeKPizoNkiS0+O4IoPR2ZNpcjE0pkhdihlDouK+x6QOast26B4Q/O9DJnwSg==
   dependencies:
     call-bind "^1.0.0"
@@ -2163,7 +2163,7 @@ asynckit@^0.4.0:
 
 at-least-node@^1.0.0:
   version "1.0.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/at-least-node/-/at-least-node-1.0.0.tgz#602cd4b46e844ad4effc92a8011a3c46e0238dc2"
+  resolved "https://registry.yarnpkg.com/at-least-node/-/at-least-node-1.0.0.tgz#602cd4b46e844ad4effc92a8011a3c46e0238dc2"
   integrity sha512-+q/t7Ekv1EDY2l6Gda6LLiX14rU9TV20Wa3ofeQmwPFZbOMo9DXrLbOjFaaclkXKWidIaopwAObQDqwWtGUjqg==
 
 atob@^2.1.2:
@@ -2215,7 +2215,7 @@ azure-storage@^2.10.2:
 
 babel-eslint@^10.1.0:
   version "10.1.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/babel-eslint/-/babel-eslint-10.1.0.tgz#6968e568a910b78fb3779cdd8b6ac2f479943232"
+  resolved "https://registry.yarnpkg.com/babel-eslint/-/babel-eslint-10.1.0.tgz#6968e568a910b78fb3779cdd8b6ac2f479943232"
   integrity sha512-ifWaTHQ0ce+448CYop8AdrQiBsGrnC+bMgfyKFdi6EsPLTAWG+QfyDeM6OH+FmWnKvEq5NnBMLvlBUPKQZoDSg==
   dependencies:
     "@babel/code-frame" "^7.0.0"
@@ -2944,7 +2944,7 @@ clone-stats@^1.0.0:
 
 clone@^1.0.0, clone@^1.0.2:
   version "1.0.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/clone/-/clone-1.0.4.tgz#da309cc263df15994c688ca902179ca3c7cd7c7e"
+  resolved "https://registry.yarnpkg.com/clone/-/clone-1.0.4.tgz#da309cc263df15994c688ca902179ca3c7cd7c7e"
   integrity sha1-2jCcwmPfFZlMaIypAheco8fNfH4=
 
 clone@^2.1.1:
@@ -3068,7 +3068,7 @@ colorette@^1.2.1, colorette@^1.2.2:
 
 colors@^1.3.3:
   version "1.4.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/colors/-/colors-1.4.0.tgz#c50491479d4c1bdaed2c9ced32cf7c7dc2360f78"
+  resolved "https://registry.yarnpkg.com/colors/-/colors-1.4.0.tgz#c50491479d4c1bdaed2c9ced32cf7c7dc2360f78"
   integrity sha512-a+UqTh4kgZg/SlGvfbzDHpgRu7AAQOmmqRHJnxhRZICKFUT91brVhNNt58CMWU9PsBbv3PDCZUHbVxuDiH2mtA==
 
 combined-stream@^1.0.6, combined-stream@~1.0.6:
@@ -3689,7 +3689,7 @@ default-resolution@^2.0.0:
 
 defaults@^1.0.3:
   version "1.0.3"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/defaults/-/defaults-1.0.3.tgz#c656051e9817d9ff08ed881477f3fe4019f3ef7d"
+  resolved "https://registry.yarnpkg.com/defaults/-/defaults-1.0.3.tgz#c656051e9817d9ff08ed881477f3fe4019f3ef7d"
   integrity sha1-xlYFHpgX2f8I7YgUd/P+QBnz730=
   dependencies:
     clone "^1.0.2"
@@ -3951,7 +3951,7 @@ editorconfig@^0.15.0, editorconfig@^0.15.3:
 
 electron-rebuild@2.0.3:
   version "2.0.3"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/electron-rebuild/-/electron-rebuild-2.0.3.tgz#fbcf34d35bf6795a0ded39bfe2aee24526a152c8"
+  resolved "https://registry.yarnpkg.com/electron-rebuild/-/electron-rebuild-2.0.3.tgz#fbcf34d35bf6795a0ded39bfe2aee24526a152c8"
   integrity sha512-I8Oeey9afU+trFLd8/qRRiHC083CCoBnmw3q0qQaRFsg0OzMaeJQn7Nl6EYKPpntuQ/3yOqZQ7b3ObNuETN/Ig==
   dependencies:
     "@malept/cross-spawn-promise" "^1.1.0"
@@ -4234,7 +4234,7 @@ escape-string-regexp@^2.0.0:
 
 eslint-config-react-app@^6.0.0:
   version "6.0.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/eslint-config-react-app/-/eslint-config-react-app-6.0.0.tgz#ccff9fc8e36b322902844cbd79197982be355a0e"
+  resolved "https://registry.yarnpkg.com/eslint-config-react-app/-/eslint-config-react-app-6.0.0.tgz#ccff9fc8e36b322902844cbd79197982be355a0e"
   integrity sha512-bpoAAC+YRfzq0dsTk+6v9aHm/uqnDwayNAXleMypGl6CpxI9oXXscVHo4fk3eJPIn+rsbtNetB4r/ZIidFIE8A==
   dependencies:
     confusing-browser-globals "^1.0.10"
@@ -4249,7 +4249,7 @@ eslint-import-resolver-node@^0.3.4:
 
 eslint-module-utils@^2.6.1:
   version "2.6.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/eslint-module-utils/-/eslint-module-utils-2.6.1.tgz#b51be1e473dd0de1c5ea638e22429c2490ea8233"
+  resolved "https://registry.yarnpkg.com/eslint-module-utils/-/eslint-module-utils-2.6.1.tgz#b51be1e473dd0de1c5ea638e22429c2490ea8233"
   integrity sha512-ZXI9B8cxAJIH4nfkhTwcRTEAnrVfobYqwjWy/QMCZ8rHkZHFjf9yO4BzpiF9kCSfNlMG54eKigISHpX0+AaT4A==
   dependencies:
     debug "^3.2.7"
@@ -4257,7 +4257,7 @@ eslint-module-utils@^2.6.1:
 
 eslint-plugin-flowtype@^5.8.1:
   version "5.8.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/eslint-plugin-flowtype/-/eslint-plugin-flowtype-5.8.1.tgz#6f2c313a6e9ec271a51315ccd09c2432b4d1930e"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-flowtype/-/eslint-plugin-flowtype-5.8.1.tgz#6f2c313a6e9ec271a51315ccd09c2432b4d1930e"
   integrity sha512-ADe4cYAn1UYVs1P1F9wKDNP2lbm3JtwbFykxJpO129utErjAhRZYQJCIKmhy6Rpx7Q9p8pc3gLVIFXtatXJriQ==
   dependencies:
     lodash "^4.17.15"
@@ -4270,7 +4270,7 @@ eslint-plugin-header@3.1.1:
 
 eslint-plugin-import@^2.23.4:
   version "2.23.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/eslint-plugin-import/-/eslint-plugin-import-2.23.4.tgz#8dceb1ed6b73e46e50ec9a5bb2411b645e7d3d97"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-import/-/eslint-plugin-import-2.23.4.tgz#8dceb1ed6b73e46e50ec9a5bb2411b645e7d3d97"
   integrity sha512-6/wP8zZRsnQFiR3iaPFgh5ImVRM1WN5NUWfTIRqwOdeiGJlBcSk82o1FEVq8yXmy4lkIzTo7YhHCIxlU/2HyEQ==
   dependencies:
     array-includes "^3.1.3"
@@ -4305,7 +4305,7 @@ eslint-plugin-jsdoc@^19.1.0:
 
 eslint-plugin-jsx-a11y@^6.4.1:
   version "6.4.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/eslint-plugin-jsx-a11y/-/eslint-plugin-jsx-a11y-6.4.1.tgz#a2d84caa49756942f42f1ffab9002436391718fd"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-jsx-a11y/-/eslint-plugin-jsx-a11y-6.4.1.tgz#a2d84caa49756942f42f1ffab9002436391718fd"
   integrity sha512-0rGPJBbwHoGNPU73/QCLP/vveMlM1b1Z9PponxO87jfr6tuH5ligXbDT6nHSSzBC8ovX2Z+BQu7Bk5D/Xgq9zg==
   dependencies:
     "@babel/runtime" "^7.11.2"
@@ -4322,12 +4322,12 @@ eslint-plugin-jsx-a11y@^6.4.1:
 
 eslint-plugin-react-hooks@^4.2.0:
   version "4.2.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-4.2.0.tgz#8c229c268d468956334c943bb45fc860280f5556"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-4.2.0.tgz#8c229c268d468956334c943bb45fc860280f5556"
   integrity sha512-623WEiZJqxR7VdxFCKLI6d6LLpwJkGPYKODnkH3D7WpOG5KM8yWueBd8TLsNAetEJNF5iJmolaAKO3F8yzyVBQ==
 
 eslint-plugin-react@^7.24.0:
   version "7.24.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/eslint-plugin-react/-/eslint-plugin-react-7.24.0.tgz#eadedfa351a6f36b490aa17f4fa9b14e842b9eb4"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-react/-/eslint-plugin-react-7.24.0.tgz#eadedfa351a6f36b490aa17f4fa9b14e842b9eb4"
   integrity sha512-KJJIx2SYx7PBx3ONe/mEeMz4YE0Lcr7feJTCMyyKb/341NcjuAgim3Acgan89GfPv7nxXK2+0slu0CWXYM4x+Q==
   dependencies:
     array-includes "^3.1.3"
@@ -4375,7 +4375,7 @@ eslint-utils@^2.1.0:
 
 eslint-utils@^3.0.0:
   version "3.0.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/eslint-utils/-/eslint-utils-3.0.0.tgz#8aebaface7345bb33559db0a1f13a1d2d48c3672"
+  resolved "https://registry.yarnpkg.com/eslint-utils/-/eslint-utils-3.0.0.tgz#8aebaface7345bb33559db0a1f13a1d2d48c3672"
   integrity sha512-uuQC43IGctw68pJA1RgbQS8/NP7rch6Cwd4j3ZBtgo4/8Flj4eGE7ZYSZRN3iq5pVUv6GPdW5Z1RFleo84uLDA==
   dependencies:
     eslint-visitor-keys "^2.0.0"
@@ -4434,7 +4434,7 @@ eslint@^5.0.1:
 
 eslint@^7.31.0:
   version "7.31.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/eslint/-/eslint-7.31.0.tgz#f972b539424bf2604907a970860732c5d99d3aca"
+  resolved "https://registry.yarnpkg.com/eslint/-/eslint-7.31.0.tgz#f972b539424bf2604907a970860732c5d99d3aca"
   integrity sha512-vafgJpSh2ia8tnTkNUkwxGmnumgckLh5aAbLa1xRmIn9+owi8qBNGKL+B881kNKNTy7FFqTEkpNkUvmw0n6PkA==
   dependencies:
     "@babel/code-frame" "7.12.11"
@@ -4510,7 +4510,7 @@ esquery@^1.0.1:
 
 esquery@^1.4.0:
   version "1.4.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/esquery/-/esquery-1.4.0.tgz#2148ffc38b82e8c7057dfed48425b3e61f0f24a5"
+  resolved "https://registry.yarnpkg.com/esquery/-/esquery-1.4.0.tgz#2148ffc38b82e8c7057dfed48425b3e61f0f24a5"
   integrity sha512-cCDispWt5vHHtwMY2YrAQ4ibFkAL8RbH5YGBnZBc90MolvvfkkQcJro/aZiAQUlQ3qgrYS6D6v8Gc5G5CQsc9w==
   dependencies:
     estraverse "^5.1.0"
@@ -4844,7 +4844,7 @@ file-entry-cache@^5.0.1:
 
 file-entry-cache@^6.0.1:
   version "6.0.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/file-entry-cache/-/file-entry-cache-6.0.1.tgz#211b2dd9659cb0394b073e7323ac3c933d522027"
+  resolved "https://registry.yarnpkg.com/file-entry-cache/-/file-entry-cache-6.0.1.tgz#211b2dd9659cb0394b073e7323ac3c933d522027"
   integrity sha512-7Gps/XWymbLk2QLYK4NzpMOrYjMhdIxXuIvy2QBsLE6ljuodKvdkWs/cpyJJ3CVIVpH0Oi1Hvg1ovbMzLdFBBg==
   dependencies:
     flat-cache "^3.0.4"
@@ -5142,7 +5142,7 @@ fs-extra@^8.1.0:
 
 fs-extra@^9.0.1:
   version "9.1.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/fs-extra/-/fs-extra-9.1.0.tgz#5954460c764a8da2094ba3554bf839e6b9a7c86d"
+  resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-9.1.0.tgz#5954460c764a8da2094ba3554bf839e6b9a7c86d"
   integrity sha512-hcg3ZmepS30/7BSFqRvoo3DOMQu7IjqxO5nCDt+zM9XWjb33Wg7ziNT+Qvqbuc3+gWpzO02JubVyk2G4Zvo1OQ==
   dependencies:
     at-least-node "^1.0.0"
@@ -5252,7 +5252,7 @@ get-caller-file@^1.0.1:
 
 get-caller-file@^2.0.1, get-caller-file@^2.0.5:
   version "2.0.5"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/get-caller-file/-/get-caller-file-2.0.5.tgz#4f94412a82db32f36e3b0b9741f8a97feb031f7e"
+  resolved "https://registry.yarnpkg.com/get-caller-file/-/get-caller-file-2.0.5.tgz#4f94412a82db32f36e3b0b9741f8a97feb031f7e"
   integrity sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==
 
 get-intrinsic@^1.0.0, get-intrinsic@^1.0.1:
@@ -5484,7 +5484,7 @@ globals@^11.1.0, globals@^11.7.0:
 
 globals@^13.6.0, globals@^13.9.0:
   version "13.10.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/globals/-/globals-13.10.0.tgz#60ba56c3ac2ca845cfbf4faeca727ad9dd204676"
+  resolved "https://registry.yarnpkg.com/globals/-/globals-13.10.0.tgz#60ba56c3ac2ca845cfbf4faeca727ad9dd204676"
   integrity sha512-piHC3blgLGFjvOuMmWZX60f+na1lXFDhQXBf1UYp2fXPXqvEUbOhNwi6BsQ0bQishwedgnjkwv1d9zKf+MWw3g==
   dependencies:
     type-fest "^0.20.2"
@@ -5510,7 +5510,7 @@ globby@^11.0.1:
 
 globby@^11.0.3:
   version "11.0.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/globby/-/globby-11.0.4.tgz#2cbaff77c2f2a62e71e9b2813a67b97a3a3001a5"
+  resolved "https://registry.yarnpkg.com/globby/-/globby-11.0.4.tgz#2cbaff77c2f2a62e71e9b2813a67b97a3a3001a5"
   integrity sha512-9O4MVG9ioZJ08ffbcyVYyLOJLk5JQ688pJ4eMGLpdWLHq/Wr1D9BlriLQyL0E+jbkuePVZXYFj47QM/v093wHg==
   dependencies:
     array-union "^2.1.0"
@@ -6280,7 +6280,7 @@ invert-kv@^1.0.0:
 
 ip@^1.1.5:
   version "1.1.5"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/ip/-/ip-1.1.5.tgz#bdded70114290828c0a039e72ef25f5aaec4354a"
+  resolved "https://registry.yarnpkg.com/ip/-/ip-1.1.5.tgz#bdded70114290828c0a039e72ef25f5aaec4354a"
   integrity sha1-vd7XARQpCCjAoDnnLvJfWq7ENUo=
 
 is-absolute-url@^2.0.0:
@@ -6403,7 +6403,7 @@ is-core-module@^2.2.0:
 
 is-core-module@^2.4.0:
   version "2.5.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/is-core-module/-/is-core-module-2.5.0.tgz#f754843617c70bfd29b7bd87327400cda5c18491"
+  resolved "https://registry.yarnpkg.com/is-core-module/-/is-core-module-2.5.0.tgz#f754843617c70bfd29b7bd87327400cda5c18491"
   integrity sha512-TXCMSDsEHMEEZ6eCA8rwRDbLu55MRGmrctljsBX/2v1d9/GzqHOxW5c5oPSgrUt2vBFXebu9rGqckXGPWOlYpg==
   dependencies:
     has "^1.0.3"
@@ -6918,7 +6918,7 @@ json-schema-traverse@^0.4.1:
 
 json-schema-traverse@^1.0.0:
   version "1.0.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/json-schema-traverse/-/json-schema-traverse-1.0.0.tgz#ae7bcb3656ab77a73ba5c49bf654f38e6b6860e2"
+  resolved "https://registry.yarnpkg.com/json-schema-traverse/-/json-schema-traverse-1.0.0.tgz#ae7bcb3656ab77a73ba5c49bf654f38e6b6860e2"
   integrity sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==
 
 json-schema@0.2.3:
@@ -7228,7 +7228,7 @@ lodash.clone@^4.3.2:
 
 lodash.clonedeep@^4.5.0:
   version "4.5.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/lodash.clonedeep/-/lodash.clonedeep-4.5.0.tgz#e23f3f9c4f8fbdde872529c1071857a086e5ccef"
+  resolved "https://registry.yarnpkg.com/lodash.clonedeep/-/lodash.clonedeep-4.5.0.tgz#e23f3f9c4f8fbdde872529c1071857a086e5ccef"
   integrity sha1-4j8/nE+Pvd6HJSnBBxhXoIblzO8=
 
 lodash.get@^4.4.2:
@@ -7248,7 +7248,7 @@ lodash.memoize@^4.1.2:
 
 lodash.merge@^4.6.2:
   version "4.6.2"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/lodash.merge/-/lodash.merge-4.6.2.tgz#558aa53b43b661e1925a0afdfa36a9a1085fe57a"
+  resolved "https://registry.yarnpkg.com/lodash.merge/-/lodash.merge-4.6.2.tgz#558aa53b43b661e1925a0afdfa36a9a1085fe57a"
   integrity sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==
 
 lodash.some@^4.2.2:
@@ -7273,7 +7273,7 @@ lodash.templatesettings@^4.0.0:
 
 lodash.truncate@^4.4.2:
   version "4.4.2"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/lodash.truncate/-/lodash.truncate-4.4.2.tgz#5a350da0b1113b837ecfffd5812cbe58d6eae193"
+  resolved "https://registry.yarnpkg.com/lodash.truncate/-/lodash.truncate-4.4.2.tgz#5a350da0b1113b837ecfffd5812cbe58d6eae193"
   integrity sha1-WjUNoLERO4N+z//VgSy+WNbq4ZM=
 
 lodash.uniq@^4.5.0:
@@ -7393,7 +7393,7 @@ match-sorter@^6.0.2:
 
 match-sorter@^6.3.0:
   version "6.3.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/match-sorter/-/match-sorter-6.3.0.tgz#454a1b31ed218cddbce6231a0ecb5fdc549fed01"
+  resolved "https://registry.yarnpkg.com/match-sorter/-/match-sorter-6.3.0.tgz#454a1b31ed218cddbce6231a0ecb5fdc549fed01"
   integrity sha512-efYOf/wUpNb8FgNY+cOD2EIJI1S5I7YPKsw0LBp7wqPh5pmMS6i/wr3ZWwfwrAw1NvqTA2KUReVRWDX84lUcOQ==
   dependencies:
     "@babel/runtime" "^7.12.5"
@@ -7927,7 +7927,7 @@ nise@^5.1.0:
 
 node-abi@^2.19.1:
   version "2.30.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/node-abi/-/node-abi-2.30.0.tgz#8be53bf3e7945a34eea10e0fc9a5982776cf550b"
+  resolved "https://registry.yarnpkg.com/node-abi/-/node-abi-2.30.0.tgz#8be53bf3e7945a34eea10e0fc9a5982776cf550b"
   integrity sha512-g6bZh3YCKQRdwuO/tSZZYJAw622SjsRfJ2X0Iy4sSOHZ34/sPPdVBn8fev2tj7njzLwuqPw9uMtGsGkO5kIQvg==
   dependencies:
     semver "^5.4.1"
@@ -8276,7 +8276,7 @@ object.values@^1.1.0:
 
 object.values@^1.1.3, object.values@^1.1.4:
   version "1.1.4"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/object.values/-/object.values-1.1.4.tgz#0d273762833e816b693a637d30073e7051535b30"
+  resolved "https://registry.yarnpkg.com/object.values/-/object.values-1.1.4.tgz#0d273762833e816b693a637d30073e7051535b30"
   integrity sha512-TnGo7j4XSnKQoK3MfvkzqKCi0nVe/D9I9IjwTNYdb/fxYHpjrluHVOgw0AF6jrRFGMPHdfuidR09tIDiIvnaSg==
   dependencies:
     call-bind "^1.0.2"
@@ -8757,7 +8757,7 @@ pkg-dir@^4.1.0, pkg-dir@^4.2.0:
 
 pkg-up@^2.0.0:
   version "2.0.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/pkg-up/-/pkg-up-2.0.0.tgz#c819ac728059a461cab1c3889a2be3c49a004d7f"
+  resolved "https://registry.yarnpkg.com/pkg-up/-/pkg-up-2.0.0.tgz#c819ac728059a461cab1c3889a2be3c49a004d7f"
   integrity sha1-yBmscoBZpGHKscOImivjxJoATX8=
   dependencies:
     find-up "^2.1.0"
@@ -9189,7 +9189,7 @@ preserve@^0.2.0:
 
 prettier@^2.3.2:
   version "2.3.2"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/prettier/-/prettier-2.3.2.tgz#ef280a05ec253712e486233db5c6f23441e7342d"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.3.2.tgz#ef280a05ec253712e486233db5c6f23441e7342d"
   integrity sha512-lnJzDfJ66zkMy58OL5/NY5zp70S7Nz6KqcKkXYzn2tMVrNxvbqaBpg7H3qHaLxCJ5lNMsGuM8+ohS7cZrthdLQ==
 
 pretty-hrtime@^1.0.0:
@@ -9431,7 +9431,7 @@ react-is@^16.13.1, react-is@^16.7.0, react-is@^16.8.1:
 
 react-is@^17.0.0:
   version "17.0.2"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/react-is/-/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
+  resolved "https://registry.yarnpkg.com/react-is/-/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
   integrity sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==
 
 react-query@^3.19.0:
@@ -9483,7 +9483,7 @@ read-pkg-up@^1.0.1:
 
 read-pkg-up@^3.0.0:
   version "3.0.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/read-pkg-up/-/read-pkg-up-3.0.0.tgz#3ed496685dba0f8fe118d0691dc51f4a1ff96f07"
+  resolved "https://registry.yarnpkg.com/read-pkg-up/-/read-pkg-up-3.0.0.tgz#3ed496685dba0f8fe118d0691dc51f4a1ff96f07"
   integrity sha1-PtSWaF26D4/hGNBpHcUfSh/5bwc=
   dependencies:
     find-up "^2.0.0"
@@ -9730,7 +9730,7 @@ replacestream@^4.0.0:
 
 "request@>= 2.44.0 < 3.0.0", request@^2.85.0, request@^2.88.0, request@^2.88.2:
   version "2.88.2"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/request/-/request-2.88.2.tgz#d73c918731cb5a87da047e207234146f664d12b3"
+  resolved "https://registry.yarnpkg.com/request/-/request-2.88.2.tgz#d73c918731cb5a87da047e207234146f664d12b3"
   integrity sha512-MsvtOrfG9ZcrOwAW+Qi+F6HbD0CWXEh9ou77uOb7FM2WPhwT7smM833PzanhJLsgXjN89Ir6V2PczXNnMpwKhw==
   dependencies:
     aws-sign2 "~0.7.0"
@@ -9796,7 +9796,7 @@ require-directory@^2.1.1:
 
 require-from-string@^2.0.2:
   version "2.0.2"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/require-from-string/-/require-from-string-2.0.2.tgz#89a7fdd938261267318eafe14f9c32e598c36909"
+  resolved "https://registry.yarnpkg.com/require-from-string/-/require-from-string-2.0.2.tgz#89a7fdd938261267318eafe14f9c32e598c36909"
   integrity sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==
 
 require-main-filename@^1.0.1:
@@ -10914,7 +10914,7 @@ table@^5.2.3:
 
 table@^6.0.9:
   version "6.7.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/table/-/table-6.7.1.tgz#ee05592b7143831a8c94f3cee6aae4c1ccef33e2"
+  resolved "https://registry.yarnpkg.com/table/-/table-6.7.1.tgz#ee05592b7143831a8c94f3cee6aae4c1ccef33e2"
   integrity sha512-ZGum47Yi6KOOFDE8m223td53ath2enHcYLgOCjGr5ngu8bdIARQk6mN/wRMv4yMRcHnCSnHbCEha4sobQx5yWg==
   dependencies:
     ajv "^8.0.1"
@@ -11235,7 +11235,7 @@ trim-repeated@^1.0.0:
 
 ts-essentials@^7.0.2:
   version "7.0.2"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/ts-essentials/-/ts-essentials-7.0.2.tgz#e21142df8034dbd444cb9573ed204d0b85fc64fb"
+  resolved "https://registry.yarnpkg.com/ts-essentials/-/ts-essentials-7.0.2.tgz#e21142df8034dbd444cb9573ed204d0b85fc64fb"
   integrity sha512-qWPVC1xZGdefbsgFP7tPo+bsgSA2ZIXL1XeEe5M2WoMZxIOr/HbsHxP/Iv75IFhiMHMDGL7cOOwi5SXcgx9mHw==
 
 ts-loader@^9.2.3:
@@ -11286,7 +11286,7 @@ tslib@^1.9.0:
 
 tsutils@^3.21.0:
   version "3.21.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/tsutils/-/tsutils-3.21.0.tgz#b48717d394cea6c1e096983eed58e9d61715b623"
+  resolved "https://registry.yarnpkg.com/tsutils/-/tsutils-3.21.0.tgz#b48717d394cea6c1e096983eed58e9d61715b623"
   integrity sha512-mHKK3iUXL+3UF6xL5k0PEhKRUBKPBCv/+RkEOpjRWxxx27KKRBmmA60A9pgOUvMi8GKhRMPEmjBRPzs2W7O1OA==
   dependencies:
     tslib "^1.8.1"
@@ -11339,7 +11339,7 @@ type-fest@^0.13.1:
 
 type-fest@^0.20.2:
   version "0.20.2"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/type-fest/-/type-fest-0.20.2.tgz#1bf207f4b28f91583666cb5fbd327887301cd5f4"
+  resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-0.20.2.tgz#1bf207f4b28f91583666cb5fbd327887301cd5f4"
   integrity sha512-Ne+eE4r0/iWnpAxD852z3A+N0Bt5RN//NjJwRd2VFHEmrywxf5vsZlh4R6lixl6B+wz/8d+maTSAkN1FIkI3LQ==
 
 type@^1.0.1:
@@ -11907,7 +11907,7 @@ watchpack@^2.2.0:
 
 wcwidth@^1.0.1:
   version "1.0.1"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/wcwidth/-/wcwidth-1.0.1.tgz#f0b0dcf915bc5ff1528afadb2c0e17b532da2fe8"
+  resolved "https://registry.yarnpkg.com/wcwidth/-/wcwidth-1.0.1.tgz#f0b0dcf915bc5ff1528afadb2c0e17b532da2fe8"
   integrity sha1-8LDc+RW8X/FSivrbLA4XtTLaL+g=
   dependencies:
     defaults "^1.0.3"
@@ -12163,7 +12163,7 @@ wrap-ansi@^6.2.0:
 
 wrap-ansi@^7.0.0:
   version "7.0.0"
-  resolved "https://uniflow-747464651282.d.codeartifact.eu-central-1.amazonaws.com:443/npm/uniflow.unimed.de/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
+  resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
   dependencies:
     ansi-styles "^4.0.0"
