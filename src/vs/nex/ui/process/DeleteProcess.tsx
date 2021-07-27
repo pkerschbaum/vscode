@@ -67,15 +67,17 @@ export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ proces
 
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
-			{process.uris.map((uri) => {
+			{process.uris.slice(0, 2).map((uri) => {
 				const { fileName, extension } = uriHelper.extractNameAndExtension(uri);
+				const fileLabel = formatter.file({ name: fileName, extension });
 
 				return (
 					<TextBox key={URI.from(uri).toString()} fontBold>
-						{formatter.file({ name: fileName, extension })}
+						{fileLabel}
 					</TextBox>
 				);
 			})}
+			{process.uris.length > 2 && <TextBox fontBold>...</TextBox>}
 
 			{content}
 		</Stack>

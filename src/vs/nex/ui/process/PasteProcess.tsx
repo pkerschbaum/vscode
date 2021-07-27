@@ -2,6 +2,8 @@ import * as React from 'react';
 import { Box, Button } from '@material-ui/core';
 import DoubleArrowIcon from '@material-ui/icons/DoubleArrow';
 
+import { URI } from 'vs/base/common/uri';
+
 import { styles } from 'vs/nex/ui/process/PasteProcess.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
@@ -56,7 +58,7 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 						const { fileName, extension } = uriHelper.extractNameAndExtension(uri);
 						const sourceFileLabel = formatter.file({ name: fileName, extension });
 						return (
-							<TextBox key={sourceFileLabel} fontBold>
+							<TextBox key={URI.from(uri).toString()} fontBold>
 								{sourceFileLabel}
 							</TextBox>
 						);
