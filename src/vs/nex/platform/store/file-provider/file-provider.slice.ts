@@ -10,9 +10,7 @@ import {
 	DeleteProcess,
 	PasteProcess,
 	PROCESS_TYPE,
-	RESOURCES_SCHEME,
 } from 'vs/nex/platform/file-types';
-import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 
 export type FileProviderState = {
