@@ -7,15 +7,15 @@ import * as fs from 'fs';
 import * as stream from 'stream';
 import { tmpdir } from 'os';
 import { promisify } from 'util';
-import { join } from 'vs/base/common/path';
 import { ResourceQueue } from 'vs/base/common/async';
-import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { isEqualOrParent, isRootOrDriveLetter } from 'vs/base/common/extpath';
-import { generateUuid } from 'vs/base/common/uuid';
 import { normalizeNFC } from 'vs/base/common/normalization';
+import { join } from 'vs/base/common/path';
+import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { extUriBiasedIgnorePathCase } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
 import { CancellationToken } from 'vs/base/common/cancellation';
+import { generateUuid } from 'vs/base/common/uuid';
 
 //#region rimraf
 

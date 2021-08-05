@@ -54,11 +54,10 @@ import { Codicon, iconRegistry } from 'vs/base/common/codicons';
 import { ITerminalStatusList, TerminalStatus, TerminalStatusList } from 'vs/workbench/contrib/terminal/browser/terminalStatusList';
 import { IQuickInputService, IQuickPickItem, IQuickPickSeparator } from 'vs/platform/quickinput/common/quickInput';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
-import { isMacintosh, isWindows, OperatingSystem, OS } from 'vs/base/common/platform';
+import { isIOS, isMacintosh, isWindows, OperatingSystem, OS } from 'vs/base/common/platform';
 import { URI } from 'vs/base/common/uri';
-import { Schemas } from 'vs/base/common/network';
 import { DataTransfers } from 'vs/base/browser/dnd';
-import { containsDragType, DragAndDropObserver, IDragAndDropObserverCallbacks } from 'vs/workbench/browser/dnd';
+import { CodeDataTransfers, containsDragType, DragAndDropObserver, IDragAndDropObserverCallbacks } from 'vs/workbench/browser/dnd';
 import { getColorClass } from 'vs/workbench/contrib/terminal/browser/terminalIcon';
 import { IWorkbenchLayoutService, Position } from 'vs/workbench/services/layout/browser/layoutService';
 import { Orientation } from 'vs/base/browser/ui/sash/sash';
@@ -66,6 +65,7 @@ import { Color } from 'vs/base/common/color';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { TerminalStorageKeys } from 'vs/workbench/contrib/terminal/common/terminalStorageKeys';
 import { TerminalContextKeys } from 'vs/workbench/contrib/terminal/common/terminalContextKey';
+import { getTerminalResourcesFromDragEvent, getTerminalUri } from 'vs/workbench/contrib/terminal/browser/terminalUri';
 
 // How long in milliseconds should an average frame take to render for a notification to appear
 // which suggests the fallback DOM-based renderer
@@ -152,6 +152,8 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 	private _navigationModeAddon: INavigationMode & ITerminalAddon | undefined;
 	private _dndObserver: IDisposable | undefined;
 
+	private readonly _resource: URI;
+
 	private _lastLayoutDimensions: dom.Dimension | undefined;
 
 	private _hasHadInput: boolean;
@@ -160,13 +162,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 	disableLayout: boolean = false;
 	target?: TerminalLocation;
 	get instanceId(): number { return this._instanceId; }
-	get resource(): URI {
-		return URI.from({
-			scheme: Schemas.vscodeTerminal,
-			path: `/${this._workspaceContextService.getWorkspace().id}/${this.instanceId}`,
-			fragment: this.title,
-		});
-	}
+	get resource(): URI { return this._resource; }
 	get cols(): number {
 		if (this._dimensionsOverride && this._dimensionsOverride.cols) {
 			if (this._dimensionsOverride.forceExactSize) {
@@ -192,7 +188,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 	// TODO: How does this work with detached processes?
 	// TODO: Should this be an event as it can fire twice?
 	get processReady(): Promise<void> { return this._processManager.ptyProcessReady; }
-	get hasChildProcesses(): boolean { return this._processManager.hasChildProcesses; }
+	get hasChildProcesses(): boolean { return this.shellLaunchConfig.attachPersistentProcess?.hasChildProcesses || this._processManager.hasChildProcesses; }
 	get areLinksReady(): boolean { return this._areLinksReady; }
 	get initialDataEvents(): string[] | undefined { return this._initialDataEvents; }
 	get exitCode(): number | undefined { return this._exitCode; }
@@ -253,6 +249,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 		private readonly _terminalAltBufferActiveContextKey: IContextKey<boolean>,
 		private readonly _configHelper: TerminalConfigHelper,
 		private _shellLaunchConfig: IShellLaunchConfig,
+		resource: URI | undefined,
 		@ITerminalInstanceService private readonly _terminalInstanceService: ITerminalInstanceService,
 		@ITerminalProfileResolverService private readonly _terminalProfileResolverService: ITerminalProfileResolverService,
 		@IContextKeyService private readonly _contextKeyService: IContextKeyService,
@@ -286,6 +283,9 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 		this._titleReadyPromise = new Promise<string>(c => {
 			this._titleReadyComplete = c;
 		});
+
+		// the resource is already set when it's been moved from another window
+		this._resource = resource || getTerminalUri(this._workspaceContextService.getWorkspace().id, this.instanceId, this.title);
 
 		this._terminalHasTextContextKey = TerminalContextKeys.textSelected.bindTo(this._contextKeyService);
 		this._terminalA11yTreeFocusContextKey = TerminalContextKeys.a11yTreeFocus.bindTo(this._contextKeyService);
@@ -761,7 +761,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 							{
 								label: nls.localize('configureTerminalSettings', "Configure Terminal Settings"),
 								run: () => {
-									this._preferencesService.openSettings(false, `@id:${TerminalSettingId.CommandsToSkipShell},${TerminalSettingId.SendKeybindingsToShell},${TerminalSettingId.AllowChords}`);
+									this._preferencesService.openSettings({ jsonEditor: false, query: `@id:${TerminalSettingId.CommandsToSkipShell},${TerminalSettingId.SendKeybindingsToShell},${TerminalSettingId.AllowChords}` });
 								}
 							} as IPromptChoice
 						]
@@ -805,6 +805,9 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 				setTimeout(() => this._refreshSelectionContextKey(), 0);
 				listener.dispose();
 			});
+		}));
+		this._register(dom.addDisposableListener(xterm.element, 'touchstart', () => {
+			xterm.focus();
 		}));
 
 		// xterm.js currently drops selection on keyup as we need to handle this case.
@@ -1491,7 +1494,8 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 		this._safeSetOption('wordSeparator', config.wordSeparators);
 
 		const suggestedRendererType = TerminalInstance._suggestedRendererType;
-		if ((config.gpuAcceleration === 'auto' && suggestedRendererType === undefined) || config.gpuAcceleration === 'on') {
+		// @meganrogge @Tyriar remove if the issue related to iPads and webgl is resolved
+		if ((!isIOS && config.gpuAcceleration === 'auto' && suggestedRendererType === undefined) || config.gpuAcceleration === 'on') {
 			this._enableWebglRenderer();
 		} else {
 			this._disposeOfWebglRenderer();
@@ -2020,7 +2024,7 @@ class TerminalInstanceDragAndDropController extends Disposable implements IDragA
 	}
 
 	onDragEnter(e: DragEvent) {
-		if (!containsDragType(e, DataTransfers.FILES, DataTransfers.RESOURCES, DataTransfers.TERMINALS)) {
+		if (!containsDragType(e, DataTransfers.FILES, DataTransfers.RESOURCES, DataTransfers.TERMINALS, CodeDataTransfers.FILES)) {
 			return;
 		}
 
@@ -2070,14 +2074,9 @@ class TerminalInstanceDragAndDropController extends Disposable implements IDragA
 			return;
 		}
 
-		const terminalResources = e.dataTransfer.getData(DataTransfers.TERMINALS);
+		const terminalResources = getTerminalResourcesFromDragEvent(e);
 		if (terminalResources) {
-			const json = JSON.parse(terminalResources);
-			for (const entry of json) {
-				const uri = URI.from({
-					scheme: Schemas.vscodeTerminal,
-					path: URI.parse(entry).path
-				});
+			for (const uri of terminalResources) {
 				const side = this._getDropSide(e);
 				this._onDropTerminal.fire({ uri, side });
 			}
@@ -2086,17 +2085,17 @@ class TerminalInstanceDragAndDropController extends Disposable implements IDragA
 
 		// Check if files were dragged from the tree explorer
 		let path: string | undefined;
-		const resources = e.dataTransfer.getData(DataTransfers.RESOURCES);
-		if (resources) {
-			const uri = URI.parse(JSON.parse(resources)[0]);
-			if (uri.scheme === Schemas.vscodeTerminal) {
-				const side = this._getDropSide(e);
-				this._onDropTerminal.fire({ uri, side });
-				return;
-			} else {
-				path = uri.fsPath;
-			}
-		} else if (e.dataTransfer.files.length > 0 && e.dataTransfer.files[0].path /* Electron only */) {
+		const rawResources = e.dataTransfer.getData(DataTransfers.RESOURCES);
+		if (rawResources) {
+			path = URI.parse(JSON.parse(rawResources)[0]).fsPath;
+		}
+
+		const rawCodeFiles = e.dataTransfer.getData(CodeDataTransfers.FILES);
+		if (!path && rawCodeFiles) {
+			path = URI.file(JSON.parse(rawCodeFiles)[0]).fsPath;
+		}
+
+		if (!path && e.dataTransfer.files.length > 0 && e.dataTransfer.files[0].path /* Electron only */) {
 			// Check if the file was dragged from the filesystem
 			path = URI.file(e.dataTransfer.files[0].path).fsPath;
 		}

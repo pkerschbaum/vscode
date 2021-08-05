@@ -10,8 +10,7 @@ import { IMarkdownString } from 'vs/base/common/htmlContent';
 import { Iterable } from 'vs/base/common/iterator';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { MarshalledId } from 'vs/base/common/marshalling';
-import { TestResultState } from 'vs/workbench/api/common/extHostTypes';
-import { identifyTest, InternalTestItem, ITestIdWithSrc, ITestItemContext } from 'vs/workbench/contrib/testing/common/testCollection';
+import { TestResultState, identifyTest, InternalTestItem, ITestIdWithSrc, ITestItemContext } from 'vs/workbench/contrib/testing/common/testCollection';
 
 /**
  * Describes a rendering of tests in the explorer view. Different
@@ -154,12 +153,16 @@ export class TestItemTreeElement implements IActionableTestTreeElement {
 	) { }
 
 	public toJSON() {
+		if (this.depth === 0) {
+			return { controllerId: this.test.controllerId };
+		}
+
 		const context: ITestItemContext = {
 			$mid: MarshalledId.TestItemContext,
 			tests: [this.test],
 		};
 
-		for (let p = this.parent; p; p = p.parent) {
+		for (let p = this.parent; p && p.depth > 0; p = p.parent) {
 			context.tests.unshift(p.test);
 		}
 

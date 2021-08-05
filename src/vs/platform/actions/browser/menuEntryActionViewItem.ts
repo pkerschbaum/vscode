@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import 'vs/css!./menuEntryActionViewItem';
-import { addDisposableListener, asCSSUrl, ModifierKeyEmitter, append, EventType, $ } from 'vs/base/browser/dom';
-import { IAction, IRunEvent, Separator, SubmenuAction } from 'vs/base/common/actions';
+import { addDisposableListener, asCSSUrl, ModifierKeyEmitter, append, EventType, $, prepend } from 'vs/base/browser/dom';
+import { ActionRunner, IAction, IRunEvent, Separator, SubmenuAction } from 'vs/base/common/actions';
 import { IDisposable, toDisposable, MutableDisposable, DisposableStore } from 'vs/base/common/lifecycle';
 import { localize } from 'vs/nls';
 import { ICommandAction, IMenu, IMenuActionOptions, MenuItemAction, SubmenuItemAction, Icon, IMenuService } from 'vs/platform/actions/common/actions';
@@ -345,7 +345,8 @@ class DropdownWithDefaultActionViewItem extends BaseActionViewItem {
 
 		this._dropdown = new DropdownMenuActionViewItem(submenuAction, submenuAction.actions, this._contextMenuService, {
 			menuAsChild: true,
-			classNames: ['codicon', 'codicon-chevron-down']
+			classNames: ['codicon', 'codicon-chevron-down'],
+			actionRunner: new ActionRunner()
 		});
 		this._dropdown.actionRunner.onDidRun((e: IRunEvent) => {
 			if (e.action instanceof MenuItemAction) {
@@ -359,9 +360,14 @@ class DropdownWithDefaultActionViewItem extends BaseActionViewItem {
 
 		this._defaultAction.dispose();
 		this._defaultAction = this._instaService.createInstance(MenuEntryActionViewItem, lastAction, undefined);
+		this._defaultAction.actionRunner = new class extends ActionRunner {
+			override async runAction(action: IAction, context?: unknown): Promise<void> {
+				await action.run(undefined);
+			}
+		}();
 
 		if (this._container) {
-			this.render(this._container);
+			this._defaultAction.render(prepend(this._container, $('.action-container')));
 		}
 	}
 
@@ -375,7 +381,7 @@ class DropdownWithDefaultActionViewItem extends BaseActionViewItem {
 		this._container = container;
 		super.render(this._container);
 
-		this._container.classList.add('monaco-dropdown-with-primary');
+		this._container.classList.add('monaco-dropdown-with-default');
 
 		const primaryContainer = $('.action-container');
 		this._defaultAction.render(append(this._container, primaryContainer));

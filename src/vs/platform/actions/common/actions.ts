@@ -43,8 +43,9 @@ export interface ICommandAction {
 	title: string | ICommandActionTitle;
 	shortTitle?: string | ICommandActionTitle;
 	category?: string | ILocalizedString;
-	tooltip?: string;
+	tooltip?: string | ILocalizedString;
 	icon?: Icon;
+	source?: string;
 	precondition?: ContextKeyExpression;
 	toggled?: ContextKeyExpression | { condition: ContextKeyExpression, icon?: Icon, tooltip?: string, title?: string | ILocalizedString };
 }
@@ -129,6 +130,7 @@ export class MenuId {
 	static readonly StatusBarWindowIndicatorMenu = new MenuId('StatusBarWindowIndicatorMenu');
 	static readonly StatusBarRemoteIndicatorMenu = new MenuId('StatusBarRemoteIndicatorMenu');
 	static readonly TestItem = new MenuId('TestItem');
+	static readonly TestItemGutter = new MenuId('TestItemGutter');
 	static readonly TestPeekElement = new MenuId('TestPeekElement');
 	static readonly TestPeekTitle = new MenuId('TestPeekTitle');
 	static readonly TouchBarContext = new MenuId('TouchBarContext');
@@ -151,6 +153,7 @@ export class MenuId {
 	static readonly InteractiveToolbar = new MenuId('InteractiveToolbar');
 	static readonly InteractiveCellTitle = new MenuId('InteractiveCellTitle');
 	static readonly InteractiveCellExecute = new MenuId('InteractiveCellExecute');
+	static readonly InteractiveInputExecute = new MenuId('InteractiveInputExecute');
 	static readonly NotebookToolbar = new MenuId('NotebookToolbar');
 	static readonly NotebookCellTitle = new MenuId('NotebookCellTitle');
 	static readonly NotebookCellInsert = new MenuId('NotebookCellInsert');
@@ -402,7 +405,7 @@ export class MenuItemAction implements IAction {
 		this.label = options?.renderShortTitle && item.shortTitle
 			? (typeof item.shortTitle === 'string' ? item.shortTitle : item.shortTitle.value)
 			: (typeof item.title === 'string' ? item.title : item.title.value);
-		this.tooltip = item.tooltip ?? '';
+		this.tooltip = (typeof item.tooltip === 'string' ? item.tooltip : item.tooltip?.value) ?? '';
 		this.enabled = !item.precondition || contextKeyService.contextMatchesRules(item.precondition);
 		this.checked = false;
 

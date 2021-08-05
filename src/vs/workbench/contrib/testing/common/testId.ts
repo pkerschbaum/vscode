@@ -69,6 +69,25 @@ export class TestId {
 		return base.toString() + TestIdPathParts.Delimiter + b;
 	}
 
+	/**
+	 * Compares the position of the two ID strings.
+	 */
+	public static compare(a: string, b: string) {
+		if (a === b) {
+			return TestPosition.IsSame;
+		}
+
+		if (b.startsWith(a + TestIdPathParts.Delimiter)) {
+			return TestPosition.IsChild;
+		}
+
+		if (a.startsWith(b + TestIdPathParts.Delimiter)) {
+			return TestPosition.IsParent;
+		}
+
+		return TestPosition.Disconnected;
+	}
+
 	constructor(
 		public readonly path: readonly string[],
 		private readonly viewEnd = path.length,
@@ -95,6 +114,13 @@ export class TestId {
 	/**
 	 * Gets whether this ID refers to the root.
 	 */
+	public get controllerId() {
+		return this.path[0];
+	}
+
+	/**
+	 * Gets whether this ID refers to the root.
+	 */
 	public get isRoot() {
 		return this.viewEnd === 1;
 	}
@@ -104,20 +130,19 @@ export class TestId {
 	 * including the current item.
 	 */
 	public *idsFromRoot() {
-		let built = this.path[0];
-		yield built;
-
-		for (let i = 1; i < this.viewEnd; i++) {
-			built += TestIdPathParts.Delimiter;
-			built += this.path[i];
-			yield built;
+		for (let i = 1; i <= this.viewEnd; i++) {
+			yield new TestId(this.path, i);
 		}
 	}
 
 	/**
 	 * Compares the other test ID with this one.
 	 */
-	public compare(other: TestId) {
+	public compare(other: TestId | string) {
+		if (typeof other === 'string') {
+			return TestId.compare(this.toString(), other);
+		}
+
 		for (let i = 0; i < other.viewEnd && i < this.viewEnd; i++) {
 			if (other.path[i] !== this.path[i]) {
 				return TestPosition.Disconnected;

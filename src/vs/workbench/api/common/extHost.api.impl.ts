@@ -174,7 +174,7 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 	const extHostWebviewViews = rpcProtocol.set(ExtHostContext.ExtHostWebviewViews, new ExtHostWebviewViews(rpcProtocol, extHostWebviews));
 	const extHostTesting = rpcProtocol.set(ExtHostContext.ExtHostTesting, new ExtHostTesting(rpcProtocol, extHostCommands));
 	const extHostUriOpeners = rpcProtocol.set(ExtHostContext.ExtHostUriOpeners, new ExtHostUriOpeners(rpcProtocol));
-	rpcProtocol.set(ExtHostContext.ExtHostInteractive, new ExtHostInteractive(rpcProtocol, extHostNotebook, extHostDocumentsAndEditors));
+	rpcProtocol.set(ExtHostContext.ExtHostInteractive, new ExtHostInteractive(rpcProtocol, extHostNotebook, extHostDocumentsAndEditors, extHostCommands));
 
 	// Check that no named customers are missing
 	const expected: ProxyIdentifier<any>[] = values(ExtHostContext);
@@ -226,6 +226,9 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 
 		const authentication: typeof vscode.authentication = {
 			getSession(providerId: string, scopes: readonly string[], options?: vscode.AuthenticationGetSessionOptions) {
+				if (options?.forceNewSession) {
+					checkProposedApiEnabled(extension);
+				}
 				return extHostAuthentication.getSession(extension, providerId, scopes, options as any);
 			},
 			get onDidChangeSessions(): Event<vscode.AuthenticationSessionsChangeEvent> {
@@ -289,6 +292,7 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			get language() { return initData.environment.appLanguage; },
 			get appName() { return initData.environment.appName; },
 			get appRoot() { return initData.environment.appRoot?.fsPath ?? ''; },
+			get embedderIdentifier() { return initData.environment.embedderIdentifier; },
 			get uriScheme() { return initData.environment.appUriScheme; },
 			get clipboard(): vscode.Clipboard { return extHostClipboard.value; },
 			get shell() {
@@ -341,14 +345,9 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			? extHostTypes.ExtensionKind.Workspace
 			: extHostTypes.ExtensionKind.UI;
 
-		const test: typeof vscode.test = {
+		const tests: typeof vscode.tests = {
 			createTestController(provider, label) {
-				checkProposedApiEnabled(extension);
 				return extHostTesting.createTestController(provider, label);
-			},
-			createTestItem(id, label, uri) {
-				checkProposedApiEnabled(extension);
-				return extHostTesting.createTestItem(id, label, uri);
 			},
 			createTestObserver() {
 				checkProposedApiEnabled(extension);
@@ -507,6 +506,10 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			registerTypeHierarchyProvider(selector: vscode.DocumentSelector, provider: vscode.TypeHierarchyProvider): vscode.Disposable {
 				checkProposedApiEnabled(extension);
 				return extHostLanguageFeatures.registerTypeHierarchyProvider(extension, selector, provider);
+			},
+			createLanguageStatusItem(selector: vscode.DocumentSelector): vscode.LanguageStatusItem {
+				checkProposedApiEnabled(extension);
+				return extHostLanguages.createLanguageStatusItem(selector);
 			}
 		};
 
@@ -1086,8 +1089,7 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 				return extHostNotebookEditors.createNotebookEditorDecorationType(options);
 			},
 			createRendererMessaging(rendererId) {
-				checkProposedApiEnabled(extension);
-				return extHostNotebookRenderers.createRendererMessaging(rendererId);
+				return extHostNotebookRenderers.createRendererMessaging(extension, rendererId);
 			},
 			onDidChangeNotebookDocumentMetadata(listener, thisArgs?, disposables?) {
 				checkProposedApiEnabled(extension);
@@ -1128,7 +1130,7 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			notebooks,
 			scm,
 			tasks,
-			test,
+			tests,
 			window,
 			workspace,
 			// types
@@ -1226,7 +1228,9 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			SymbolKind: extHostTypes.SymbolKind,
 			SymbolTag: extHostTypes.SymbolTag,
 			Task: extHostTypes.Task,
+			Task2: extHostTypes.Task,
 			TaskGroup: extHostTypes.TaskGroup,
+			TaskGroup2: extHostTypes.TaskGroup,
 			TaskPanelKind: extHostTypes.TaskPanelKind,
 			TaskRevealKind: extHostTypes.TaskRevealKind,
 			TaskScope: extHostTypes.TaskScope,
@@ -1273,7 +1277,7 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			TestResultState: extHostTypes.TestResultState,
 			TestRunRequest: extHostTypes.TestRunRequest,
 			TestMessage: extHostTypes.TestMessage,
-			TestRunProfileGroup: extHostTypes.TestRunProfileGroup,
+			TestRunProfileKind: extHostTypes.TestRunProfileKind,
 			TextSearchCompleteMessageType: TextSearchCompleteMessageType,
 			TestMessageSeverity: extHostTypes.TestMessageSeverity,
 			CoveredCount: extHostTypes.CoveredCount,
@@ -1281,7 +1285,8 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			StatementCoverage: extHostTypes.StatementCoverage,
 			BranchCoverage: extHostTypes.BranchCoverage,
 			FunctionCoverage: extHostTypes.FunctionCoverage,
-			WorkspaceTrustState: extHostTypes.WorkspaceTrustState
+			WorkspaceTrustState: extHostTypes.WorkspaceTrustState,
+			LanguageStatusSeverity: extHostTypes.LanguageStatusSeverity,
 		};
 	};
 }
