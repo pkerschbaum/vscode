@@ -174,6 +174,7 @@ export function useExplorerActions(explorerId: string) {
 						progressCb,
 						fileTagActions: fileActions,
 						fileSystem,
+						invalidateFiles,
 					}),
 				),
 			);
@@ -211,9 +212,6 @@ export function useExplorerActions(explorerId: string) {
 				}),
 			);
 		}
-
-		// invalidate files of the target directory
-		await invalidateFiles(cwd);
 	}
 
 	async function createFolder(folderName: string) {

@@ -18,6 +18,7 @@ import {
 import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
+import { KEYS } from 'vs/nex/ui/constants';
 import { strings } from 'vs/nex/base/utils/strings.util';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
@@ -188,7 +189,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 													<RenameInput
 														file={fileToShow}
 														onSubmit={renameFile}
-														onBlur={abortRename}
+														abortRename={abortRename}
 													/>
 												) : (
 													<Box component="span">{formatter.file(fileToShow)}</Box>
@@ -224,15 +225,25 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 type RenameInputProps = {
 	file: FileForUI;
 	onSubmit: (newName: string) => void;
-	onBlur: () => void;
+	abortRename: () => void;
 };
 
-const RenameInput: React.FC<RenameInputProps> = ({ file, onSubmit, onBlur }) => {
+const RenameInput: React.FC<RenameInputProps> = ({ file, onSubmit, abortRename }) => {
 	const [value, setValue] = React.useState(formatter.file(file));
 
 	return (
-		<form onSubmit={() => onSubmit(value)} onBlur={onBlur}>
+		<form
+			css={commonStyles.fullWidth}
+			onSubmit={() => onSubmit(value)}
+			onBlur={abortRename}
+			onKeyDown={(e) => {
+				if (e.key === KEYS.ESC) {
+					abortRename();
+				}
+			}}
+		>
 			<TextField
+				fullWidth
 				autoFocus
 				label="Rename"
 				value={value}

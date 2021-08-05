@@ -37,17 +37,14 @@ export const createTheme = (locale: Localization) => {
 		components: {
 			MuiButton: {
 				defaultProps: { variant: 'outlined', type: 'button' },
-			},
-
-			MuiTextField: { defaultProps: { size: 'small' } },
-
-			MuiTableCell: {
 				styleOverrides: {
 					root: css`
-						font-size: 1rem;
+						text-transform: initial;
 					`,
 				},
 			},
+
+			MuiTextField: { defaultProps: { size: 'small' } },
 		},
 
 		typography: {

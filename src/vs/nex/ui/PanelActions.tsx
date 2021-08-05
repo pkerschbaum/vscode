@@ -70,7 +70,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 		explorerActions.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
 	}
 
-	/**
+	/*
 	 * - If no file is selected, select the first file
 	 * - If at least one file is selected,
 	 * -- and arrow up is pressed, select the file above the first currently selected file (if file above exists)

@@ -27,7 +27,7 @@ export function useAppActions() {
 	}
 
 	function removeExplorerPanel(explorerId: string) {
-		/**
+		/*
 		 * If the explorer gets removed immediately, redux subscriptions (e.g. useSelectors) currently
 		 * listening on that explorer will throw errors. So first, mark explorer for deletion, so that
 		 * the explorer gets unmounted from the UI and thus, from the React Tree. This will stop all

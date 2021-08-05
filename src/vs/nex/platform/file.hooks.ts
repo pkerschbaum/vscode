@@ -128,6 +128,7 @@ export function useFileActions() {
 				addTags,
 				removeTags,
 			},
+			invalidateFiles,
 			fileSystem,
 		});
 		const distinctParents = getDistinctParents([sourceFileURI, targetFileURI]);
@@ -260,6 +261,7 @@ export async function executeCopyOrMove({
 	cancellationTokenSource,
 	progressCb,
 	fileTagActions,
+	invalidateFiles,
 	fileSystem,
 }: {
 	sourceFileURI: URI;
@@ -273,6 +275,7 @@ export async function executeCopyOrMove({
 		addTags: FileActions['addTags'];
 		removeTags: FileActions['removeTags'];
 	};
+	invalidateFiles: (directory: UriComponents) => Promise<void>;
 	fileSystem: NexFileSystem;
 }) {
 	// Move/Copy File
@@ -300,4 +303,7 @@ export async function executeCopyOrMove({
 	if (pasteShouldMove) {
 		fileTagActions.removeTags([sourceFileURI], tagsOfSourceFile);
 	}
+
+	// invalidate files of the target directory
+	await Promise.all([invalidateFiles(sourceFileURI), invalidateFiles(targetFileURI)]);
 }
