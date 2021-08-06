@@ -151,6 +151,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 						condition: (e) =>
 							e.key !== KEYS.BACKSPACE &&
 							e.key !== KEYS.SHIFT &&
+							e.key !== KEYS.TAB &&
 							!e.altKey &&
 							!e.ctrlKey &&
 							filterInputRef.current !== null,
@@ -210,14 +211,25 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 				/>
 			</Stack>
 			<Divider orientation="vertical" flexItem />
-			<Stack css={[commonStyles.flex.disableShrink, commonStyles.flex.disableShrinkChildren]}>
-				<TextField
-					label="Current Directory"
-					value={cwdInput}
-					onChange={(e) => setCwdInput(e.target.value)}
-				/>
-				<Button onClick={() => explorerActions.changeDirectory(cwdInput)}>Change CWD</Button>
-				<Button onClick={navigateUp}>Up</Button>
+			<Stack
+				direction="column"
+				alignItems="flex-start"
+				css={[commonStyles.flex.disableShrink, commonStyles.flex.disableShrinkChildren]}
+			>
+				<Stack>
+					<TextField
+						label="Current Directory"
+						value={cwdInput}
+						onChange={(e) => setCwdInput(e.target.value)}
+					/>
+					<Button onClick={() => explorerActions.changeDirectory(cwdInput)}>Change CWD</Button>
+					<Button onClick={navigateUp}>Up</Button>
+				</Stack>
+				<Stack>
+					<Button onClick={explorerActions.revealCwdInOSExplorer}>
+						Reveal in OS File Explorer
+					</Button>
+				</Stack>
 			</Stack>
 		</>
 	);

@@ -15,7 +15,7 @@ export class NexApp {
 		@NexClipboard clipboard: NexClipboard,
 		@NexStorage storage: NexStorage,
 	) {
-		this.app = createApp(modeService, modelService, fileSystem, clipboard, storage);
+		this.app = createApp({ modeService, modelService, fileSystem, clipboard, storage });
 	}
 
 	public renderApp(target: HTMLElement) {

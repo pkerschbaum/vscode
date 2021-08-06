@@ -16,6 +16,7 @@ import {
 	useFileProviderProcesses,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useAppActions } from 'vs/nex/platform/app.hooks';
+import { tabIndicatorSpanClassName } from 'vs/nex/theme';
 import { KEYS } from 'vs/nex/ui/constants';
 import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
@@ -76,6 +77,7 @@ export const App: React.FC = () => {
 					variant="scrollable"
 					value={focusedExplorerId}
 					onChange={(_, newValue) => appActions.changeFocusedExplorer(newValue)}
+					TabIndicatorProps={{ children: <span className={tabIndicatorSpanClassName} /> }}
 				>
 					{explorersToShow.map((explorer) => (
 						<Tab

@@ -40,22 +40,12 @@ export function useExplorerActions(explorerId: string) {
 	async function changeDirectory(newDir: string) {
 		const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, newDir);
 
-		// check if the directory is a valid directory (i.e., is a URI-parsable string)
+		// check if the directory is a valid directory (i.e., is a URI-parsable string, and the directory is accessible)
 		if (!parsedUri) {
 			throw Error(
 				`could not change directory, reason: path is not a valid directory. path: ${newDir}`,
 			);
 		}
-
-		// if newDir is the current working directory, no action is necessary
-		const cwdTrailingSepRemoved = resources.removeTrailingPathSeparator(URI.from(cwd));
-		const parsedUriTrailingSepRemoved = resources.removeTrailingPathSeparator(parsedUri);
-
-		if (resources.isEqual(cwdTrailingSepRemoved, parsedUriTrailingSepRemoved)) {
-			return;
-		}
-
-		// check if the directory is a valid directory (i.e., the directory is accessible)
 		const stats = await fileSystem.resolve(parsedUri);
 		if (!stats.isDirectory) {
 			throw Error(
@@ -63,9 +53,10 @@ export function useExplorerActions(explorerId: string) {
 			);
 		}
 
-		// if newDir is not the current working directory, and is a valid directory => change to the new directory
+		// change to the new directory and reload files
 		const newCwd = parsedUri.toJSON();
 		dispatch(actions.changeCwd({ explorerId, newCwd }));
+		await invalidateFiles(cwd);
 	}
 
 	async function pasteFiles() {
@@ -223,10 +214,15 @@ export function useExplorerActions(explorerId: string) {
 		await invalidateFiles(cwd);
 	}
 
+	function revealCwdInOSExplorer() {
+		fileSystem.revealResourcesInOS([cwd]);
+	}
+
 	return {
 		changeDirectory,
 		pasteFiles,
 		createFolder,
+		revealCwdInOSExplorer,
 	};
 }
 

@@ -27,36 +27,26 @@ const logger = createLogger('index');
 const queryClient = new QueryClient();
 const theme = createTheme(enUS);
 
-export const createApp = (
-	modeService: IModeService,
-	modelService: IModelService,
-	fileSystem: NexFileSystem,
-	clipboard: NexClipboard,
-	storage: NexStorage,
-) => ({
+type AppDependencies = {
+	modeService: IModeService;
+	modelService: IModelService;
+	fileSystem: NexFileSystem;
+	clipboard: NexClipboard;
+	storage: NexStorage;
+};
+
+export const createApp = (appDependencies: AppDependencies) => ({
 	renderApp: async function (targetContainer: HTMLElement) {
 		render(
 			<React.StrictMode>
-				<Root
-					modeService={modeService}
-					modelService={modelService}
-					fileSystem={fileSystem}
-					clipboard={clipboard}
-					storage={storage}
-				/>
+				<Root appDependencies={appDependencies} />
 			</React.StrictMode>,
 			targetContainer,
 		);
 	},
 });
 
-const Root: React.FC<{
-	modeService: IModeService;
-	modelService: IModelService;
-	fileSystem: NexFileSystem;
-	clipboard: NexClipboard;
-	storage: NexStorage;
-}> = ({ modeService, modelService, fileSystem, clipboard, storage }) => {
+const Root: React.FC<{ appDependencies: AppDependencies }> = ({ appDependencies }) => {
 	/*
 	 * Nex uses VS Code to show file and folder icons. The languages registered in the "ModeService"
 	 * of VS Code influence how icons get displayed. Even after the first render and paint of Nex, languages
@@ -67,7 +57,7 @@ const Root: React.FC<{
 	const [renderCount, setRenderCount] = React.useState(0);
 	const debouncedRenderCount = useDebounce(renderCount, 500);
 
-	modeService.onLanguagesMaybeChanged(() => {
+	appDependencies.modeService.onLanguagesMaybeChanged(() => {
 		logger.info(
 			`modeService.onLanguagesMaybeChanged got triggered ` +
 				`--> scheduling re-rendering of entire react tree...`,
@@ -78,11 +68,11 @@ const Root: React.FC<{
 	return (
 		<QueryClientProvider client={queryClient}>
 			<RenderOnCountChange renderCount={debouncedRenderCount}>
-				<ModeServiceProvider value={modeService}>
-					<ModelServiceProvider value={modelService}>
-						<NexFileSystemProvider value={fileSystem}>
-							<NexClipboardProvider value={clipboard}>
-								<NexStorageProvider value={storage}>
+				<ModeServiceProvider value={appDependencies.modeService}>
+					<ModelServiceProvider value={appDependencies.modelService}>
+						<NexFileSystemProvider value={appDependencies.fileSystem}>
+							<NexClipboardProvider value={appDependencies.clipboard}>
+								<NexStorageProvider value={appDependencies.storage}>
 									<ClipboardResourcesContext>
 										<ThemeProvider theme={theme}>
 											<Provider store={store}>

@@ -305,5 +305,6 @@ export async function executeCopyOrMove({
 	}
 
 	// invalidate files of the target directory
-	await Promise.all([invalidateFiles(sourceFileURI), invalidateFiles(targetFileURI)]);
+	const distinctParents = getDistinctParents([sourceFileURI, targetFileURI]);
+	await Promise.all(distinctParents.map((directory) => invalidateFiles(directory)));
 }

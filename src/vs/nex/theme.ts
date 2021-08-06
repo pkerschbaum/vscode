@@ -31,20 +31,77 @@ declare module '@emotion/react/types' {
 
 export const BACKGROUND_COLOR = '#241F1A';
 const PAPER_COLOR = '#2F2A26';
+const PRIMARY_COLOR = '#30E5FF';
+export const tabIndicatorSpanClassName = 'MuiTabs-indicatorSpan';
 
 export const createTheme = (locale: Localization) => {
 	const theme: MuiThemeOptions = {
 		components: {
 			MuiButton: {
-				defaultProps: { variant: 'outlined', type: 'button' },
+				defaultProps: {
+					variant: 'outlined',
+					type: 'button',
+				},
 				styleOverrides: {
 					root: css`
 						text-transform: initial;
+						padding-top: 4px;
+						padding-bottom: 4px;
+						padding-left: 12px;
+						padding-right: 12px;
+
+						transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+							box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+							border-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+							color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+
+						&:hover {
+							border-color: ${PAPER_COLOR};
+							background-color: rgba(255, 255, 255, 0.08);
+						}
+					`,
+					outlined: css`
+						color: white;
+						background-color: ${PAPER_COLOR};
+						outline-color: initial;
+						border-color: ${PAPER_COLOR};
 					`,
 				},
 			},
 
-			MuiTextField: { defaultProps: { size: 'small' } },
+			MuiInputBase: {
+				styleOverrides: {
+					input: css`
+						padding-top: 6px;
+						padding-bottom: 6px;
+						padding-left: 12px;
+						padding-right: 12px;
+					`,
+				},
+			},
+
+			MuiTextField: {
+				defaultProps: { size: 'small' },
+			},
+
+			MuiTabs: {
+				styleOverrides: {
+					indicator: css`
+						width: 4px;
+						display: flex;
+						flex-direction: column;
+						justify-content: center;
+						background-color: transparent;
+
+						& .${tabIndicatorSpanClassName} {
+							max-height: 20px;
+							height: 100%;
+							background-color: ${PRIMARY_COLOR};
+							border-radius: 4px;
+						}
+					`,
+				},
+			},
 		},
 
 		typography: {
@@ -54,7 +111,7 @@ export const createTheme = (locale: Localization) => {
 		palette: {
 			mode: 'dark',
 			background: { default: BACKGROUND_COLOR, paper: PAPER_COLOR },
-			primary: { main: '#30E5FF' },
+			primary: { main: PRIMARY_COLOR },
 		},
 
 		availableTagColors: [

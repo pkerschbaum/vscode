@@ -14,12 +14,13 @@ import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ process }) => {
 	const fileActions = useFileActions();
 
-	let content;
+	let contentToRender;
 	switch (process.status) {
 		case PROCESS_STATUS.PENDING_FOR_USER_INPUT: {
-			content = (
-				<>
+			contentToRender = (
+				<DeleteProcessCard process={process}>
 					<Button
+						autoFocus
 						variant="contained"
 						onClick={() => fileActions.runDeleteProcess(process.id, { useTrash: true })}
 					>
@@ -34,29 +35,35 @@ export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ proces
 					<Button variant="contained" onClick={() => fileActions.removeProcess(process.id)}>
 						Abort
 					</Button>
-				</>
+				</DeleteProcessCard>
 			);
 			break;
 		}
 		case PROCESS_STATUS.RUNNING: {
-			content = (
-				<>
+			contentToRender = (
+				<DeleteProcessCard process={process}>
 					<TextBox>Deletion is in progress...</TextBox>
 					<LinearProgress variant="indeterminate" />
-				</>
+				</DeleteProcessCard>
 			);
 			break;
 		}
 		case PROCESS_STATUS.SUCCESS: {
-			content = <TextBox>Files deleted successfully</TextBox>;
+			contentToRender = (
+				<DeleteProcessCard process={process}>
+					<TextBox>Files deleted successfully</TextBox>
+				</DeleteProcessCard>
+			);
 			break;
 		}
 		case PROCESS_STATUS.FAILURE: {
-			content = (
-				<Stack direction="column" alignItems="flex-start">
-					<TextBox>Error occured during deletion of the files:</TextBox>
-					<TextBox>{process.error}</TextBox>
-				</Stack>
+			contentToRender = (
+				<DeleteProcessCard process={process}>
+					<Stack direction="column" alignItems="flex-start">
+						<TextBox>Error occured during deletion of the files:</TextBox>
+						<TextBox>{process.error}</TextBox>
+					</Stack>
+				</DeleteProcessCard>
 			);
 			break;
 		}
@@ -65,6 +72,14 @@ export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ proces
 		}
 	}
 
+	return contentToRender;
+};
+
+type DeleteProcessCardProps = {
+	process: DeleteProcessType;
+};
+
+const DeleteProcessCard: React.FC<DeleteProcessCardProps> = ({ process, children }) => {
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
 			{process.uris.slice(0, 2).map((uri) => {
@@ -79,7 +94,7 @@ export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ proces
 			})}
 			{process.uris.length > 2 && <TextBox fontBold>...</TextBox>}
 
-			{content}
+			{children}
 		</Stack>
 	);
 };
