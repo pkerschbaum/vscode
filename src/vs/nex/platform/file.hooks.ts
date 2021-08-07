@@ -13,7 +13,7 @@ import { useNexStorage } from 'vs/nex/NexStorage.provider';
 import { useDispatch } from 'vs/nex/platform/store/store';
 import {
 	useFileProviderProcesses,
-	useInvalidateFiles,
+	useRefreshFiles,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import {
 	DeleteProcess,
@@ -41,7 +41,7 @@ export function useFileActions() {
 	const clipboard = useNexClipboard();
 	const storage = useNexStorage();
 
-	const invalidateFiles = useInvalidateFiles();
+	const refreshFiles = useRefreshFiles();
 	const tagsActions = useTagsActions();
 
 	useRerenderOnEventFire(
@@ -101,7 +101,7 @@ export function useFileActions() {
 
 		// invalidate files of all affected directories
 		const distinctParents = getDistinctParents(deleteProcess.uris);
-		await Promise.all(distinctParents.map((directory) => invalidateFiles(directory)));
+		await Promise.all(distinctParents.map((directory) => refreshFiles(directory)));
 	}
 
 	function removeProcess(deleteProcessId: string) {
@@ -128,11 +128,11 @@ export function useFileActions() {
 				addTags,
 				removeTags,
 			},
-			invalidateFiles,
+			refreshFiles,
 			fileSystem,
 		});
 		const distinctParents = getDistinctParents([sourceFileURI, targetFileURI]);
-		await Promise.all(distinctParents.map((directory) => invalidateFiles(directory)));
+		await Promise.all(distinctParents.map((directory) => refreshFiles(directory)));
 	}
 
 	async function resolveDeep(targetToResolve: UriComponents, targetStat: IFileStatWithMetadata) {
@@ -261,7 +261,7 @@ export async function executeCopyOrMove({
 	cancellationTokenSource,
 	progressCb,
 	fileTagActions,
-	invalidateFiles,
+	refreshFiles,
 	fileSystem,
 }: {
 	sourceFileURI: URI;
@@ -275,7 +275,7 @@ export async function executeCopyOrMove({
 		addTags: FileActions['addTags'];
 		removeTags: FileActions['removeTags'];
 	};
-	invalidateFiles: (directory: UriComponents) => Promise<void>;
+	refreshFiles: (directory: UriComponents) => Promise<void>;
 	fileSystem: NexFileSystem;
 }) {
 	// Move/Copy File
@@ -306,5 +306,5 @@ export async function executeCopyOrMove({
 
 	// invalidate files of the target directory
 	const distinctParents = getDistinctParents([sourceFileURI, targetFileURI]);
-	await Promise.all(distinctParents.map((directory) => invalidateFiles(directory)));
+	await Promise.all(distinctParents.map((directory) => refreshFiles(directory)));
 }

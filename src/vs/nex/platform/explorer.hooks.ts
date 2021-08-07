@@ -17,7 +17,7 @@ import { CustomError } from 'vs/nex/base/custom-error';
 import {
 	useFileProviderCwd,
 	useFileProviderDraftPasteState,
-	useInvalidateFiles,
+	useRefreshFiles,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useFileActions, executeCopyOrMove } from 'vs/nex/platform/file.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
@@ -34,7 +34,7 @@ export function useExplorerActions(explorerId: string) {
 	const fileSystem = useNexFileSystem();
 	const clipboardResources = useClipboardResources();
 
-	const invalidateFiles = useInvalidateFiles();
+	const refreshFiles = useRefreshFiles();
 	const fileActions = useFileActions();
 
 	async function changeDirectory(newDir: string) {
@@ -56,7 +56,7 @@ export function useExplorerActions(explorerId: string) {
 		// change to the new directory and reload files
 		const newCwd = parsedUri.toJSON();
 		dispatch(actions.changeCwd({ explorerId, newCwd }));
-		await invalidateFiles(cwd);
+		await refreshFiles(cwd);
 	}
 
 	async function pasteFiles() {
@@ -165,7 +165,7 @@ export function useExplorerActions(explorerId: string) {
 						progressCb,
 						fileTagActions: fileActions,
 						fileSystem,
-						invalidateFiles,
+						refreshFiles,
 					}),
 				),
 			);
@@ -211,7 +211,7 @@ export function useExplorerActions(explorerId: string) {
 		await fileSystem.createFolder(folderUri);
 
 		// invalidate files of the target directory
-		await invalidateFiles(cwd);
+		await refreshFiles(cwd);
 	}
 
 	function revealCwdInOSExplorer() {

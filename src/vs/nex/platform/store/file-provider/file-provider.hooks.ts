@@ -73,11 +73,11 @@ function useFiles({
 	return filesQuery;
 }
 
-export function useInvalidateFiles() {
+export function useRefreshFiles() {
 	const queryClient = useQueryClient();
 	return React.useCallback(
 		async (directory: UriComponents) => {
-			await queryClient.invalidateQueries(['files', URI.from(directory).toString()]);
+			await queryClient.refetchQueries(['files', URI.from(directory).toString()]);
 		},
 		[queryClient],
 	);

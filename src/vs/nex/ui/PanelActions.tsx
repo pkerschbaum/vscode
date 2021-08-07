@@ -16,7 +16,6 @@ import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
 import { KEYS, MOUSE_BUTTONS } from 'vs/nex/ui/constants';
 import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
 import { functions } from 'vs/nex/base/utils/functions.util';
-import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 
 const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
 export const filterInputState = atom({
@@ -69,35 +68,34 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 	 * -- and arrow up is pressed, select the file above the first currently selected file (if file above exists)
 	 * -- and arrow down is pressed, select the file below the first currently selected file (if file below exists)
 	 */
-	const changeSelectedFile = (
-		e: KeyboardEvent,
-		key: KEYS['ARROW_UP'] | KEYS['ARROW_DOWN'] | KEYS['PAGE_UP'] | KEYS['PAGE_DOWN'],
-	) => {
+	function changeSelectedFile(e: KeyboardEvent) {
 		e.preventDefault();
 
 		if (filesToShow.length < 1) {
 			return;
 		}
 
-		if (key === KEYS.ARROW_UP || key === KEYS.ARROW_DOWN) {
+		if (e.key === KEYS.ARROW_UP || e.key === KEYS.ARROW_DOWN) {
 			const firstSelectedFileIndex = filesToShow.findIndex((file) =>
 				selectedFiles.some((selectedFile) => selectedFile.id === file.id),
 			);
 			if (selectedFiles.length === 0) {
 				setIdsOfSelectedFiles([filesToShow[0].id]);
-			} else if (key === KEYS.ARROW_UP && firstSelectedFileIndex > 0) {
+			} else if (e.key === KEYS.ARROW_UP && firstSelectedFileIndex > 0) {
 				setIdsOfSelectedFiles([filesToShow[firstSelectedFileIndex - 1].id]);
-			} else if (key === KEYS.ARROW_DOWN && filesToShow.length > firstSelectedFileIndex + 1) {
+			} else if (e.key === KEYS.ARROW_DOWN && filesToShow.length > firstSelectedFileIndex + 1) {
 				setIdsOfSelectedFiles([filesToShow[firstSelectedFileIndex + 1].id]);
 			}
-		} else if (key === KEYS.PAGE_UP) {
+		} else if (e.key === KEYS.PAGE_UP) {
 			setIdsOfSelectedFiles([filesToShow[0].id]);
-		} else if (key === KEYS.PAGE_DOWN) {
+		} else if (e.key === KEYS.PAGE_DOWN) {
 			setIdsOfSelectedFiles([filesToShow[filesToShow.length - 1].id]);
+		} else if (e.key === KEYS.A) {
+			setIdsOfSelectedFiles(filesToShow.map((file) => file.id));
 		} else {
-			assertUnreachable(key);
+			throw new Error(`key not implemented. e.key=${e.key}`);
 		}
-	};
+	}
 
 	/*
 	 * The following keydown handlers allow navigation of the directory content.
@@ -122,20 +120,13 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 					{ condition: (e) => e.ctrlKey && e.key === KEYS.X, handler: cutSelectedFiles },
 					{ condition: (e) => e.ctrlKey && e.key === KEYS.V, handler: explorerActions.pasteFiles },
 					{
-						condition: (e) => e.key === KEYS.ARROW_UP,
-						handler: (e) => changeSelectedFile(e, KEYS.ARROW_UP),
-					},
-					{
-						condition: (e) => e.key === KEYS.ARROW_DOWN,
-						handler: (e) => changeSelectedFile(e, KEYS.ARROW_DOWN),
-					},
-					{
-						condition: (e) => !e.ctrlKey && e.key === KEYS.PAGE_UP,
-						handler: (e) => changeSelectedFile(e, KEYS.PAGE_UP),
-					},
-					{
-						condition: (e) => !e.ctrlKey && e.key === KEYS.PAGE_DOWN,
-						handler: (e) => changeSelectedFile(e, KEYS.PAGE_DOWN),
+						condition: (e) =>
+							e.key === KEYS.ARROW_UP ||
+							e.key === KEYS.ARROW_DOWN ||
+							(e.ctrlKey && e.key === KEYS.A) ||
+							(!e.ctrlKey && e.key === KEYS.PAGE_UP) ||
+							(!e.ctrlKey && e.key === KEYS.PAGE_DOWN),
+						handler: (e) => changeSelectedFile(e),
 					},
 					{ condition: (e) => e.key === KEYS.ENTER, handler: openSelectedFiles },
 					{ condition: (e) => e.key === KEYS.DELETE, handler: scheduleDeleteSelectedFiles },

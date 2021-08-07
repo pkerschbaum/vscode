@@ -14,6 +14,7 @@ export const KEYS = {
 	SHIFT: 'Shift',
 	ESC: 'Escape',
 	TAB: 'Tab',
+	A: 'a',
 } as const;
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type KEYS = typeof KEYS;
