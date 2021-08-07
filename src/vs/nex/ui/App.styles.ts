@@ -36,6 +36,7 @@ export const styles = {
 
 	activeExplorerArea: (theme: Theme) => css`
 		grid-area: active-explorer-panel;
+		padding-top: ${theme.spacing(0.5)};
 		padding-right: ${theme.spacing()};
 		padding-bottom: ${theme.spacing(2)};
 	`,

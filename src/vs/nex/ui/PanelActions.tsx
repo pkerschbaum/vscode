@@ -173,7 +173,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 
 	return (
 		<>
-			<Stack>
+			<Stack alignItems="flex-end">
 				<TextField
 					id={EXPLORER_FILTER_INPUT_ID}
 					inputRef={filterInputRef}

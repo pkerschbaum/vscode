@@ -129,7 +129,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 
 	return (
 		<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
-			<Stack>
+			<Stack alignItems="stretch">
 				<PanelActions
 					explorerId={explorerId}
 					filesToShow={filesToShow}

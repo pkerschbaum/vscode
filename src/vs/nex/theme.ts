@@ -55,7 +55,7 @@ export const createTheme = (locale: Localization) => {
 							border-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
 							color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 
-						&:hover {
+						&:hover.MuiButton-outlined {
 							border-color: ${PAPER_COLOR};
 							background-color: rgba(255, 255, 255, 0.08);
 						}
