@@ -90,7 +90,7 @@ export const App: React.FC = () => {
 										{uriHelper.extractNameAndExtension(explorer.cwd).fileName}
 									</Box>
 									<Tooltip
-										title={removeExplorerActionDisabled ? '' : 'Remove Tab'}
+										title={removeExplorerActionDisabled ? '' : 'Remove tab'}
 										disableInteractive
 									>
 										<Box component="span">

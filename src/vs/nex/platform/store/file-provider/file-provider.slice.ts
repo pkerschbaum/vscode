@@ -78,7 +78,6 @@ type UpdateDeleteProcessPayload =
 
 type RemoveProcessPayload = {
 	id: string;
-	type: PROCESS_TYPE;
 };
 
 const INITIAL_STATE: FileProviderState = {

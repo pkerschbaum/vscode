@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { Button, LinearProgress } from '@material-ui/core';
+import { Button, IconButton, LinearProgress, Tooltip } from '@material-ui/core';
+import ClearAllIcon from '@material-ui/icons/ClearAll';
 
 import { URI } from 'vs/base/common/uri';
 
@@ -80,19 +81,34 @@ type DeleteProcessCardProps = {
 };
 
 const DeleteProcessCard: React.FC<DeleteProcessCardProps> = ({ process, children }) => {
+	const fileActions = useFileActions();
+
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
-			{process.uris.slice(0, 2).map((uri) => {
-				const { fileName, extension } = uriHelper.extractNameAndExtension(uri);
-				const fileLabel = formatter.file({ name: fileName, extension });
+			<Stack spacing={4} alignItems="center">
+				<Stack direction="column">
+					{process.uris.slice(0, 2).map((uri) => {
+						const { fileName, extension } = uriHelper.extractNameAndExtension(uri);
+						const fileLabel = formatter.file({ name: fileName, extension });
 
-				return (
-					<TextBox key={URI.from(uri).toString()} fontBold>
-						{fileLabel}
-					</TextBox>
-				);
-			})}
-			{process.uris.length > 2 && <TextBox fontBold>...</TextBox>}
+						return (
+							<TextBox key={URI.from(uri).toString()} fontBold>
+								{fileLabel}
+							</TextBox>
+						);
+					})}
+					{process.uris.length > 2 && <TextBox fontBold>...</TextBox>}
+				</Stack>
+
+				{(process.status === PROCESS_STATUS.SUCCESS ||
+					process.status === PROCESS_STATUS.FAILURE) && (
+					<Tooltip title="Remove card" disableInteractive>
+						<IconButton size="large" onClick={() => fileActions.removeProcess(process.id)}>
+							<ClearAllIcon fontSize="inherit" />
+						</IconButton>
+					</Tooltip>
+				)}
+			</Stack>
 
 			{children}
 		</Stack>

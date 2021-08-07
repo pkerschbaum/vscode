@@ -104,8 +104,8 @@ export function useFileActions() {
 		await Promise.all(distinctParents.map((directory) => refreshFiles(directory)));
 	}
 
-	function removeProcess(deleteProcessId: string) {
-		dispatch(actions.removeProcess({ id: deleteProcessId, type: PROCESS_TYPE.DELETE }));
+	function removeProcess(processId: string) {
+		dispatch(actions.removeProcess({ id: processId }));
 	}
 
 	async function cutOrCopyFiles(files: UriComponents[], cut: boolean) {
