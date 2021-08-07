@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Button, Divider, TextField } from '@material-ui/core';
+import { atom, useRecoilState } from 'recoil';
 
 import { URI } from 'vs/base/common/uri';
 
@@ -13,19 +14,21 @@ import {
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
 import { KEYS, MOUSE_BUTTONS } from 'vs/nex/ui/constants';
-import { useWindowEvent, usePrevious } from 'vs/nex/ui/utils/events.hooks';
+import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
 import { functions } from 'vs/nex/base/utils/functions.util';
 import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 
 const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
+export const filterInputState = atom({
+	key: 'filterInputState',
+	default: '',
+});
 
 type PanelActionsProps = {
 	explorerId: string;
 	filesToShow: FileForUI[];
 	idsOfSelectedFiles: string[];
 	setIdsOfSelectedFiles: (val: string[]) => void;
-	filterInput: string;
-	setFilterInput: (val: string) => void;
 
 	openSelectedFiles: () => void;
 	scheduleDeleteSelectedFiles: () => void;
@@ -38,8 +41,6 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 	filesToShow,
 	idsOfSelectedFiles,
 	setIdsOfSelectedFiles,
-	filterInput,
-	setFilterInput,
 
 	openSelectedFiles,
 	scheduleDeleteSelectedFiles,
@@ -47,7 +48,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 	cutSelectedFiles,
 }) => {
 	const cwd = useFileProviderCwd(explorerId);
-	const files = useFileProviderFiles(explorerId);
+	const { files } = useFileProviderFiles(explorerId);
 	const focusedFileExplorerId = useFileProviderFocusedExplorerId();
 
 	const explorerActions = useExplorerActions(explorerId);
@@ -57,14 +58,6 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 
 	const isFocusedExplorer = explorerId === focusedFileExplorerId;
 	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
-
-	// on mount, and every time the filter input changes, reset selection (just select the first file)
-	const prevFilterInput = usePrevious(filterInput);
-	React.useEffect(() => {
-		if (filterInput !== prevFilterInput && filesToShow.length > 0) {
-			setIdsOfSelectedFiles([filesToShow[0].id]);
-		}
-	}, [filterInput, prevFilterInput, filesToShow, setIdsOfSelectedFiles]);
 
 	function navigateUp() {
 		explorerActions.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
@@ -174,41 +167,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 	return (
 		<>
 			<Stack alignItems="flex-end">
-				<TextField
-					id={EXPLORER_FILTER_INPUT_ID}
-					inputRef={filterInputRef}
-					InputLabelProps={{ shrink: true }}
-					onKeyDown={(e) => {
-						/*
-						 * For some keys, the default action should be stopped (e.g. in case of ARROW_UP and
-						 * ARROW_DOWN, the cursor in the input field jumps to the start/end of the field). The event
-						 * must get propagated to the parent, this is needed for navigating the files using the
-						 * keyboard. For all other events, we stop propagation to avoid interference with the
-						 * keyboard navigation (e.g. CTRL+X would not only cut the text of the input field, but
-						 * also the files currently selected)
-						 */
-						if (
-							e.ctrlKey ||
-							e.altKey ||
-							e.key === KEYS.ARROW_UP ||
-							e.key === KEYS.ARROW_DOWN ||
-							e.key === KEYS.PAGE_UP ||
-							e.key === KEYS.PAGE_DOWN ||
-							e.key === KEYS.ENTER
-						) {
-							e.preventDefault();
-						}
-					}}
-					label="Filter"
-					value={filterInput}
-					onChange={(e) => {
-						const newVal = e.target.value.trimStart();
-						setFilterInput(newVal);
-						if (newVal === '' && filterInputRef.current !== null) {
-							filterInputRef.current.blur();
-						}
-					}}
-				/>
+				<FilterInput filterResetKey={URI.from(cwd).toString()} filterInputRef={filterInputRef} />
 			</Stack>
 			<Divider orientation="vertical" flexItem />
 			<Stack
@@ -232,5 +191,61 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 				</Stack>
 			</Stack>
 		</>
+	);
+};
+
+type FilterInputProps = {
+	filterResetKey: string;
+	filterInputRef: React.RefObject<HTMLDivElement>;
+};
+
+const FilterInput: React.FC<FilterInputProps> = ({ filterResetKey, filterInputRef }) => {
+	const [filterInput, setFilterInput] = useRecoilState(filterInputState);
+
+	React.useEffect(
+		function resetFilterOnKeyChange() {
+			setFilterInput('');
+		},
+		[filterResetKey, setFilterInput],
+	);
+
+	return (
+		<TextField
+			id={EXPLORER_FILTER_INPUT_ID}
+			inputRef={filterInputRef}
+			InputLabelProps={{ shrink: true }}
+			onKeyDown={(e) => {
+				/*
+				 * For some keys, the default action should be stopped (e.g. in case of ARROW_UP and
+				 * ARROW_DOWN, the cursor in the input field jumps to the start/end of the field). The event
+				 * must get propagated to the parent, this is needed for navigating the files using the
+				 * keyboard. For all other events, we stop propagation to avoid interference with the
+				 * keyboard navigation (e.g. CTRL+X would not only cut the text of the input field, but
+				 * also the files currently selected)
+				 */
+				if (
+					e.ctrlKey ||
+					e.altKey ||
+					e.key === KEYS.ARROW_UP ||
+					e.key === KEYS.ARROW_DOWN ||
+					e.key === KEYS.PAGE_UP ||
+					e.key === KEYS.PAGE_DOWN ||
+					e.key === KEYS.ENTER
+				) {
+					e.preventDefault();
+				}
+			}}
+			label="Filter"
+			value={filterInput}
+			onChange={(e) => {
+				const newVal = e.target.value.trimStart();
+				setFilterInput(newVal);
+
+				// if input is empty now, blur the input field
+				if (newVal === '' && filterInputRef.current !== null) {
+					filterInputRef.current.blur();
+				}
+			}}
+		/>
 	);
 };

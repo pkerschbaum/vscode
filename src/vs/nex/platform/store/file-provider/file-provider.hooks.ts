@@ -89,7 +89,16 @@ export type FileForUI = File & {
 	tags: Tag[];
 	iconClasses: string[];
 };
-export const useFileProviderFiles = (explorerId: string): FileForUI[] => {
+type FilesLoadingResult =
+	| {
+			dataAvailable: false;
+			files: FileForUI[];
+	  }
+	| {
+			dataAvailable: true;
+			files: FileForUI[];
+	  };
+export const useFileProviderFiles = (explorerId: string): FilesLoadingResult => {
 	const modelService = useModelService();
 	const modeService = useModeService();
 
@@ -106,9 +115,12 @@ export const useFileProviderFiles = (explorerId: string): FileForUI[] => {
 		filesToUse = filesQueryWithoutMetadata.data;
 	}
 
-	filesToUse = filesToUse ?? [];
+	if (filesToUse === undefined) {
+		// files queries do not have any (possibly cached) data yet
+		return { dataAvailable: false, files: [] };
+	}
 
-	return Object.values(filesToUse)
+	const filesForUI = Object.values(filesToUse)
 		.filter(objects.isNotNullish)
 		.map((file) => {
 			const { fileName, extension } = uriHelper.extractNameAndExtension(file.uri);
@@ -125,6 +137,8 @@ export const useFileProviderFiles = (explorerId: string): FileForUI[] => {
 			};
 			return fileForUI;
 		});
+
+	return { dataAvailable: true, files: filesForUI };
 };
 
 function mapFileTypeToFileKind(fileType: FILE_TYPE) {
