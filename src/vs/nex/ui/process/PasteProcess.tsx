@@ -78,7 +78,11 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 				{(process.status === PROCESS_STATUS.SUCCESS ||
 					process.status === PROCESS_STATUS.FAILURE) && (
 					<Tooltip title="Remove card" disableInteractive>
-						<IconButton size="large" onClick={() => fileActions.removeProcess(process.id)}>
+						<IconButton
+							autoFocus
+							size="large"
+							onClick={() => fileActions.removeProcess(process.id)}
+						>
 							<ClearAllIcon fontSize="inherit" />
 						</IconButton>
 					</Tooltip>

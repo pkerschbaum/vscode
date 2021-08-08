@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Button, Divider, TextField } from '@material-ui/core';
 import { atom, useRecoilState } from 'recoil';
 
-import { URI } from 'vs/base/common/uri';
+import { URI, UriComponents } from 'vs/base/common/uri';
 
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
@@ -48,14 +48,13 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 }) => {
 	const cwd = useFileProviderCwd(explorerId);
 	const { files } = useFileProviderFiles(explorerId);
-	const focusedFileExplorerId = useFileProviderFocusedExplorerId();
+	const focusedExplorerId = useFileProviderFocusedExplorerId();
 
 	const explorerActions = useExplorerActions(explorerId);
 
-	const [cwdInput, setCwdInput] = React.useState(cwd.path);
 	const filterInputRef = React.useRef<HTMLDivElement>(null);
 
-	const isFocusedExplorer = explorerId === focusedFileExplorerId;
+	const isFocusedExplorer = explorerId === focusedExplorerId;
 	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
 
 	function navigateUp() {
@@ -136,10 +135,11 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 							e.key !== KEYS.BACKSPACE &&
 							e.key !== KEYS.SHIFT &&
 							e.key !== KEYS.TAB &&
+							e.key !== KEYS.F2 &&
 							!e.altKey &&
 							!e.ctrlKey &&
 							filterInputRef.current !== null,
-						handler: () => {
+						handler: (e) => {
 							if (filterInputRef.current !== null) {
 								filterInputRef.current.focus();
 							}
@@ -167,12 +167,10 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 				css={[commonStyles.flex.disableShrink, commonStyles.flex.disableShrinkChildren]}
 			>
 				<Stack>
-					<TextField
-						label="Current Directory"
-						value={cwdInput}
-						onChange={(e) => setCwdInput(e.target.value)}
+					<CwdInput
+						cwd={cwd}
+						onSubmit={(newCwdPath) => explorerActions.changeDirectory(newCwdPath)}
 					/>
-					<Button onClick={() => explorerActions.changeDirectory(cwdInput)}>Change CWD</Button>
 					<Button onClick={navigateUp}>Up</Button>
 				</Stack>
 				<Stack>
@@ -182,6 +180,28 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 				</Stack>
 			</Stack>
 		</>
+	);
+};
+
+type CwdInputProps = {
+	cwd: UriComponents;
+	onSubmit: (newCwdPath: string) => void;
+};
+
+const CwdInput: React.FC<CwdInputProps> = ({ cwd, onSubmit }) => {
+	const [cwdInput, setCwdInput] = React.useState(cwd.path);
+
+	return (
+		<form css={commonStyles.fullWidth} onSubmit={() => onSubmit(cwdInput)}>
+			<Stack>
+				<TextField
+					label="Current Directory"
+					value={cwdInput}
+					onChange={(e) => setCwdInput(e.target.value)}
+				/>
+				<Button type="submit">Change CWD</Button>
+			</Stack>
+		</form>
 	);
 };
 

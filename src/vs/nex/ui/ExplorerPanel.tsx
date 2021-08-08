@@ -123,7 +123,11 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 					{...fileEditActions}
 				/>
 				<Divider orientation="vertical" flexItem />
-				<ExplorerActions selectedFiles={selectedFiles} {...fileEditActions} />
+				<ExplorerActions
+					explorerId={explorerId}
+					selectedFiles={selectedFiles}
+					{...fileEditActions}
+				/>
 			</Stack>
 
 			<Box css={[commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical]}>

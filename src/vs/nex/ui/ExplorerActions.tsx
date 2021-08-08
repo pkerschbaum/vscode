@@ -13,8 +13,11 @@ import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
 import { useTagsActions } from 'vs/nex/platform/tag.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
+import { KEYS } from 'vs/nex/ui/constants';
+import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
 
 type ExplorerActionsProps = {
+	explorerId: string;
 	selectedFiles: FileForUI[];
 	openSelectedFiles: () => void;
 	scheduleDeleteSelectedFiles: () => void;
@@ -34,6 +37,7 @@ export const ExplorerActions: React.FC<ExplorerActionsProps> = (props) => {
 };
 
 const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: string }> = ({
+	explorerId,
 	selectedFiles,
 	focusedExplorerId,
 	openSelectedFiles,
@@ -47,6 +51,15 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 	const fileActions = useFileActions();
 	const explorerActions = useExplorerActions(focusedExplorerId);
 	const tagActions = useTagsActions();
+
+	const isFocusedExplorer = explorerId === focusedExplorerId;
+
+	useWindowEvent(
+		'keydown',
+		!isFocusedExplorer
+			? null
+			: [{ condition: (e) => e.key === KEYS.F2, handler: triggerRenameForSelectedFiles }],
+	);
 
 	const singleFileActionsDisabled = selectedFiles.length !== 1;
 	const multipleFilesActionsDisabled = selectedFiles.length < 1;
