@@ -653,6 +653,7 @@ async function doCopyFile(source: string, target: string, mode: number, addition
 				}
 			}
 		});
+		progressWatcher.once('error', error => finish(error));
 
 		// start piping
 		reader.pipe(progressWatcher).pipe(writer);
