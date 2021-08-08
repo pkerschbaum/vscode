@@ -134,6 +134,12 @@ export const App: React.FC = () => {
 					css={[styles.processesArea, commonStyles.flex.disableShrinkChildren]}
 					spacing={2}
 					alignItems="flex-start"
+					boxProps={{
+						onKeyDown: (e) => {
+							// stop propagation so that global navigation handlers do not fire when interacting with processes using the keyboard
+							e.stopPropagation();
+						},
+					}}
 				>
 					{arrays.reverse(processes).map((process) => (
 						<ProcessCard key={process.id} process={process} />

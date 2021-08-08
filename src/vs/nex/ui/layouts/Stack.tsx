@@ -18,6 +18,7 @@ type StackProps = {
 	children: React.ReactNode;
 	className?: string;
 	sx?: BoxProps['sx'];
+	boxProps?: BoxProps;
 };
 
 export const Stack = React.forwardRef<HTMLElement, StackProps>(
@@ -33,6 +34,7 @@ export const Stack = React.forwardRef<HTMLElement, StackProps>(
 			spacing,
 			stretchContainer = false,
 			children,
+			boxProps,
 			...rest
 		},
 		ref,
@@ -60,6 +62,7 @@ export const Stack = React.forwardRef<HTMLElement, StackProps>(
 				 * see https://material-ui.com/components/tooltips/#custom-child-element
 				 */
 				{...rest}
+				{...boxProps}
 			>
 				{children}
 			</Box>
