@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Button } from '@material-ui/core';
 
+import { config } from 'vs/nex/config';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { AddTag } from 'vs/nex/ui/AddTag';
 import { CreateFolder } from 'vs/nex/ui/CreateFolder';
@@ -91,21 +92,23 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 				Delete
 			</Button>
 			<CreateFolder onSubmit={explorerActions.createFolder} />
-			<AddTag
-				options={Object.entries(tagActions.getTags()).map(([id, otherValues]) => ({
-					...otherValues,
-					id,
-				}))}
-				onValueCreated={(tag) => tagActions.addTag(tag)}
-				onValueChosen={async (chosenTag) => {
-					await fileActions.addTags(
-						selectedFiles.map((file) => file.uri),
-						[chosenTag.id],
-					);
-				}}
-				onValueDeleted={(tag) => tagActions.removeTags([tag.id])}
-				disabled={multipleDirectoriesActionsDisabled}
-			/>
+			{config.featureFlags.tags && (
+				<AddTag
+					options={Object.entries(tagActions.getTags()).map(([id, otherValues]) => ({
+						...otherValues,
+						id,
+					}))}
+					onValueCreated={(tag) => tagActions.addTag(tag)}
+					onValueChosen={async (chosenTag) => {
+						await fileActions.addTags(
+							selectedFiles.map((file) => file.uri),
+							[chosenTag.id],
+						);
+					}}
+					onValueDeleted={(tag) => tagActions.removeTags([tag.id])}
+					disabled={multipleDirectoriesActionsDisabled}
+				/>
+			)}
 		</Stack>
 	);
 };

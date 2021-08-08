@@ -138,7 +138,7 @@ export const AddTag: React.FC<AddTagProps> = ({
 						</Stack>
 					</li>
 				)}
-				renderInput={(params) => <TextField {...params} label="Add Tag" />}
+				renderInput={(params) => <TextField {...params} label="Add tag" />}
 			/>
 			<Dialog open={open} onClose={handleClose}>
 				<form onSubmit={handleSubmit}>
