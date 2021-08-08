@@ -288,7 +288,22 @@ export async function executeCopyOrMove({
 				token: cancellationTokenSource?.token,
 				progressCb,
 		  });
-	await operation;
+
+	try {
+		await operation;
+	} catch (err: unknown) {
+		/*
+		 * If an error occurs during copy/move, perform cleanup.
+		 * We can just permanently delete the target file URI (and, if it's a folder, its contents),
+		 * since "findValidPasteFileTarget" makes sure that the paste target URI is new, without conflict.
+		 */
+		try {
+			await fileSystem.del(targetFileURI, { useTrash: false, recursive: true });
+		} catch {
+			// ignore
+		}
+		throw err;
+	}
 
 	// Also copy tags to destination
 	const tagsOfSourceFile = fileTagActions

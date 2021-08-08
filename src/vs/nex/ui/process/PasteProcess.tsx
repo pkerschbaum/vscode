@@ -56,9 +56,9 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
-			<Stack spacing={4} alignItems="center">
+			<Stack spacing={4} alignItems="center" justifyContent="space-between">
 				<Stack spacing={2}>
-					<Stack direction="column">
+					<Stack direction="column" alignItems="flex-start">
 						{process.sourceUris.slice(0, 2).map((uri) => {
 							const { fileName, extension } = uriHelper.extractNameAndExtension(uri);
 							const sourceFileLabel = formatter.file({ name: fileName, extension });
@@ -77,7 +77,7 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 
 				{(process.status === PROCESS_STATUS.SUCCESS ||
 					process.status === PROCESS_STATUS.FAILURE) && (
-					<Tooltip title="Remove card" disableInteractive>
+					<Tooltip title="Discard card" disableInteractive>
 						<IconButton
 							autoFocus
 							size="large"

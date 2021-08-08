@@ -22,20 +22,14 @@ export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ proces
 				<DeleteProcessCard process={process}>
 					<Button
 						autoFocus
-						variant="contained"
 						onClick={() => fileActions.runDeleteProcess(process.id, { useTrash: true })}
 					>
 						Move to trash
 					</Button>
-					<Button
-						variant="contained"
-						onClick={() => fileActions.runDeleteProcess(process.id, { useTrash: false })}
-					>
+					<Button onClick={() => fileActions.runDeleteProcess(process.id, { useTrash: false })}>
 						Delete permanently
 					</Button>
-					<Button variant="contained" onClick={() => fileActions.removeProcess(process.id)}>
-						Abort
-					</Button>
+					<Button onClick={() => fileActions.removeProcess(process.id)}>Abort</Button>
 				</DeleteProcessCard>
 			);
 			break;
@@ -85,8 +79,8 @@ const DeleteProcessCard: React.FC<DeleteProcessCardProps> = ({ process, children
 
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
-			<Stack spacing={4} alignItems="center">
-				<Stack direction="column">
+			<Stack spacing={4} alignItems="center" justifyContent="space-between">
+				<Stack direction="column" alignItems="flex-start">
 					{process.uris.slice(0, 2).map((uri) => {
 						const { fileName, extension } = uriHelper.extractNameAndExtension(uri);
 						const fileLabel = formatter.file({ name: fileName, extension });
@@ -102,7 +96,7 @@ const DeleteProcessCard: React.FC<DeleteProcessCardProps> = ({ process, children
 
 				{(process.status === PROCESS_STATUS.SUCCESS ||
 					process.status === PROCESS_STATUS.FAILURE) && (
-					<Tooltip title="Remove card" disableInteractive>
+					<Tooltip title="Discard card" disableInteractive>
 						<IconButton
 							autoFocus
 							size="large"

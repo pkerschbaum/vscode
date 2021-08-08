@@ -23,7 +23,7 @@ export function useAppActions() {
 		}
 
 		dispatch(actions.addExplorer({ explorerId, cwd: parsedUri.toJSON() }));
-		dispatch(actions.changeCwd({ explorerId, newCwd: parsedUri.toJSON() }));
+		dispatch(actions.changeFocusedExplorer({ explorerId }));
 	}
 
 	function removeExplorerPanel(explorerId: string) {

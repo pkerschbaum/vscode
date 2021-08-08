@@ -144,7 +144,6 @@ export function useExplorerActions(explorerId: string) {
 		);
 
 		// perform paste
-		let errorOccured = false;
 		function progressCb(newBytesRead: number, forSource: URI) {
 			bytesProcessed += newBytesRead;
 			statusPerFile[forSource.toString()].bytesProcessed += newBytesRead;
@@ -172,7 +171,6 @@ export function useExplorerActions(explorerId: string) {
 
 			dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.SUCCESS }));
 		} catch (err: unknown) {
-			errorOccured = true;
 			dispatch(
 				actions.updatePasteProcess({
 					id,
@@ -183,25 +181,6 @@ export function useExplorerActions(explorerId: string) {
 		} finally {
 			clearInterval(intervalId);
 			cancellationTokenSource.dispose();
-		}
-
-		/*
-		 * If an error occured or cancellation was requested, perform cleanup.
-		 * We can just permanently delete all target file URIs (and, if it's a folder, its contents),
-		 * since "findValidPasteFileTarget" makes sure that the paste target URIs are new, without conflict.
-		 */
-		const cleanupNecessary = errorOccured || cancellationTokenSource.token.isCancellationRequested;
-		if (cleanupNecessary) {
-			await Promise.all(
-				pasteInfos.map(async (pasteInfo) => {
-					const { targetFileURI } = pasteInfo;
-					try {
-						await fileSystem.del(targetFileURI, { useTrash: false, recursive: true });
-					} catch {
-						// ignore
-					}
-				}),
-			);
 		}
 	}
 
