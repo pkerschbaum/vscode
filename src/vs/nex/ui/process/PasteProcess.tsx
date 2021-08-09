@@ -91,12 +91,17 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 
 			{content}
 
-			<Stack css={commonStyles.fullWidth} spacing={0}>
-				<Box css={[styles.linearProgressBox, commonStyles.flex.shrinkAndFitHorizontal]}>
-					<LinearProgress value={percentageBytesProcessed} />
-				</Box>
-				<TextBox>{percentageBytesProcessed}%</TextBox>
-			</Stack>
+			<Box css={[commonStyles.fullWidth, styles.linearProgressBox]}>
+				<LinearProgress
+					value={percentageBytesProcessed}
+					variant={
+						process.progressOfAtLeastOneSourceIsIndeterminate &&
+						process.status === PROCESS_STATUS.RUNNING
+							? 'indeterminate'
+							: 'determinate'
+					}
+				/>
+			</Box>
 
 			{process.status !== PROCESS_STATUS.SUCCESS && (
 				<Stack spacing={0.5}>

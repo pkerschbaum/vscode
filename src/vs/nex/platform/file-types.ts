@@ -24,6 +24,7 @@ export type Process = {
 			sourceUris: UriComponents[];
 			totalSize: number;
 			bytesProcessed: number;
+			progressOfAtLeastOneSourceIsIndeterminate: boolean;
 			destinationFolder: UriComponents;
 			cancellationTokenSource: CancellationTokenSource;
 	  }
@@ -33,6 +34,7 @@ export type Process = {
 			sourceUris: UriComponents[];
 			totalSize: number;
 			bytesProcessed: number;
+			progressOfAtLeastOneSourceIsIndeterminate: boolean;
 			destinationFolder: UriComponents;
 			cancellationTokenSource: CancellationTokenSource;
 			error: string;

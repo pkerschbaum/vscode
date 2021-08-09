@@ -4,29 +4,31 @@ import {
 	Box,
 	LinearProgress as MuiLinearProgress,
 	LinearProgressProps as MuiLinearProgressProps,
-	Typography,
 } from '@material-ui/core';
 
-type LinearProgressProps = Omit<MuiLinearProgressProps, 'variant'> & {
+import { Stack } from 'vs/nex/ui/layouts/Stack';
+import { TextBox } from 'vs/nex/ui/elements/TextBox';
+
+type LinearProgressProps = MuiLinearProgressProps & {
 	value: number;
-	showLabel?: boolean;
 };
 
-export const LinearProgress: React.FC<LinearProgressProps> = ({
-	showLabel,
-	value,
-	...otherProps
-}) => {
+export const LinearProgress: React.FC<LinearProgressProps> = ({ value, ...otherProps }) => {
+	const variant = otherProps.variant ?? 'determinate';
+
 	return (
-		<Box sx={{ display: 'flex', alignItems: 'center' }}>
-			<Box sx={{ width: '100%', mr: 1 }}>
-				<MuiLinearProgress variant="determinate" value={value} {...otherProps} />
-			</Box>
-			{showLabel && (
+		<Stack alignItems="center">
+			<MuiLinearProgress
+				value={value}
+				{...otherProps}
+				variant={variant}
+				sx={{ width: '100%', ...otherProps.sx }}
+			/>
+			{variant === 'determinate' && (
 				<Box sx={{ minWidth: 35 }}>
-					<Typography variant="body2" color="textSecondary">{`${Math.round(value)}%`}</Typography>
+					<TextBox fontSize="sm" sx={{ color: 'textSecondary' }}>{`${Math.round(value)}%`}</TextBox>
 				</Box>
 			)}
-		</Box>
+		</Stack>
 	);
 };

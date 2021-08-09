@@ -743,6 +743,10 @@ export class FileService extends Disposable implements IFileService {
 
 			// same provider: leverage rename() functionality
 			if (sourceProvider === targetProvider) {
+				if (additionalArgs?.progressCb) {
+					additionalArgs.progressCb({ forSource: source, progressIsIndeterminate: true });
+				}
+
 				await sourceProvider.rename(source, target, { overwrite });
 
 				return mode;

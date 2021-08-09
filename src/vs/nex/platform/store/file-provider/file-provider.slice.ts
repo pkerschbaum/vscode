@@ -55,6 +55,7 @@ type UpdatePasteProcessPayload =
 	| {
 			id: string;
 			bytesProcessed?: number;
+			progressOfAtLeastOneSourceIsIndeterminate?: boolean;
 			status?: PROCESS_STATUS.RUNNING | PROCESS_STATUS.SUCCESS;
 	  }
 	| {
@@ -180,6 +181,13 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 
 			if ('bytesProcessed' in action.payload && action.payload.bytesProcessed !== undefined) {
 				process.bytesProcessed = action.payload.bytesProcessed;
+			}
+			if (
+				'progressOfAtLeastOneSourceIsIndeterminate' in action.payload &&
+				action.payload.progressOfAtLeastOneSourceIsIndeterminate !== undefined
+			) {
+				process.progressOfAtLeastOneSourceIsIndeterminate =
+					action.payload.progressOfAtLeastOneSourceIsIndeterminate;
 			}
 
 			if (action.payload.status !== undefined) {

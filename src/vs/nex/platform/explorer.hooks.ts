@@ -113,6 +113,7 @@ export function useExplorerActions(explorerId: string) {
 		const id = uuid.generateUuid();
 		let totalSize = 0;
 		let bytesProcessed = 0;
+		let progressOfAtLeastOneSourceIsIndeterminate = false;
 		let cancellationTokenSource = new CancellationTokenSource();
 		const statusPerFile: {
 			[uri: string]: { bytesProcessed: number };
@@ -139,18 +140,31 @@ export function useExplorerActions(explorerId: string) {
 				id,
 				totalSize,
 				bytesProcessed,
+				progressOfAtLeastOneSourceIsIndeterminate,
 				destinationFolder: destinationFolder.toJSON(),
 				cancellationTokenSource,
 			}),
 		);
 
 		// perform paste
-		function progressCb({ newBytesRead, forSource }: ProgressCbArgs) {
-			bytesProcessed += newBytesRead;
-			statusPerFile[forSource.toString()].bytesProcessed += newBytesRead;
+		function progressCb(progressArgs: ProgressCbArgs) {
+			if ('newBytesRead' in progressArgs && progressArgs.newBytesRead !== undefined) {
+				bytesProcessed += progressArgs.newBytesRead;
+				statusPerFile[progressArgs.forSource.toString()].bytesProcessed +=
+					progressArgs.newBytesRead;
+			}
+			if ('progressIsIndeterminate' in progressArgs && progressArgs.progressIsIndeterminate) {
+				progressOfAtLeastOneSourceIsIndeterminate = true;
+			}
 		}
 		const intervalId = setInterval(function dispatchProgress() {
-			dispatch(actions.updatePasteProcess({ id, bytesProcessed }));
+			dispatch(
+				actions.updatePasteProcess({
+					id,
+					bytesProcessed,
+					progressOfAtLeastOneSourceIsIndeterminate,
+				}),
+			);
 		}, UPDATE_INTERVAL_MS);
 
 		try {

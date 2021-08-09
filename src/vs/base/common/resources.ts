@@ -12,9 +12,8 @@ import { compare as strCompare, equalsIgnoreCase } from 'vs/base/common/strings'
 import { URI, uriToFsPath } from 'vs/base/common/uri';
 
 export type ProgressCbArgs = {
-	newBytesRead: number;
 	forSource: URI;
-};
+} & ({ newBytesRead: number; } | { progressIsIndeterminate: true; });
 
 export function originalFSPath(uri: URI): string {
 	return uriToFsPath(uri, true);
