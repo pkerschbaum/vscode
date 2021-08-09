@@ -106,6 +106,7 @@ export const createTheme = (locale: Localization) => {
 
 		typography: {
 			fontFamily: ['Segoe UI Variable', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'].join(','),
+			fontSize: 12,
 		},
 
 		palette: {

@@ -1,5 +1,11 @@
 import * as React from 'react';
 import { Button } from '@material-ui/core';
+import LaunchOutlinedIcon from '@material-ui/icons/LaunchOutlined';
+import ContentCopyOutlinedIcon from '@material-ui/icons/ContentCopyOutlined';
+import ContentCutOutlinedIcon from '@material-ui/icons/ContentCutOutlined';
+import ContentPasteOutlinedIcon from '@material-ui/icons/ContentPasteOutlined';
+import EditOutlinedIcon from '@material-ui/icons/EditOutlined';
+import DeleteOutlinedIcon from '@material-ui/icons/DeleteOutlined';
 
 import { config } from 'vs/nex/config';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
@@ -70,26 +76,44 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 	return (
 		<Stack wrap>
 			<Button onClick={openSelectedFiles} disabled={singleFileActionsDisabled}>
-				Open
+				<Stack>
+					<LaunchOutlinedIcon fontSize="small" />
+					Open
+				</Stack>
 			</Button>
 			<Button onClick={copySelectedFiles} disabled={multipleFilesActionsDisabled}>
-				Copy
+				<Stack>
+					<ContentCopyOutlinedIcon fontSize="small" />
+					Copy
+				</Stack>
 			</Button>
 			<Button onClick={cutSelectedFiles} disabled={multipleFilesActionsDisabled}>
-				Cut
+				<Stack>
+					<ContentCutOutlinedIcon fontSize="small" />
+					Cut
+				</Stack>
 			</Button>
 			<Button
 				variant={draftPasteState === undefined ? undefined : 'contained'}
 				onClick={explorerActions.pasteFiles}
 				disabled={draftPasteState === undefined}
 			>
-				Paste
+				<Stack>
+					<ContentPasteOutlinedIcon fontSize="small" />
+					Paste
+				</Stack>
 			</Button>
 			<Button onClick={triggerRenameForSelectedFiles} disabled={singleFileActionsDisabled}>
-				Rename
+				<Stack>
+					<EditOutlinedIcon fontSize="small" />
+					Rename
+				</Stack>
 			</Button>
 			<Button onClick={scheduleDeleteSelectedFiles} disabled={multipleFilesActionsDisabled}>
-				Delete
+				<Stack>
+					<DeleteOutlinedIcon fontSize="small" />
+					Delete
+				</Stack>
 			</Button>
 			<CreateFolder onSubmit={explorerActions.createFolder} />
 			{config.featureFlags.tags && (

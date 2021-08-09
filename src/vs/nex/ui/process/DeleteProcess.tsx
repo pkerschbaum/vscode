@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { Button, IconButton, LinearProgress, Tooltip } from '@material-ui/core';
 import ClearAllIcon from '@material-ui/icons/ClearAll';
+import DeleteOutlineOutlinedIcon from '@material-ui/icons/DeleteOutlineOutlined';
+import DeleteForeverOutlinedIcon from '@material-ui/icons/DeleteForeverOutlined';
 
 import { URI } from 'vs/base/common/uri';
 
@@ -24,10 +26,16 @@ export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ proces
 						autoFocus
 						onClick={() => fileActions.runDeleteProcess(process.id, { useTrash: true })}
 					>
-						Move to trash
+						<Stack>
+							<DeleteOutlineOutlinedIcon fontSize="small" />
+							Move to trash
+						</Stack>
 					</Button>
 					<Button onClick={() => fileActions.runDeleteProcess(process.id, { useTrash: false })}>
-						Delete permanently
+						<Stack>
+							<DeleteForeverOutlinedIcon fontSize="small" />
+							Delete permanently
+						</Stack>
 					</Button>
 					<Button onClick={() => fileActions.removeProcess(process.id)}>Abort</Button>
 				</DeleteProcessCard>
@@ -79,7 +87,7 @@ const DeleteProcessCard: React.FC<DeleteProcessCardProps> = ({ process, children
 
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
-			<Stack spacing={4} alignItems="center" justifyContent="space-between">
+			<Stack spacing={4} justifyContent="space-between">
 				<Stack direction="column" alignItems="flex-start">
 					{process.uris.slice(0, 2).map((uri) => {
 						const { fileName, extension } = uriHelper.extractNameAndExtension(uri);

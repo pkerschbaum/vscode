@@ -17,7 +17,7 @@ export const LinearProgress: React.FC<LinearProgressProps> = ({ value, ...otherP
 	const variant = otherProps.variant ?? 'determinate';
 
 	return (
-		<Stack alignItems="center">
+		<Stack>
 			<MuiLinearProgress
 				value={value}
 				{...otherProps}

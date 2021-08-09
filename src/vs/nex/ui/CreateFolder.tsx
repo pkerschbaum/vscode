@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Button, Popover, TextField } from '@material-ui/core';
+import CreateNewFolderOutlinedIcon from '@material-ui/icons/CreateNewFolderOutlined';
 
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { strings } from 'vs/nex/base/utils/strings.util';
@@ -34,7 +35,12 @@ export const CreateFolder: React.FC<CreateFolderProps> = ({ onSubmit }) => {
 
 	return (
 		<>
-			<Button onClick={(e) => setCreateFolderAnchorEl(e.currentTarget)}>New Folder</Button>
+			<Button onClick={(e) => setCreateFolderAnchorEl(e.currentTarget)}>
+				<Stack>
+					<CreateNewFolderOutlinedIcon fontSize="small" />
+					New Folder
+				</Stack>
+			</Button>
 
 			<Popover
 				open={createFolderAnchorEl !== null}

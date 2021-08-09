@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { Button, Divider, TextField } from '@material-ui/core';
+import ArrowUpwardOutlinedIcon from '@material-ui/icons/ArrowUpwardOutlined';
 import { atom, useRecoilState } from 'recoil';
 
 import { URI, UriComponents } from 'vs/base/common/uri';
 
-import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import {
 	FileForUI,
@@ -161,19 +161,18 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 				<FilterInput filterResetKey={URI.from(cwd).toString()} filterInputRef={filterInputRef} />
 			</Stack>
 			<Divider orientation="vertical" flexItem />
-			<Stack
-				direction="column"
-				alignItems="flex-start"
-				css={[commonStyles.flex.disableShrink, commonStyles.flex.disableShrinkChildren]}
-			>
+			<Stack alignItems="flex-end">
 				<Stack>
 					<CwdInput
 						cwd={cwd}
 						onSubmit={(newCwdPath) => explorerActions.changeDirectory(newCwdPath)}
 					/>
-					<Button onClick={navigateUp}>Up</Button>
-				</Stack>
-				<Stack>
+					<Button onClick={navigateUp}>
+						<Stack>
+							<ArrowUpwardOutlinedIcon fontSize="small" />
+							Up
+						</Stack>
+					</Button>
 					<Button onClick={explorerActions.revealCwdInOSExplorer}>
 						Reveal in OS File Explorer
 					</Button>
@@ -192,15 +191,12 @@ const CwdInput: React.FC<CwdInputProps> = ({ cwd, onSubmit }) => {
 	const [cwdInput, setCwdInput] = React.useState(cwd.path);
 
 	return (
-		<form css={commonStyles.fullWidth} onSubmit={() => onSubmit(cwdInput)}>
-			<Stack>
-				<TextField
-					label="Current Directory"
-					value={cwdInput}
-					onChange={(e) => setCwdInput(e.target.value)}
-				/>
-				<Button type="submit">Change CWD</Button>
-			</Stack>
+		<form onSubmit={() => onSubmit(cwdInput)}>
+			<TextField
+				label="Current Directory"
+				value={cwdInput}
+				onChange={(e) => setCwdInput(e.target.value)}
+			/>
 		</form>
 	);
 };

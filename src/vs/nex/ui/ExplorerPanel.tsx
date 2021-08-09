@@ -297,11 +297,7 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 						selected={fileIsSelected}
 					>
 						<Cell>
-							<Stack
-								css={styles.fileIcon}
-								className={fileForRow.iconClasses.join(' ')}
-								alignItems="center"
-							>
+							<Stack css={styles.fileIcon} className={fileForRow.iconClasses.join(' ')}>
 								{fileToRename && fileToRename.id === fileForRow.id ? (
 									<RenameInput
 										file={fileForRow}

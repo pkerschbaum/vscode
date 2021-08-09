@@ -56,7 +56,7 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
-			<Stack spacing={4} alignItems="center" justifyContent="space-between">
+			<Stack spacing={4} justifyContent="space-between">
 				<Stack spacing={2}>
 					<Stack direction="column" alignItems="flex-start">
 						{process.sourceUris.slice(0, 2).map((uri) => {

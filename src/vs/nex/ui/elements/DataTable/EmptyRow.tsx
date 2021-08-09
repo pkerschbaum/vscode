@@ -8,7 +8,7 @@ export const EmptyRow: React.FC = () => {
 	return (
 		<TableRow style={{ height: ROW_HEIGHT }} tabIndex={-1}>
 			<TableCell colSpan={999}>
-				<Stack alignItems="center" justifyContent="center">
+				<Stack justifyContent="center">
 					<strong>No data present</strong>
 				</Stack>
 			</TableCell>

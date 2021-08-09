@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Box, Tabs, Tab, Button, IconButton, Tooltip } from '@material-ui/core';
+import AddCircleOutlineOutlinedIcon from '@material-ui/icons/AddCircleOutlineOutlined';
 import RemoveCircleOutlineIcon from '@material-ui/icons/RemoveCircleOutline';
 
 import { URI } from 'vs/base/common/uri';
@@ -111,7 +112,12 @@ export const App: React.FC = () => {
 						/>
 					))}
 				</Tabs>
-				<Button onClick={appActions.addExplorerPanel}>Add Tab</Button>
+				<Button onClick={appActions.addExplorerPanel}>
+					<Stack>
+						<AddCircleOutlineOutlinedIcon fontSize="small" />
+						Add tab
+					</Stack>
+				</Button>
 			</Stack>
 
 			<Box
