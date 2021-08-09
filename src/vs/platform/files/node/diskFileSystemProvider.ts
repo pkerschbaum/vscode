@@ -12,6 +12,7 @@ import { isLinux, isWindows } from 'vs/base/common/platform';
 import { SymlinkSupport, RimRafMode, IDirent, Promises } from 'vs/base/node/pfs';
 import { normalize, basename, dirname } from 'vs/base/common/path';
 import { joinPath } from 'vs/base/common/resources';
+import type { ProgressCbArgs } from 'vs/base/common/resources';
 import { isEqual } from 'vs/base/common/extpath';
 import { retry, ThrottledDelayer } from 'vs/base/common/async';
 import { ILogService, LogLevel } from 'vs/platform/log/common/log';
@@ -441,7 +442,7 @@ export class DiskFileSystemProvider extends Disposable implements
 		}
 	}
 
-	async rename(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<void> {
+	async rename(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
 		const fromFilePath = this.toFilePath(from);
 		const toFilePath = this.toFilePath(to);
 
@@ -468,7 +469,7 @@ export class DiskFileSystemProvider extends Disposable implements
 		}
 	}
 
-	async copy(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<void> {
+	async copy(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
 		const fromFilePath = this.toFilePath(from);
 		const toFilePath = this.toFilePath(to);
 

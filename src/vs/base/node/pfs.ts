@@ -13,6 +13,7 @@ import { normalizeNFC } from 'vs/base/common/normalization';
 import { join } from 'vs/base/common/path';
 import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { extUriBiasedIgnorePathCase } from 'vs/base/common/resources';
+import type { ProgressCbArgs } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { generateUuid } from 'vs/base/common/uuid';
@@ -476,7 +477,7 @@ function ensureWriteOptions(options?: IWriteFileOptions): IEnsuredWriteFileOptio
  * - updates the `mtime` of the `source` after the operation
  * - allows to move across multiple disks
  */
-async function move(source: string, target: string, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<void> {
+async function move(source: string, target: string, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
 	if (source === target) {
 		return;  // simulate node.js behaviour here and do a no-op if paths match
 	}
@@ -538,7 +539,7 @@ interface ICopyPayload {
  * links should be handled when encountered. Set to
  * `false` to not preserve them and `true` otherwise.
  */
-async function copy(source: string, target: string, options: { preserveSymlinks: boolean }, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<void> {
+async function copy(source: string, target: string, options: { preserveSymlinks: boolean }, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
 	return doCopy(source, target, { root: { source, target }, options, handledSourcePaths: new Set<string>() }, additionalArgs);
 }
 
@@ -548,7 +549,7 @@ async function copy(source: string, target: string, options: { preserveSymlinks:
 // (https://github.com/nodejs/node-v0.x-archive/issues/3045#issuecomment-4862588)
 const COPY_MODE_MASK = 0o777;
 
-async function doCopy(source: string, target: string, payload: ICopyPayload, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<void> {
+async function doCopy(source: string, target: string, payload: ICopyPayload, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
 
 	// Keep track of paths already copied to prevent
 	// cycles from symbolic links to cause issues
@@ -601,7 +602,7 @@ async function doCopyDirectory(source: string, target: string, mode: number, pay
 	}
 }
 
-async function doCopyFile(source: string, target: string, mode: number, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<void> {
+async function doCopyFile(source: string, target: string, mode: number, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
 
 	/*
 	 * Nex-App: two modifications:
@@ -644,7 +645,7 @@ async function doCopyFile(source: string, target: string, mode: number, addition
 		const progressWatcher = new stream.Transform({
 			transform(chunk: Buffer, _, callback) {
 				if (additionalArgs?.progressCb) {
-					additionalArgs.progressCb(chunk.byteLength, sourceUri);
+					additionalArgs.progressCb({ newBytesRead: chunk.byteLength, forSource: sourceUri });
 				}
 				if (!!additionalArgs?.token?.isCancellationRequested) {
 					callback(new Error(`aborted doCopyFile due to cancellation`));

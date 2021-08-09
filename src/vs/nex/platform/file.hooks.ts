@@ -3,6 +3,7 @@ import { shell } from 'electron';
 
 import * as uuid from 'vs/base/common/uuid';
 import { URI, UriComponents } from 'vs/base/common/uri';
+import type { ProgressCbArgs } from 'vs/base/common/resources';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { IFileStatWithMetadata } from 'vs/platform/files/common/files';
 
@@ -269,7 +270,7 @@ export async function executeCopyOrMove({
 	sourceFileStat: IFileStatWithMetadata;
 	pasteShouldMove: boolean;
 	cancellationTokenSource?: CancellationTokenSource;
-	progressCb?: (newBytesRead: number, forSource: URI) => void;
+	progressCb?: (args: ProgressCbArgs) => void;
 	fileTagActions: {
 		getTagsOfFile: FileActions['getTagsOfFile'];
 		addTags: FileActions['addTags'];

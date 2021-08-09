@@ -11,6 +11,11 @@ import { isLinux, isWindows } from 'vs/base/common/platform';
 import { compare as strCompare, equalsIgnoreCase } from 'vs/base/common/strings';
 import { URI, uriToFsPath } from 'vs/base/common/uri';
 
+export type ProgressCbArgs = {
+	newBytesRead: number;
+	forSource: URI;
+};
+
 export function originalFSPath(uri: URI): string {
 	return uriToFsPath(uri, true);
 }

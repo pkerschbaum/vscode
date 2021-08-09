@@ -1,6 +1,7 @@
 import * as resources from 'vs/base/common/resources';
 import * as uuid from 'vs/base/common/uuid';
 import { extname, basename } from 'vs/base/common/path';
+import type { ProgressCbArgs } from 'vs/base/common/resources';
 import { Constants } from 'vs/base/common/uint';
 import { isLinux } from 'vs/base/common/platform';
 import { URI, UriComponents } from 'vs/base/common/uri';
@@ -144,7 +145,7 @@ export function useExplorerActions(explorerId: string) {
 		);
 
 		// perform paste
-		function progressCb(newBytesRead: number, forSource: URI) {
+		function progressCb({ newBytesRead, forSource }: ProgressCbArgs) {
 			bytesProcessed += newBytesRead;
 			statusPerFile[forSource.toString()].bytesProcessed += newBytesRead;
 		}

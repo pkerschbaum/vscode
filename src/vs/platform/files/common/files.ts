@@ -6,6 +6,7 @@
 import { localize } from 'vs/nls';
 import { sep } from 'vs/base/common/path';
 import { URI } from 'vs/base/common/uri';
+import type { ProgressCbArgs } from 'vs/base/common/resources';
 import { IExpression } from 'vs/base/common/glob';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { Event } from 'vs/base/common/event';
@@ -141,7 +142,7 @@ export interface IFileService {
 	 * The optional parameter overwrite can be set to replace an existing file at the location.
 	 */
 	move(source: URI, target: URI, overwrite?: boolean): Promise<IFileStatWithMetadata>;
-	move(source: URI, target: URI, overwrite?: boolean, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<undefined | IFileStatWithMetadata>;
+	move(source: URI, target: URI, overwrite?: boolean, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<undefined | IFileStatWithMetadata>;
 
 	/**
 	 * Find out if a move operation is possible given the arguments. No changes on disk will
@@ -155,7 +156,7 @@ export interface IFileService {
 	 * The optional parameter overwrite can be set to replace an existing file at the location.
 	 */
 	copy(source: URI, target: URI, overwrite?: boolean): Promise<IFileStatWithMetadata>;
-	copy(source: URI, target: URI, overwrite?: boolean, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<undefined | IFileStatWithMetadata>;
+	copy(source: URI, target: URI, overwrite?: boolean, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<undefined | IFileStatWithMetadata>;
 
 	/**
 	 * Find out if a copy operation is possible given the arguments. No changes on disk will
@@ -436,7 +437,7 @@ export interface IFileSystemProvider {
 
 	rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void>;
 	copy?(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void>;
-	copy?(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<void>;
+	copy?(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void>;
 
 	readFile?(resource: URI): Promise<Uint8Array>;
 	writeFile?(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void>;
@@ -459,7 +460,7 @@ export function hasReadWriteCapability(provider: IFileSystemProvider): provider 
 }
 
 export interface IFileSystemProviderWithFileFolderCopyCapability extends IFileSystemProvider {
-	copy(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (newBytesRead: number, forSource: URI) => void }): Promise<void>;
+	copy(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void>;
 }
 
 export function hasFileFolderCopyCapability(provider: IFileSystemProvider): provider is IFileSystemProviderWithFileFolderCopyCapability {
