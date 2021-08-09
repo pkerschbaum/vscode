@@ -25,10 +25,12 @@ import {
 } from 'vs/nex/platform/file-types';
 import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
 import { getDistinctParents, NexFileSystem } from 'vs/nex/platform/logic/file-system';
+import { onFileDragStart } from 'vs/nex/ipc/electron-sandbox/nex';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
 import { useTagsActions } from 'vs/nex/platform/tag.hooks';
 import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
+import { strings } from 'vs/nex/base/utils/strings.util';
 
 const logger = createLogger('file.hooks');
 
@@ -53,9 +55,9 @@ export function useFileActions() {
 	async function openFile(uri: UriComponents) {
 		const executablePath = URI.from(uri).fsPath;
 
-		const success = await shell.openPath(executablePath);
-		if (!success) {
-			logger.error(`electron shell openItem did not succeed`, undefined, { uri });
+		const errorMessage = await shell.openPath(executablePath);
+		if (!strings.isNullishOrEmpty(errorMessage)) {
+			logger.error(`electron shell openItem did not succeed`, undefined, { uri, errorMessage });
 		}
 	}
 
@@ -251,6 +253,7 @@ export function useFileActions() {
 		addTags,
 		getTagsOfFile,
 		removeTags,
+		onFileDragStart,
 	};
 }
 

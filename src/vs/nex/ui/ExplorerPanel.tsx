@@ -153,6 +153,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 								renameFile={renameFile}
 								abortRename={abortRename}
 								removeTags={fileActions.removeTags}
+								onDragStart={(file) => fileActions.onFileDragStart(file.uri)}
 							/>
 						) : (
 							<>
@@ -178,6 +179,7 @@ type FilesTableBodyProps = {
 	renameFile: (fileToRename: FileForUI, newName: string) => void;
 	abortRename: () => void;
 	removeTags: (files: UriComponents[], tagIds: string[]) => void;
+	onDragStart: (file: FileForUI) => void;
 };
 
 const FilesTableBody: React.FC<FilesTableBodyProps> = ({
@@ -189,6 +191,7 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 	renameFile,
 	abortRename,
 	removeTags,
+	onDragStart,
 }) => {
 	const [filterInput] = useRecoilState(filterInputState);
 	const [fileIdSelectionGotStartedWith, setFileIdSelectionGotStartedWith] = React.useState<
@@ -256,6 +259,8 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 				return (
 					<Row
 						key={fileForRow.id}
+						draggable
+						onDragStart={() => onDragStart(fileForRow)}
 						onClick={(e) => {
 							if (e.ctrlKey) {
 								// toggle selection of file which was clicked on

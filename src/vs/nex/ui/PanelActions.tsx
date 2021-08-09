@@ -139,7 +139,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 							!e.altKey &&
 							!e.ctrlKey &&
 							filterInputRef.current !== null,
-						handler: (e) => {
+						handler: () => {
 							if (filterInputRef.current !== null) {
 								filterInputRef.current.focus();
 							}
