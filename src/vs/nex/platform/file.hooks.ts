@@ -25,7 +25,7 @@ import {
 } from 'vs/nex/platform/file-types';
 import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
 import { getDistinctParents, NexFileSystem } from 'vs/nex/platform/logic/file-system';
-import { onFileDragStart } from 'vs/nex/ipc/electron-sandbox/nex';
+import { getNativeFileIconDataURL, onFileDragStart } from 'vs/nex/ipc/electron-sandbox/nex';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
 import { useTagsActions } from 'vs/nex/platform/tag.hooks';
@@ -254,6 +254,7 @@ export function useFileActions() {
 		getTagsOfFile,
 		removeTags,
 		onFileDragStart,
+		getNativeFileIconDataURL,
 	};
 }
 

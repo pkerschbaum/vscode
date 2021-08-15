@@ -89,7 +89,7 @@ import { hasWorkspaceFileExtension, IWorkspacesService } from 'vs/platform/works
 import { IWorkspacesHistoryMainService, WorkspacesHistoryMainService } from 'vs/platform/workspaces/electron-main/workspacesHistoryMainService';
 import { WorkspacesMainService } from 'vs/platform/workspaces/electron-main/workspacesMainService';
 import { IWorkspacesManagementMainService, WorkspacesManagementMainService } from 'vs/platform/workspaces/electron-main/workspacesManagementMainService';
-import { registerNexListener } from 'vs/nex/ipc/electron-main/nex';
+import { registerNexListeners } from 'vs/nex/ipc/electron-main/nex';
 
 /**
  * The main VS Code application. There will only ever be one instance,
@@ -187,7 +187,7 @@ export class CodeApplication extends Disposable {
 		registerContextMenuListener();
 
 		// Nex-App: Register some IPC channel listeners
-		registerNexListener();
+		registerNexListeners();
 
 		// Accessibility change event
 		app.on('accessibility-support-changed', (event, accessibilitySupportEnabled) => {

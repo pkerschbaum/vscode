@@ -3,7 +3,7 @@ import { useRecoilState, useResetRecoilState } from 'recoil';
 import { Box, Chip, Divider, Skeleton, TextField } from '@material-ui/core';
 import { matchSorter } from 'match-sorter';
 
-import { UriComponents } from 'vs/base/common/uri';
+import { URI } from 'vs/base/common/uri';
 
 import { styles } from 'vs/nex/ui/ExplorerPanel.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
@@ -33,6 +33,8 @@ import {
 	filterInputState,
 	PanelActions,
 } from 'vs/nex/ui/PanelActions';
+
+const USE_NATIVE_ICON_FOR_REGEX = /(?:exe|ico|dll)/i;
 
 export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) => {
 	const { dataAvailable, files } = useFileProviderFiles(explorerId);
@@ -165,11 +167,8 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 								selectFiles={selectFiles}
 								openFileOrDirectory={openFileOrDirectory}
 								fileToRename={fileToRename}
-								setFileToRenameId={setFileToRenameId}
 								renameFile={renameFile}
 								abortRename={abortRename}
-								removeTags={fileActions.removeTags}
-								onDragStart={(file) => fileActions.onFileDragStart(file.uri)}
 							/>
 						) : (
 							<>
@@ -191,11 +190,8 @@ type FilesTableBodyProps = {
 	selectFiles: (files: FileForUI[]) => void;
 	openFileOrDirectory: (file: FileForUI) => void;
 	fileToRename?: FileForUI;
-	setFileToRenameId: (fileId: string) => void;
 	renameFile: (fileToRename: FileForUI, newName: string) => void;
 	abortRename: () => void;
-	removeTags: (files: UriComponents[], tagIds: string[]) => void;
-	onDragStart: (file: FileForUI) => void;
 };
 
 const FilesTableBody: React.FC<FilesTableBodyProps> = ({
@@ -206,19 +202,8 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 	fileToRename,
 	renameFile,
 	abortRename,
-	removeTags,
-	onDragStart,
 }) => {
 	const [filterInput] = useRecoilState(filterInputState);
-	const [fileIdSelectionGotStartedWith, setFileIdSelectionGotStartedWith] = useRecoilState(
-		fileIdSelectionGotStartedWithState,
-	);
-
-	React.useEffect(() => {
-		if (selectedFiles.length === 1) {
-			setFileIdSelectionGotStartedWith(selectedFiles[0].id);
-		}
-	}, [selectedFiles, setFileIdSelectionGotStartedWith]);
 
 	/*
 	 * Compute files to show:
@@ -269,86 +254,172 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 
 	return (
 		<>
-			{filesToShow.map((fileForRow, idxOfFileForRow) => {
-				const fileIsSelected = !!selectedFiles.find((file) => file.id === fileForRow.id);
-
-				return (
-					<Row
-						key={fileForRow.id}
-						draggable
-						onDragStart={() => onDragStart(fileForRow)}
-						onClick={(e) => {
-							if (e.ctrlKey) {
-								// toggle selection of file which was clicked on
-								if (fileIsSelected) {
-									selectFiles(
-										selectedFiles.filter((selectedFile) => selectedFile.id !== fileForRow.id),
-									);
-								} else {
-									selectFiles([...selectedFiles, fileForRow]);
-								}
-							} else if (e.shiftKey) {
-								// select range of files
-								if (fileIdSelectionGotStartedWith === undefined) {
-									return;
-								}
-
-								const idxSelectionGotStartedWith = filesToShow.findIndex(
-									(file) => file.id === fileIdSelectionGotStartedWith,
-								);
-								let idxSelectFrom = idxSelectionGotStartedWith;
-								let idxSelectTo = idxOfFileForRow;
-								if (idxSelectTo < idxSelectFrom) {
-									// swap values
-									const tmp = idxSelectFrom;
-									idxSelectFrom = idxSelectTo;
-									idxSelectTo = tmp;
-								}
-
-								const filesToSelect = filesToShow.filter(
-									(_, idx) => idx >= idxSelectFrom && idx <= idxSelectTo,
-								);
-								selectFiles(filesToSelect);
-							} else {
-								// no ctrl or shift key pressed --> just select the file which was clicked on
-								selectFiles([fileForRow]);
-							}
-						}}
-						onDoubleClick={() => openFileOrDirectory(fileForRow)}
-						selected={fileIsSelected}
-					>
-						<Cell>
-							<Stack css={styles.fileIcon} className={fileForRow.iconClasses.join(' ')}>
-								{fileToRename && fileToRename.id === fileForRow.id ? (
-									<RenameInput
-										file={fileForRow}
-										onSubmit={(newName) => renameFile(fileForRow, newName)}
-										abortRename={abortRename}
-									/>
-								) : (
-									<TextBox fontSize="sm">{formatter.file(fileForRow)}</TextBox>
-								)}
-								{fileForRow.tags.map((tag) => (
-									<Chip
-										key={tag.id}
-										style={{ backgroundColor: tag.colorHex }}
-										variant="outlined"
-										size="small"
-										label={tag.name}
-										onDelete={() => removeTags([fileForRow.uri], [tag.id])}
-									/>
-								))}
-							</Stack>
-						</Cell>
-						<Cell>
-							{fileForRow.fileType === FILE_TYPE.FILE &&
-								fileForRow.size !== undefined &&
-								formatter.bytes(fileForRow.size)}
-						</Cell>
-					</Row>
-				);
-			})}
+			{filesToShow.map((fileForRow, idxOfFileForRow) => (
+				<FilesTableRow
+					key={fileForRow.id}
+					filesToShow={filesToShow}
+					selectedFiles={selectedFiles}
+					selectFiles={selectFiles}
+					openFileOrDirectory={openFileOrDirectory}
+					fileToRename={fileToRename}
+					renameFile={renameFile}
+					abortRename={abortRename}
+					fileForRow={fileForRow}
+					idxOfFileForRow={idxOfFileForRow}
+				/>
+			))}
 		</>
+	);
+};
+
+type FilesTableRowProps = {
+	filesToShow: FileForUI[];
+	selectedFiles: FileForUI[];
+	selectFiles: (files: FileForUI[]) => void;
+	openFileOrDirectory: (file: FileForUI) => void;
+	fileToRename?: FileForUI;
+	renameFile: (fileToRename: FileForUI, newName: string) => void;
+	abortRename: () => void;
+
+	fileForRow: FileForUI;
+	idxOfFileForRow: number;
+};
+
+const FilesTableRow: React.FC<FilesTableRowProps> = ({
+	filesToShow,
+	selectedFiles,
+	selectFiles,
+	openFileOrDirectory,
+	fileToRename,
+	renameFile,
+	abortRename,
+	fileForRow,
+	idxOfFileForRow,
+}) => {
+	const fileActions = useFileActions();
+
+	const [nativeIconDataURL, setNativeIconDataURL] = React.useState<string | undefined>();
+	const [fileIdSelectionGotStartedWith, setFileIdSelectionGotStartedWith] = useRecoilState(
+		fileIdSelectionGotStartedWithState,
+	);
+
+	React.useEffect(() => {
+		if (selectedFiles.length === 1) {
+			setFileIdSelectionGotStartedWith(selectedFiles[0].id);
+		}
+	}, [selectedFiles, setFileIdSelectionGotStartedWith]);
+
+	const fsPath = URI.from(fileForRow.uri).fsPath;
+	const extension = fileForRow.extension;
+	const { getNativeFileIconDataURL } = fileActions;
+	React.useEffect(
+		function fetchIcon() {
+			if (
+				strings.isNullishOrEmpty(fsPath) ||
+				strings.isNullishOrEmpty(extension) ||
+				!USE_NATIVE_ICON_FOR_REGEX.test(extension)
+			) {
+				return;
+			}
+
+			async function doFetchIcon() {
+				const icon = await getNativeFileIconDataURL({ fsPath });
+				setNativeIconDataURL(icon);
+			}
+			doFetchIcon();
+		},
+		[fsPath, extension, getNativeFileIconDataURL],
+	);
+
+	const fileIsSelected = !!selectedFiles.find((file) => file.id === fileForRow.id);
+
+	return (
+		<Row
+			key={fileForRow.id}
+			draggable
+			onDragStart={() => fileActions.onFileDragStart({ fsPath: URI.from(fileForRow.uri).fsPath })}
+			onClick={(e) => {
+				if (e.ctrlKey) {
+					// toggle selection of file which was clicked on
+					if (fileIsSelected) {
+						selectFiles(selectedFiles.filter((selectedFile) => selectedFile.id !== fileForRow.id));
+					} else {
+						selectFiles([...selectedFiles, fileForRow]);
+					}
+				} else if (e.shiftKey) {
+					// select range of files
+					if (fileIdSelectionGotStartedWith === undefined) {
+						return;
+					}
+
+					const idxSelectionGotStartedWith = filesToShow.findIndex(
+						(file) => file.id === fileIdSelectionGotStartedWith,
+					);
+					let idxSelectFrom = idxSelectionGotStartedWith;
+					let idxSelectTo = idxOfFileForRow;
+					if (idxSelectTo < idxSelectFrom) {
+						// swap values
+						const tmp = idxSelectFrom;
+						idxSelectFrom = idxSelectTo;
+						idxSelectTo = tmp;
+					}
+
+					const filesToSelect = filesToShow.filter(
+						(_, idx) => idx >= idxSelectFrom && idx <= idxSelectTo,
+					);
+					selectFiles(filesToSelect);
+				} else {
+					// no ctrl or shift key pressed --> just select the file which was clicked on
+					selectFiles([fileForRow]);
+				}
+			}}
+			onDoubleClick={() => openFileOrDirectory(fileForRow)}
+			selected={fileIsSelected}
+		>
+			<Cell>
+				<Stack>
+					<Stack
+						css={styles.fileIcon}
+						className={nativeIconDataURL ? undefined : fileForRow.iconClasses.join(' ')}
+					>
+						{nativeIconDataURL && (
+							<Box css={styles.icon}>
+								<img
+									src={nativeIconDataURL}
+									alt="application icon"
+									style={{ maxHeight: '100%', maxWidth: '100%' }}
+								/>
+							</Box>
+						)}
+						{fileToRename && fileToRename.id === fileForRow.id ? (
+							<RenameInput
+								file={fileForRow}
+								onSubmit={(newName) => renameFile(fileForRow, newName)}
+								abortRename={abortRename}
+							/>
+						) : (
+							<TextBox fontSize="sm">{formatter.file(fileForRow)}</TextBox>
+						)}
+					</Stack>
+
+					{fileForRow.tags.map((tag) => (
+						<Chip
+							key={tag.id}
+							style={{ backgroundColor: tag.colorHex }}
+							variant="outlined"
+							size="small"
+							label={tag.name}
+							onDelete={() => fileActions.removeTags([fileForRow.uri], [tag.id])}
+						/>
+					))}
+				</Stack>
+			</Cell>
+			<Cell>
+				{fileForRow.fileType === FILE_TYPE.FILE &&
+					fileForRow.size !== undefined &&
+					formatter.bytes(fileForRow.size)}
+			</Cell>
+		</Row>
 	);
 };
 
