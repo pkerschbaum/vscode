@@ -77,7 +77,7 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 
 				{(process.status === PROCESS_STATUS.SUCCESS ||
 					process.status === PROCESS_STATUS.FAILURE) && (
-					<Tooltip title="Discard card" disableInteractive>
+					<Tooltip title="Discard card">
 						<IconButton
 							autoFocus
 							size="large"

@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { Button, Divider, TextField } from '@material-ui/core';
+import { Button, Divider, TextField, Tooltip } from '@material-ui/core';
 import ArrowUpwardOutlinedIcon from '@material-ui/icons/ArrowUpwardOutlined';
+import FolderOutlinedIcon from '@material-ui/icons/FolderOutlined';
 import { atom, useRecoilState } from 'recoil';
 
 import { URI, UriComponents } from 'vs/base/common/uri';
@@ -173,9 +174,14 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 							Up
 						</Stack>
 					</Button>
-					<Button onClick={explorerActions.revealCwdInOSExplorer}>
-						Reveal in OS File Explorer
-					</Button>
+					<Tooltip title="Reveal in OS File Explorer">
+						<Button onClick={explorerActions.revealCwdInOSExplorer}>
+							<Stack>
+								<FolderOutlinedIcon fontSize="small" />
+								Reveal
+							</Stack>
+						</Button>
+					</Tooltip>
 				</Stack>
 			</Stack>
 		</>

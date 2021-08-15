@@ -84,21 +84,40 @@ export const createTheme = (locale: Localization) => {
 				defaultProps: { size: 'small' },
 			},
 
+			MuiTooltip: {
+				defaultProps: { disableInteractive: true },
+			},
+
 			MuiTabs: {
 				styleOverrides: {
+					flexContainer: css`
+						gap: 16px;
+					`,
+
 					indicator: css`
-						width: 4px;
+						right: initial;
+						width: 3px;
 						display: flex;
 						flex-direction: column;
 						justify-content: center;
 						background-color: transparent;
 
 						& .${tabIndicatorSpanClassName} {
-							max-height: 20px;
+							max-height: 16px;
 							height: 100%;
 							background-color: ${PRIMARY_COLOR};
 							border-radius: 4px;
 						}
+					`,
+				},
+			},
+
+			MuiTab: {
+				styleOverrides: {
+					root: css`
+						text-transform: none;
+						padding: 0;
+						min-height: 0;
 					`,
 				},
 			},

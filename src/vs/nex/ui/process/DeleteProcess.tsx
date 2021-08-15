@@ -104,7 +104,7 @@ const DeleteProcessCard: React.FC<DeleteProcessCardProps> = ({ process, children
 
 				{(process.status === PROCESS_STATUS.SUCCESS ||
 					process.status === PROCESS_STATUS.FAILURE) && (
-					<Tooltip title="Discard card" disableInteractive>
+					<Tooltip title="Discard card">
 						<IconButton
 							autoFocus
 							size="large"

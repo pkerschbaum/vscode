@@ -30,7 +30,8 @@ export const styles = {
 
 	tabsArea: (theme: Theme) => css`
 		grid-area: explorer-tabs;
-		padding-left: ${theme.spacing()};
+		padding-left: ${theme.spacing(2)};
+		padding-right: ${theme.spacing()};
 		padding-bottom: ${theme.spacing()};
 	`,
 
@@ -54,11 +55,8 @@ export const styles = {
 		}
 	`,
 
-	tabsPanel: (theme: Theme) => css`
-		border-right: 1px solid ${theme.palette.divider};
-	`,
-
-	tab: css`
-		text-transform: none;
+	tabIconButton: css`
+		border-radius: 0;
+		padding: 0;
 	`,
 };

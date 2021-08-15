@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Box, Tabs, Tab, Button, IconButton, Tooltip } from '@material-ui/core';
 import AddCircleOutlineOutlinedIcon from '@material-ui/icons/AddCircleOutlineOutlined';
-import RemoveCircleOutlineIcon from '@material-ui/icons/RemoveCircleOutline';
+import CloseOutlinedIcon from '@material-ui/icons/CloseOutlined';
 
 import { URI } from 'vs/base/common/uri';
 
@@ -71,9 +71,8 @@ export const App: React.FC = () => {
 
 	return (
 		<Box className="show-file-icons" css={[styles.container, commonStyles.fullHeight]}>
-			<Stack css={styles.tabsArea} direction="column" alignItems="stretch">
+			<Stack css={styles.tabsArea} spacing={2} direction="column" alignItems="stretch">
 				<Tabs
-					css={styles.tabsPanel}
 					orientation="vertical"
 					variant="scrollable"
 					value={focusedExplorerId}
@@ -83,30 +82,31 @@ export const App: React.FC = () => {
 					{explorersToShow.map((explorer) => (
 						<Tab
 							key={explorer.explorerId}
-							css={[styles.tab]}
 							component="div"
+							disableRipple
 							label={
-								<Stack css={commonStyles.fullWidth} justifyContent="space-between">
-									<Box component="span">
-										{uriHelper.extractNameAndExtension(explorer.cwd).fileName}
-									</Box>
-									<Tooltip
-										title={removeExplorerActionDisabled ? '' : 'Remove tab'}
-										disableInteractive
-									>
+								<Button css={commonStyles.fullWidth}>
+									<Stack css={commonStyles.fullWidth} justifyContent="space-between">
 										<Box component="span">
-											<IconButton
-												disabled={removeExplorerActionDisabled}
-												onClick={(e) => {
-													e.stopPropagation();
-													appActions.removeExplorerPanel(explorer.explorerId);
-												}}
-											>
-												<RemoveCircleOutlineIcon />
-											</IconButton>
+											{uriHelper.extractNameAndExtension(explorer.cwd).fileName}
 										</Box>
-									</Tooltip>
-								</Stack>
+										<Tooltip title={removeExplorerActionDisabled ? '' : 'Close tab'}>
+											<Box component="span">
+												<IconButton
+													css={styles.tabIconButton}
+													size="small"
+													disabled={removeExplorerActionDisabled}
+													onClick={(e) => {
+														e.stopPropagation();
+														appActions.removeExplorerPanel(explorer.explorerId);
+													}}
+												>
+													<CloseOutlinedIcon />
+												</IconButton>
+											</Box>
+										</Tooltip>
+									</Stack>
+								</Button>
 							}
 							value={explorer.explorerId}
 						/>
