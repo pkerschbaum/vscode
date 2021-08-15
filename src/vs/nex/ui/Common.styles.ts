@@ -80,6 +80,10 @@ export const commonStyles = {
 			overflow: hidden;
 			text-overflow: ellipsis;
 		`,
+
+		breakAll: css`
+			word-break: break-all;
+		`,
 	},
 
 	borderBoxSizing: css`

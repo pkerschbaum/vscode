@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Button } from '@material-ui/core';
+import { Box, Button, Tooltip } from '@material-ui/core';
 import LaunchOutlinedIcon from '@material-ui/icons/LaunchOutlined';
 import ContentCopyOutlinedIcon from '@material-ui/icons/ContentCopyOutlined';
 import ContentCutOutlinedIcon from '@material-ui/icons/ContentCutOutlined';
@@ -8,7 +8,10 @@ import EditOutlinedIcon from '@material-ui/icons/EditOutlined';
 import DeleteOutlinedIcon from '@material-ui/icons/DeleteOutlined';
 
 import { config } from 'vs/nex/config';
+import { styles } from 'vs/nex/ui/ExplorerActions.styles';
+import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
+import { TextBox } from 'vs/nex/ui/elements/TextBox';
 import { AddTag } from 'vs/nex/ui/AddTag';
 import { CreateFolder } from 'vs/nex/ui/CreateFolder';
 import {
@@ -19,6 +22,7 @@ import {
 import { useFileActions } from 'vs/nex/platform/file.hooks';
 import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
 import { useTagsActions } from 'vs/nex/platform/tag.hooks';
+import { useClipboardResources } from 'vs/nex/NexClipboard.provider';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
 import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
@@ -101,6 +105,7 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 				<Stack>
 					<ContentPasteOutlinedIcon fontSize="small" />
 					Paste
+					<PasteInfoBadge />
 				</Stack>
 			</Button>
 			<Button onClick={triggerRenameForSelectedFiles} disabled={singleFileActionsDisabled}>
@@ -134,5 +139,38 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 				/>
 			)}
 		</Stack>
+	);
+};
+
+const PasteInfoBadge: React.FC = () => {
+	const clipboardResources = useClipboardResources();
+	const draftPasteState = useFileProviderDraftPasteState();
+
+	if (draftPasteState === undefined || clipboardResources.length === 0) {
+		return null;
+	}
+
+	return (
+		<Tooltip
+			title={
+				<Stack direction="column" alignItems="flex-start" css={commonStyles.text.breakAll}>
+					{clipboardResources.map((resource) => (
+						<TextBox key={resource.fsPath} fontSize="sm">
+							{resource.fsPath}
+						</TextBox>
+					))}
+				</Stack>
+			}
+			arrow
+			disableInteractive={false}
+		>
+			<Box css={styles.pasteInfoBadge}>
+				{draftPasteState.pasteShouldMove ? (
+					<ContentCutOutlinedIcon fontSize="small" />
+				) : (
+					<ContentCopyOutlinedIcon fontSize="small" />
+				)}
+			</Box>
+		</Tooltip>
 	);
 };

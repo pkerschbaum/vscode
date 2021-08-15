@@ -1,5 +1,4 @@
-import { css } from '@emotion/react';
-import { Theme } from '@material-ui/core/styles';
+import { css, Theme } from '@emotion/react';
 
 // adapted from https://github.com/mui-org/material-ui/blob/next/packages/material-ui/src/Typography/Typography.js
 
