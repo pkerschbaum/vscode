@@ -15,6 +15,7 @@ export const KEYS = {
 	ESC: 'Escape',
 	TAB: 'Tab',
 	A: 'a',
+	T: 't',
 	F2: 'F2',
 } as const;
 // eslint-disable-next-line @typescript-eslint/no-redeclare

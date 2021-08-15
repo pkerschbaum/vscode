@@ -64,6 +64,10 @@ export const App: React.FC = () => {
 			condition: (e) => e.ctrlKey && e.key === KEYS.PAGE_DOWN,
 			handler: () => switchFocusedExplorer('DOWN'),
 		},
+		{
+			condition: (e) => e.ctrlKey && e.key === KEYS.T,
+			handler: appActions.addExplorerPanel,
+		},
 	]);
 
 	const explorersToShow = explorers.filter((explorer) => !explorer.scheduledToRemove);
