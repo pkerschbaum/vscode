@@ -71,7 +71,7 @@ export const App: React.FC = () => {
 
 	return (
 		<Box className="show-file-icons" css={[styles.container, commonStyles.fullHeight]}>
-			<Stack css={styles.tabsArea} spacing={2} direction="column" alignItems="stretch">
+			<Stack css={styles.tabsArea} direction="column" alignItems="stretch">
 				<Tabs
 					orientation="vertical"
 					variant="scrollable"

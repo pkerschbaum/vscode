@@ -1,7 +1,7 @@
 import * as React from 'react';
+import { useRecoilState, useResetRecoilState } from 'recoil';
 import { Box, Chip, Divider, Skeleton, TextField } from '@material-ui/core';
 import { matchSorter } from 'match-sorter';
-import { useRecoilState } from 'recoil';
 
 import { UriComponents } from 'vs/base/common/uri';
 
@@ -28,7 +28,11 @@ import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
 import { usePrevious } from 'vs/nex/ui/utils/events.hooks';
 import { ExplorerActions } from 'vs/nex/ui/ExplorerActions';
-import { filterInputState, PanelActions } from 'vs/nex/ui/PanelActions';
+import {
+	fileIdSelectionGotStartedWithState,
+	filterInputState,
+	PanelActions,
+} from 'vs/nex/ui/PanelActions';
 
 export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) => {
 	const { dataAvailable, files } = useFileProviderFiles(explorerId);
@@ -38,6 +42,18 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 
 	const [idsOfSelectedFiles, setIdsOfSelectedFiles] = React.useState<string[]>([]);
 	const [fileToRenameId, setFileToRenameId] = React.useState<string | undefined>();
+	const resetFilterInput = useResetRecoilState(filterInputState);
+	const resetFileIdSelectionGotStartedWith = useResetRecoilState(
+		fileIdSelectionGotStartedWithState,
+	);
+
+	React.useEffect(
+		function resetSharedStateOnMount() {
+			resetFilterInput();
+			resetFileIdSelectionGotStartedWith();
+		},
+		[resetFileIdSelectionGotStartedWith, resetFilterInput],
+	);
 
 	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
 	let fileToRename: FileForUI | undefined;
@@ -194,15 +210,15 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 	onDragStart,
 }) => {
 	const [filterInput] = useRecoilState(filterInputState);
-	const [fileIdSelectionGotStartedWith, setFileIdSelectionGotStartedWith] = React.useState<
-		string | undefined
-	>();
+	const [fileIdSelectionGotStartedWith, setFileIdSelectionGotStartedWith] = useRecoilState(
+		fileIdSelectionGotStartedWithState,
+	);
 
 	React.useEffect(() => {
 		if (selectedFiles.length === 1) {
 			setFileIdSelectionGotStartedWith(selectedFiles[0].id);
 		}
-	}, [selectedFiles]);
+	}, [selectedFiles, setFileIdSelectionGotStartedWith]);
 
 	/*
 	 * Compute files to show:

@@ -1,8 +1,8 @@
 import * as React from 'react';
+import { atom, useRecoilState } from 'recoil';
 import { Button, Divider, TextField, Tooltip } from '@material-ui/core';
 import ArrowUpwardOutlinedIcon from '@material-ui/icons/ArrowUpwardOutlined';
 import FolderOutlinedIcon from '@material-ui/icons/FolderOutlined';
-import { atom, useRecoilState } from 'recoil';
 
 import { URI, UriComponents } from 'vs/base/common/uri';
 
@@ -22,6 +22,10 @@ const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
 export const filterInputState = atom({
 	key: 'filterInputState',
 	default: '',
+});
+export const fileIdSelectionGotStartedWithState = atom({
+	key: 'fileIdSelectionGotStartedWith',
+	default: undefined as string | undefined,
 });
 
 type PanelActionsProps = {
@@ -54,6 +58,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 	const explorerActions = useExplorerActions(explorerId);
 
 	const filterInputRef = React.useRef<HTMLDivElement>(null);
+	const [fileIdSelectionGotStartedWith] = useRecoilState(fileIdSelectionGotStartedWithState);
 
 	const isFocusedExplorer = explorerId === focusedExplorerId;
 	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
@@ -62,12 +67,6 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 		explorerActions.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
 	}
 
-	/*
-	 * - If no file is selected, select the first file
-	 * - If at least one file is selected,
-	 * -- and arrow up is pressed, select the file above the first currently selected file (if file above exists)
-	 * -- and arrow down is pressed, select the file below the first currently selected file (if file below exists)
-	 */
 	function changeSelectedFile(e: KeyboardEvent) {
 		e.preventDefault();
 
@@ -76,15 +75,88 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 		}
 
 		if (e.key === KEYS.ARROW_UP || e.key === KEYS.ARROW_DOWN) {
-			const firstSelectedFileIndex = filesToShow.findIndex((file) =>
-				selectedFiles.some((selectedFile) => selectedFile.id === file.id),
-			);
-			if (selectedFiles.length === 0) {
+			const selectedFilesInfos = filesToShow
+				.map((file, idx) => ({
+					file,
+					idx,
+					isSelected: selectedFiles.some((selectedFile) => selectedFile.id === file.id),
+				}))
+				.filter((entry) => entry.isSelected);
+			const fileIdSelectionGotStartedWithIndex = selectedFilesInfos.find(
+				(sfi) => sfi.file.id === fileIdSelectionGotStartedWith,
+			)?.idx;
+
+			if (selectedFilesInfos.length === 0 || fileIdSelectionGotStartedWithIndex === undefined) {
+				// If no file is selected, just select the first file
 				setIdsOfSelectedFiles([filesToShow[0].id]);
-			} else if (e.key === KEYS.ARROW_UP && firstSelectedFileIndex > 0) {
-				setIdsOfSelectedFiles([filesToShow[firstSelectedFileIndex - 1].id]);
-			} else if (e.key === KEYS.ARROW_DOWN && filesToShow.length > firstSelectedFileIndex + 1) {
-				setIdsOfSelectedFiles([filesToShow[firstSelectedFileIndex + 1].id]);
+				return;
+			}
+
+			// If at least one file is selected, gather some infos essential for further processing
+			const firstSelectedFileIndex = selectedFilesInfos[0].idx;
+			const lastSelectedFileIndex = selectedFilesInfos[selectedFilesInfos.length - 1].idx;
+			const selectionWasStartedDownwards =
+				fileIdSelectionGotStartedWithIndex === firstSelectedFileIndex;
+
+			if (!e.shiftKey) {
+				if (e.key === KEYS.ARROW_UP && fileIdSelectionGotStartedWithIndex > 0) {
+					/*
+					 * UP without shift key is pressed
+					 * --> select the file above the file which got selected first (if file above exists)
+					 */
+					setIdsOfSelectedFiles([filesToShow[fileIdSelectionGotStartedWithIndex - 1].id]);
+				} else if (
+					e.key === KEYS.ARROW_DOWN &&
+					filesToShow.length > fileIdSelectionGotStartedWithIndex + 1
+				) {
+					/*
+					 * DOWN without shift key is pressed
+					 * --> select the file below the file which got selected first (if file below exists)
+					 */
+					setIdsOfSelectedFiles([filesToShow[fileIdSelectionGotStartedWithIndex + 1].id]);
+				}
+			} else {
+				if (e.key === KEYS.ARROW_UP) {
+					if (selectedFilesInfos.length > 1 && selectionWasStartedDownwards) {
+						/*
+						 * SHIFT+UP is pressed, multiple files are selected, and the selection was started downwards.
+						 * --> The user wants to remove the last file from the selection.
+						 */
+						setIdsOfSelectedFiles(
+							idsOfSelectedFiles.filter(
+								(id) => id !== selectedFilesInfos[selectedFilesInfos.length - 1].file.id,
+							),
+						);
+					} else if (firstSelectedFileIndex > 0) {
+						/*
+						 * SHIFT+UP is pressed and the selection was started upwards. Or, there is only one file selected at the moment.
+						 * --> The user wants to add the file above all selected files to the selection.
+						 */
+						setIdsOfSelectedFiles([
+							filesToShow[firstSelectedFileIndex - 1].id,
+							...idsOfSelectedFiles,
+						]);
+					}
+				} else if (e.key === KEYS.ARROW_DOWN) {
+					if (selectedFilesInfos.length > 1 && !selectionWasStartedDownwards) {
+						/*
+						 * SHIFT+DOWN is pressed, multiple files are selected, and the selection was started upwards.
+						 * --> The user wants to remove the first file from the selection.
+						 */
+						setIdsOfSelectedFiles(
+							idsOfSelectedFiles.filter((id) => id !== selectedFilesInfos[0].file.id),
+						);
+					} else if (filesToShow.length > lastSelectedFileIndex + 1) {
+						/*
+						 * SHIFT+DOWN is pressed and the selection was started downwards. Or, there is only one file selected at the moment.
+						 * --> The user wants to add the file after all selected files to the selection.
+						 */
+						setIdsOfSelectedFiles([
+							...idsOfSelectedFiles,
+							filesToShow[lastSelectedFileIndex + 1].id,
+						]);
+					}
+				}
 			}
 		} else if (e.key === KEYS.PAGE_UP) {
 			setIdsOfSelectedFiles([filesToShow[0].id]);
@@ -159,7 +231,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 	return (
 		<>
 			<Stack alignItems="flex-end">
-				<FilterInput filterResetKey={URI.from(cwd).toString()} filterInputRef={filterInputRef} />
+				<FilterInput filterInputRef={filterInputRef} />
 			</Stack>
 			<Divider orientation="vertical" flexItem />
 			<Stack alignItems="flex-end">
@@ -208,19 +280,11 @@ const CwdInput: React.FC<CwdInputProps> = ({ cwd, onSubmit }) => {
 };
 
 type FilterInputProps = {
-	filterResetKey: string;
 	filterInputRef: React.RefObject<HTMLDivElement>;
 };
 
-const FilterInput: React.FC<FilterInputProps> = ({ filterResetKey, filterInputRef }) => {
+const FilterInput: React.FC<FilterInputProps> = ({ filterInputRef }) => {
 	const [filterInput, setFilterInput] = useRecoilState(filterInputState);
-
-	React.useEffect(
-		function resetFilterOnKeyChange() {
-			setFilterInput('');
-		},
-		[filterResetKey, setFilterInput],
-	);
 
 	return (
 		<TextField

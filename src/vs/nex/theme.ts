@@ -91,7 +91,7 @@ export const createTheme = (locale: Localization) => {
 			MuiTabs: {
 				styleOverrides: {
 					flexContainer: css`
-						gap: 16px;
+						gap: 8px;
 					`,
 
 					indicator: css`

@@ -30,9 +30,9 @@ export const styles = {
 
 	tabsArea: (theme: Theme) => css`
 		grid-area: explorer-tabs;
-		padding-left: ${theme.spacing(2)};
-		padding-right: ${theme.spacing()};
+		padding-top: ${theme.spacing()};
 		padding-bottom: ${theme.spacing()};
+		padding-left: ${theme.spacing()};
 	`,
 
 	activeExplorerArea: (theme: Theme) => css`
