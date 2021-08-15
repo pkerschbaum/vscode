@@ -132,6 +132,11 @@ class KeybindingsRegistryImpl implements IKeybindingsRegistry {
 	}
 
 	public registerKeybindingRule(rule: IKeybindingRule): void {
+		// Nex-App: disable all key bindings of VS code except reloading the window and toggle dev tools
+		if (!(rule.id === 'workbench.action.reloadWindow' || rule.id === 'workbench.action.toggleDevTools')) {
+			return;
+		}
+
 		const actualKb = KeybindingsRegistryImpl.bindToCurrentPlatform(rule);
 
 		if (actualKb && actualKb.primary) {
