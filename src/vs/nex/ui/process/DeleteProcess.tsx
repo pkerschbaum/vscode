@@ -9,35 +9,33 @@ import { URI } from 'vs/base/common/uri';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { TextBox } from 'vs/nex/ui/elements/TextBox';
 import { DeleteProcess as DeleteProcessType, PROCESS_STATUS } from 'vs/nex/platform/file-types';
-import { useFileActions } from 'vs/nex/platform/file.hooks';
+import { useRemoveProcess, useRunDeleteProcess } from 'vs/nex/platform/file.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
 import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 
 export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ process }) => {
-	const fileActions = useFileActions();
+	const { runDeleteProcess } = useRunDeleteProcess();
+	const { removeProcess } = useRemoveProcess();
 
 	let contentToRender;
 	switch (process.status) {
 		case PROCESS_STATUS.PENDING_FOR_USER_INPUT: {
 			contentToRender = (
 				<DeleteProcessCard process={process}>
-					<Button
-						autoFocus
-						onClick={() => fileActions.runDeleteProcess(process.id, { useTrash: true })}
-					>
+					<Button autoFocus onClick={() => runDeleteProcess(process.id, { useTrash: true })}>
 						<Stack>
 							<DeleteOutlineOutlinedIcon fontSize="small" />
 							Move to trash
 						</Stack>
 					</Button>
-					<Button onClick={() => fileActions.runDeleteProcess(process.id, { useTrash: false })}>
+					<Button onClick={() => runDeleteProcess(process.id, { useTrash: false })}>
 						<Stack>
 							<DeleteForeverOutlinedIcon fontSize="small" />
 							Delete permanently
 						</Stack>
 					</Button>
-					<Button onClick={() => fileActions.removeProcess(process.id)}>Abort</Button>
+					<Button onClick={() => removeProcess(process.id)}>Abort</Button>
 				</DeleteProcessCard>
 			);
 			break;
@@ -83,7 +81,7 @@ type DeleteProcessCardProps = {
 };
 
 const DeleteProcessCard: React.FC<DeleteProcessCardProps> = ({ process, children }) => {
-	const fileActions = useFileActions();
+	const { removeProcess } = useRemoveProcess();
 
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
@@ -105,11 +103,7 @@ const DeleteProcessCard: React.FC<DeleteProcessCardProps> = ({ process, children
 				{(process.status === PROCESS_STATUS.SUCCESS ||
 					process.status === PROCESS_STATUS.FAILURE) && (
 					<Tooltip title="Discard card">
-						<IconButton
-							autoFocus
-							size="large"
-							onClick={() => fileActions.removeProcess(process.id)}
-						>
+						<IconButton autoFocus size="large" onClick={() => removeProcess(process.id)}>
 							<ClearAllIcon fontSize="inherit" />
 						</IconButton>
 					</Tooltip>

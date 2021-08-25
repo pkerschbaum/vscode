@@ -19,8 +19,15 @@ import {
 	FileForUI,
 	useFileProviderFiles,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { useFileActions } from 'vs/nex/platform/file.hooks';
-import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
+import {
+	useCutOrCopyFiles,
+	useGetTagsOfFile,
+	useOpenFile,
+	useRemoveTags,
+	useRenameFile,
+	useScheduleMoveFilesToTrash,
+} from 'vs/nex/platform/file.hooks';
+import { useChangeDirectory } from 'vs/nex/platform/explorer.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
 import { strings } from 'vs/nex/base/utils/strings.util';
@@ -33,14 +40,19 @@ import {
 	filterInputState,
 	PanelActions,
 } from 'vs/nex/ui/PanelActions';
+import { getNativeFileIconDataURL, onFileDragStart } from 'vs/nex/ipc/electron-sandbox/nex';
 
 const USE_NATIVE_ICON_FOR_REGEX = /(?:exe|ico|dll)/i;
 
 export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) => {
 	const { dataAvailable, files } = useFileProviderFiles(explorerId);
 
-	const fileActions = useFileActions();
-	const explorerActions = useExplorerActions(explorerId);
+	const { changeDirectory } = useChangeDirectory(explorerId);
+	const { openFile } = useOpenFile();
+	const { scheduleMoveFilesToTrash } = useScheduleMoveFilesToTrash();
+	const { cutOrCopyFiles } = useCutOrCopyFiles();
+	const { getTagsOfFile } = useGetTagsOfFile();
+	const { renameFile } = useRenameFile();
 
 	const [idsOfSelectedFiles, setIdsOfSelectedFiles] = React.useState<string[]>([]);
 	const [fileToRenameId, setFileToRenameId] = React.useState<string | undefined>();
@@ -65,20 +77,20 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 
 	const openSelectedFiles = () => {
 		if (selectedFiles.length === 1 && selectedFiles[0].fileType === FILE_TYPE.DIRECTORY) {
-			explorerActions.changeDirectory(selectedFiles[0].uri.path);
+			changeDirectory(selectedFiles[0].uri.path);
 		} else {
 			selectedFiles
 				.filter((selectedFile) => selectedFile.fileType === FILE_TYPE.FILE)
-				.forEach((selectedFile) => fileActions.openFile(selectedFile.uri));
+				.forEach((selectedFile) => openFile(selectedFile.uri));
 		}
 	};
 
 	const scheduleDeleteSelectedFiles = () => {
-		fileActions.scheduleMoveFilesToTrash(selectedFiles.map((file) => file.uri));
+		scheduleMoveFilesToTrash(selectedFiles.map((file) => file.uri));
 	};
 
 	const cutOrCopySelectedFiles = (cut: boolean) => () => {
-		return fileActions.cutOrCopyFiles(
+		return cutOrCopyFiles(
 			selectedFiles.map((file) => file.uri),
 			cut,
 		);
@@ -103,10 +115,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 
 	const filesToShowWithTags: FileForUI[] = files.map((file) => ({
 		...file,
-		tags:
-			file.ctime === undefined
-				? []
-				: fileActions.getTagsOfFile({ uri: file.uri, ctime: file.ctime }),
+		tags: file.ctime === undefined ? [] : getTagsOfFile({ uri: file.uri, ctime: file.ctime }),
 	}));
 
 	function selectFiles(files: FileForUI[]) {
@@ -115,14 +124,14 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 
 	function openFileOrDirectory(file: FileForUI) {
 		if (file.fileType === FILE_TYPE.DIRECTORY) {
-			explorerActions.changeDirectory(file.uri.path);
+			changeDirectory(file.uri.path);
 		} else {
-			fileActions.openFile(file.uri);
+			openFile(file.uri);
 		}
 	}
 
-	async function renameFile(fileToRename: FileForUI, newName: string) {
-		await fileActions.renameFile(fileToRename.uri, newName);
+	async function renameFileHandler(fileToRename: FileForUI, newName: string) {
+		await renameFile(fileToRename.uri, newName);
 		setFileToRenameId(undefined);
 	}
 
@@ -167,7 +176,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 								selectFiles={selectFiles}
 								openFileOrDirectory={openFileOrDirectory}
 								fileToRename={fileToRename}
-								renameFile={renameFile}
+								renameFile={renameFileHandler}
 								abortRename={abortRename}
 							/>
 						) : (
@@ -296,7 +305,7 @@ const FilesTableRow: React.FC<FilesTableRowProps> = ({
 	fileForRow,
 	idxOfFileForRow,
 }) => {
-	const fileActions = useFileActions();
+	const { removeTags } = useRemoveTags();
 
 	const [nativeIconDataURL, setNativeIconDataURL] = React.useState<string | undefined>();
 	const [fileIdSelectionGotStartedWith, setFileIdSelectionGotStartedWith] = useRecoilState(
@@ -311,7 +320,6 @@ const FilesTableRow: React.FC<FilesTableRowProps> = ({
 
 	const fsPath = URI.from(fileForRow.uri).fsPath;
 	const extension = fileForRow.extension;
-	const { getNativeFileIconDataURL } = fileActions;
 	React.useEffect(
 		function fetchIcon() {
 			if (
@@ -328,7 +336,7 @@ const FilesTableRow: React.FC<FilesTableRowProps> = ({
 			}
 			doFetchIcon();
 		},
-		[fsPath, extension, getNativeFileIconDataURL],
+		[fsPath, extension],
 	);
 
 	const fileIsSelected = !!selectedFiles.find((file) => file.id === fileForRow.id);
@@ -337,7 +345,7 @@ const FilesTableRow: React.FC<FilesTableRowProps> = ({
 		<Row
 			key={fileForRow.id}
 			draggable
-			onDragStart={() => fileActions.onFileDragStart({ fsPath: URI.from(fileForRow.uri).fsPath })}
+			onDragStart={() => onFileDragStart({ fsPath: URI.from(fileForRow.uri).fsPath })}
 			onClick={(e) => {
 				if (e.ctrlKey) {
 					// toggle selection of file which was clicked on
@@ -409,7 +417,7 @@ const FilesTableRow: React.FC<FilesTableRowProps> = ({
 							variant="outlined"
 							size="small"
 							label={tag.name}
-							onDelete={() => fileActions.removeTags([fileForRow.uri], [tag.id])}
+							onDelete={() => removeTags([fileForRow.uri], [tag.id])}
 						/>
 					))}
 				</Stack>

@@ -16,7 +16,11 @@ import {
 	useFileProviderFocusedExplorerId,
 	useFileProviderProcesses,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { useAppActions } from 'vs/nex/platform/app.hooks';
+import {
+	useAddExplorerPanel,
+	useChangeFocusedExplorer,
+	useRemoveExplorerPanel,
+} from 'vs/nex/platform/app.hooks';
 import { tabIndicatorSpanClassName } from 'vs/nex/theme';
 import { KEYS } from 'vs/nex/ui/constants';
 import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
@@ -29,11 +33,13 @@ export const App: React.FC = () => {
 	const focusedExplorerId = useFileProviderFocusedExplorerId();
 	const processes = useFileProviderProcesses();
 
-	const appActions = useAppActions();
+	const { addExplorerPanel } = useAddExplorerPanel();
+	const { changeFocusedExplorer } = useChangeFocusedExplorer();
+	const { removeExplorerPanel } = useRemoveExplorerPanel();
 
 	// on mount, add first (initial) explorer panel
 	React.useEffect(() => {
-		appActions.addExplorerPanel();
+		addExplorerPanel();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
@@ -53,7 +59,7 @@ export const App: React.FC = () => {
 		const explorerIdxToSwitchTo =
 			direction === 'UP' ? focusedExplorerIdx - 1 : focusedExplorerIdx + 1;
 
-		appActions.changeFocusedExplorer(explorers[explorerIdxToSwitchTo].explorerId);
+		changeFocusedExplorer(explorers[explorerIdxToSwitchTo].explorerId);
 	}
 
 	useWindowEvent('keydown', [
@@ -67,7 +73,7 @@ export const App: React.FC = () => {
 		},
 		{
 			condition: (e) => e.ctrlKey && e.key === KEYS.T,
-			handler: appActions.addExplorerPanel,
+			handler: addExplorerPanel,
 		},
 	]);
 
@@ -81,7 +87,7 @@ export const App: React.FC = () => {
 					orientation="vertical"
 					variant="scrollable"
 					value={focusedExplorerId}
-					onChange={(_, newValue) => appActions.changeFocusedExplorer(newValue)}
+					onChange={(_, newValue) => changeFocusedExplorer(newValue)}
 					TabIndicatorProps={{ children: <span className={tabIndicatorSpanClassName} /> }}
 				>
 					{explorersToShow.map((explorer) => (
@@ -93,14 +99,14 @@ export const App: React.FC = () => {
 								<ExplorerPanelTab
 									label={uriHelper.extractNameAndExtension(explorer.cwd).fileName}
 									removeExplorerActionDisabled={removeExplorerActionDisabled}
-									onRemove={() => appActions.removeExplorerPanel(explorer.explorerId)}
+									onRemove={() => removeExplorerPanel(explorer.explorerId)}
 								/>
 							}
 							value={explorer.explorerId}
 						/>
 					))}
 				</Tabs>
-				<Button onClick={appActions.addExplorerPanel}>
+				<Button onClick={addExplorerPanel}>
 					<Stack>
 						<AddCircleOutlineOutlinedIcon fontSize="small" />
 						Add tab
@@ -150,8 +156,8 @@ type ExplorerPanelTabProps = {
 	onRemove: () => void;
 };
 
-const ExplorerPanelTab = React.memo<ExplorerPanelTabProps>(
-	(props) => (
+const ExplorerPanelTab = React.memo<ExplorerPanelTabProps>(function ExplorerPanelTab(props) {
+	return (
 		<Button css={commonStyles.fullWidth}>
 			<Stack css={commonStyles.fullWidth} justifyContent="space-between">
 				<Box component="span">{props.label}</Box>
@@ -172,17 +178,18 @@ const ExplorerPanelTab = React.memo<ExplorerPanelTabProps>(
 				</Tooltip>
 			</Stack>
 		</Button>
-	),
-	objects.shallowIsEqualIgnoreFunctions,
-);
+	);
+}, objects.shallowIsEqualIgnoreFunctions);
 
 type ExplorerPanelContainerProps = { explorerId: string };
 
-const ExplorerPanelContainer = React.memo<ExplorerPanelContainerProps>(({ explorerId }) => {
-	const cwd = useFileProviderCwd(explorerId);
+const ExplorerPanelContainer = React.memo<ExplorerPanelContainerProps>(
+	function ExplorerPanelContainer({ explorerId }) {
+		const cwd = useFileProviderCwd(explorerId);
 
-	return <ExplorerPanel key={URI.from(cwd).toString()} explorerId={explorerId} />;
-});
+		return <ExplorerPanel key={URI.from(cwd).toString()} explorerId={explorerId} />;
+	},
+);
 
 type TabPanelProps = {
 	index: string;

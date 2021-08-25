@@ -100,7 +100,7 @@ type RenderOnCountChangeProps = {
 };
 
 const RenderOnCountChange: React.FC<RenderOnCountChangeProps> = React.memo(
-	({ children }) => {
+	function RenderOnCountChange({ children }) {
 		logger.info(`(re-)rendering entire react tree...`);
 		return children;
 	},

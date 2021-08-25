@@ -11,7 +11,7 @@ import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { TextBox } from 'vs/nex/ui/elements/TextBox';
 import { LinearProgress } from 'vs/nex/ui/elements/LinearProgress';
 import { PasteProcess as PasteProcessType, PROCESS_STATUS } from 'vs/nex/platform/file-types';
-import { useFileActions } from 'vs/nex/platform/file.hooks';
+import { useRemoveProcess } from 'vs/nex/platform/file.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
 import { byteSize } from 'vs/nex/base/utils/byte-size.util';
@@ -19,7 +19,7 @@ import { numbers } from 'vs/nex/base/utils/numbers.util';
 import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 
 export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process }) => {
-	const fileActions = useFileActions();
+	const { removeProcess } = useRemoveProcess();
 
 	const smallestUnitOfTotalSize = byteSize.probe(process.totalSize).unit;
 	const { fileName, extension } = uriHelper.extractNameAndExtension(process.destinationFolder);
@@ -78,11 +78,7 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 				{(process.status === PROCESS_STATUS.SUCCESS ||
 					process.status === PROCESS_STATUS.FAILURE) && (
 					<Tooltip title="Discard card">
-						<IconButton
-							autoFocus
-							size="large"
-							onClick={() => fileActions.removeProcess(process.id)}
-						>
+						<IconButton autoFocus size="large" onClick={() => removeProcess(process.id)}>
 							<ClearAllIcon fontSize="inherit" />
 						</IconButton>
 					</Tooltip>

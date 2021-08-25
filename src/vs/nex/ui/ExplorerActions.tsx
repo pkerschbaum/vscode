@@ -19,9 +19,9 @@ import {
 	useFileProviderDraftPasteState,
 	useFileProviderFocusedExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { useFileActions } from 'vs/nex/platform/file.hooks';
-import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
-import { useTagsActions } from 'vs/nex/platform/tag.hooks';
+import { useAddTags } from 'vs/nex/platform/file.hooks';
+import { useCreateFolder, usePasteFiles } from 'vs/nex/platform/explorer.hooks';
+import { useAddTag, useGetTags, useRemoveTags } from 'vs/nex/platform/tag.hooks';
 import { useClipboardResources } from 'vs/nex/NexClipboard.provider';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
@@ -59,9 +59,12 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 }) => {
 	const draftPasteState = useFileProviderDraftPasteState();
 
-	const fileActions = useFileActions();
-	const explorerActions = useExplorerActions(focusedExplorerId);
-	const tagActions = useTagsActions();
+	const { pasteFiles } = usePasteFiles(focusedExplorerId);
+	const { createFolder } = useCreateFolder(focusedExplorerId);
+	const { getTags } = useGetTags();
+	const { addTag } = useAddTag();
+	const { addTags } = useAddTags();
+	const { removeTags } = useRemoveTags();
 
 	const isFocusedExplorer = explorerId === focusedExplorerId;
 
@@ -99,7 +102,7 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 			</Button>
 			<Button
 				variant={draftPasteState === undefined ? undefined : 'contained'}
-				onClick={explorerActions.pasteFiles}
+				onClick={pasteFiles}
 				disabled={draftPasteState === undefined}
 			>
 				<Stack>
@@ -120,21 +123,21 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 					Delete
 				</Stack>
 			</Button>
-			<CreateFolder onSubmit={explorerActions.createFolder} />
+			<CreateFolder onSubmit={createFolder} />
 			{config.featureFlags.tags && (
 				<AddTag
-					options={Object.entries(tagActions.getTags()).map(([id, otherValues]) => ({
+					options={Object.entries(getTags()).map(([id, otherValues]) => ({
 						...otherValues,
 						id,
 					}))}
-					onValueCreated={(tag) => tagActions.addTag(tag)}
+					onValueCreated={(tag) => addTag(tag)}
 					onValueChosen={async (chosenTag) => {
-						await fileActions.addTags(
+						await addTags(
 							selectedFiles.map((file) => file.uri),
 							[chosenTag.id],
 						);
 					}}
-					onValueDeleted={(tag) => tagActions.removeTags([tag.id])}
+					onValueDeleted={(tag) => removeTags([tag.id])}
 					disabled={multipleDirectoriesActionsDisabled}
 				/>
 			)}

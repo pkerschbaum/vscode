@@ -7,7 +7,7 @@ import {
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
 
-export function useAppActions() {
+export function useAddExplorerPanel() {
 	const dispatch = useDispatch();
 
 	const fileSystem = useNexFileSystem();
@@ -26,6 +26,14 @@ export function useAppActions() {
 		dispatch(actions.changeFocusedExplorer({ explorerId }));
 	}
 
+	return {
+		addExplorerPanel,
+	};
+}
+
+export function useRemoveExplorerPanel() {
+	const dispatch = useDispatch();
+
 	function removeExplorerPanel(explorerId: string) {
 		/*
 		 * If the explorer gets removed immediately, redux subscriptions (e.g. useSelectors) currently
@@ -41,13 +49,19 @@ export function useAppActions() {
 		});
 	}
 
+	return {
+		removeExplorerPanel,
+	};
+}
+
+export function useChangeFocusedExplorer() {
+	const dispatch = useDispatch();
+
 	function changeFocusedExplorer(newFocusedExplorerId: string) {
 		dispatch(actions.changeFocusedExplorer({ explorerId: newFocusedExplorerId }));
 	}
 
 	return {
-		addExplorerPanel,
-		removeExplorerPanel,
 		changeFocusedExplorer,
 	};
 }

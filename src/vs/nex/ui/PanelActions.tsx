@@ -13,7 +13,11 @@ import {
 	useFileProviderFiles,
 	useFileProviderFocusedExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { useExplorerActions } from 'vs/nex/platform/explorer.hooks';
+import {
+	useChangeDirectory,
+	usePasteFiles,
+	useRevealCwdInOSExplorer,
+} from 'vs/nex/platform/explorer.hooks';
 import { KEYS, MOUSE_BUTTONS } from 'vs/nex/ui/constants';
 import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
 import { functions } from 'vs/nex/base/utils/functions.util';
@@ -55,7 +59,9 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 	const { files } = useFileProviderFiles(explorerId);
 	const focusedExplorerId = useFileProviderFocusedExplorerId();
 
-	const explorerActions = useExplorerActions(explorerId);
+	const { changeDirectory } = useChangeDirectory(explorerId);
+	const { pasteFiles } = usePasteFiles(explorerId);
+	const { revealCwdInOSExplorer } = useRevealCwdInOSExplorer(explorerId);
 
 	const filterInputRef = React.useRef<HTMLDivElement>(null);
 	const [fileIdSelectionGotStartedWith] = useRecoilState(fileIdSelectionGotStartedWithState);
@@ -64,7 +70,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
 
 	function navigateUp() {
-		explorerActions.changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
+		changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
 	}
 
 	function changeSelectedFile(e: KeyboardEvent) {
@@ -190,7 +196,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 					},
 					{ condition: (e) => e.ctrlKey && e.key === KEYS.C, handler: copySelectedFiles },
 					{ condition: (e) => e.ctrlKey && e.key === KEYS.X, handler: cutSelectedFiles },
-					{ condition: (e) => e.ctrlKey && e.key === KEYS.V, handler: explorerActions.pasteFiles },
+					{ condition: (e) => e.ctrlKey && e.key === KEYS.V, handler: pasteFiles },
 					{
 						condition: (e) =>
 							e.key === KEYS.ARROW_UP ||
@@ -236,10 +242,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 			<Divider orientation="vertical" flexItem />
 			<Stack alignItems="flex-end">
 				<Stack>
-					<CwdInput
-						cwd={cwd}
-						onSubmit={(newCwdPath) => explorerActions.changeDirectory(newCwdPath)}
-					/>
+					<CwdInput cwd={cwd} onSubmit={changeDirectory} />
 					<Button onClick={navigateUp}>
 						<Stack>
 							<ArrowUpwardOutlinedIcon fontSize="small" />
@@ -247,7 +250,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 						</Stack>
 					</Button>
 					<Tooltip title="Reveal in OS File Explorer">
-						<Button onClick={explorerActions.revealCwdInOSExplorer}>
+						<Button onClick={revealCwdInOSExplorer}>
 							<Stack>
 								<FolderOutlinedIcon fontSize="small" />
 								Reveal

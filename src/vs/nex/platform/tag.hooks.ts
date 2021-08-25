@@ -9,7 +9,7 @@ import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
 
 const logger = createLogger('tag.hooks');
 
-export function useTagsActions() {
+export function useAddTag() {
 	const storage = useNexStorage();
 
 	useRerenderOnEventFire(
@@ -30,13 +30,35 @@ export function useTagsActions() {
 			logger.debug(`tag added to storage!`, { tag });
 			return tag;
 		},
+	};
+}
 
+export function useGetTags() {
+	const storage = useNexStorage();
+
+	useRerenderOnEventFire(
+		storage.onDataChanged,
+		React.useCallback((storageKey) => storageKey === STORAGE_KEY.TAGS, []),
+	);
+
+	return {
 		getTags: () => {
 			const tags = storage.get(STORAGE_KEY.TAGS) ?? {};
 			logger.debug(`got tags from storage`, { tags });
 			return tags;
 		},
+	};
+}
 
+export function useRemoveTags() {
+	const storage = useNexStorage();
+
+	useRerenderOnEventFire(
+		storage.onDataChanged,
+		React.useCallback((storageKey) => storageKey === STORAGE_KEY.TAGS, []),
+	);
+
+	return {
 		removeTags: (tagIds: Tag['id'][]) => {
 			logger.debug(`removing tags from storage...`, { tagIds });
 

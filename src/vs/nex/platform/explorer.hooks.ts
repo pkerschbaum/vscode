@@ -20,23 +20,26 @@ import {
 	useFileProviderDraftPasteState,
 	useRefreshFiles,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { useFileActions, executeCopyOrMove } from 'vs/nex/platform/file.hooks';
+import {
+	executeCopyOrMove,
+	useAddTags,
+	useGetTagsOfFile,
+	useRemoveTags,
+	useResolveDeep,
+} from 'vs/nex/platform/file.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { objects } from 'vs/nex/base/utils/objects.util';
 
 const UPDATE_INTERVAL_MS = 300;
 const logger = createLogger('explorer.hooks');
 
-export function useExplorerActions(explorerId: string) {
+export function useChangeDirectory(explorerId: string) {
 	const dispatch = useDispatch();
 	const cwd = useFileProviderCwd(explorerId);
-	const draftPasteState = useFileProviderDraftPasteState();
 
 	const fileSystem = useNexFileSystem();
-	const clipboardResources = useClipboardResources();
 
 	const refreshFiles = useRefreshFiles();
-	const fileActions = useFileActions();
 
 	async function changeDirectory(newDir: string) {
 		const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, newDir);
@@ -59,6 +62,25 @@ export function useExplorerActions(explorerId: string) {
 		dispatch(actions.changeCwd({ explorerId, newCwd }));
 		await refreshFiles(cwd);
 	}
+
+	return {
+		changeDirectory,
+	};
+}
+
+export function usePasteFiles(explorerId: string) {
+	const dispatch = useDispatch();
+	const cwd = useFileProviderCwd(explorerId);
+	const draftPasteState = useFileProviderDraftPasteState();
+
+	const fileSystem = useNexFileSystem();
+	const clipboardResources = useClipboardResources();
+
+	const refreshFiles = useRefreshFiles();
+	const { resolveDeep } = useResolveDeep();
+	const { getTagsOfFile } = useGetTagsOfFile();
+	const { addTags } = useAddTags();
+	const { removeTags } = useRemoveTags();
 
 	async function pasteFiles() {
 		if (clipboardResources.length === 0 || draftPasteState === undefined) {
@@ -123,7 +145,7 @@ export function useExplorerActions(explorerId: string) {
 			pasteInfos.map(async (pasteInfo) => {
 				const { sourceFileURI, sourceFileStat } = pasteInfo;
 
-				const fileStatMap = await fileActions.resolveDeep(sourceFileURI, sourceFileStat);
+				const fileStatMap = await resolveDeep(sourceFileURI, sourceFileStat);
 
 				Object.entries(fileStatMap).forEach(([uri, fileStat]) => {
 					totalSize += fileStat.size;
@@ -177,7 +199,7 @@ export function useExplorerActions(explorerId: string) {
 						pasteShouldMove: draftPasteState.pasteShouldMove,
 						cancellationTokenSource,
 						progressCb,
-						fileTagActions: fileActions,
+						fileTagActions: { getTagsOfFile, addTags, removeTags },
 						fileSystem,
 						refreshFiles,
 					}),
@@ -199,6 +221,18 @@ export function useExplorerActions(explorerId: string) {
 		}
 	}
 
+	return {
+		pasteFiles,
+	};
+}
+
+export function useCreateFolder(explorerId: string) {
+	const cwd = useFileProviderCwd(explorerId);
+
+	const fileSystem = useNexFileSystem();
+
+	const refreshFiles = useRefreshFiles();
+
 	async function createFolder(folderName: string) {
 		// create folder
 		const folderUri = URI.joinPath(URI.from(cwd), folderName);
@@ -208,14 +242,21 @@ export function useExplorerActions(explorerId: string) {
 		await refreshFiles(cwd);
 	}
 
+	return {
+		createFolder,
+	};
+}
+
+export function useRevealCwdInOSExplorer(explorerId: string) {
+	const cwd = useFileProviderCwd(explorerId);
+
+	const fileSystem = useNexFileSystem();
+
 	function revealCwdInOSExplorer() {
 		fileSystem.revealResourcesInOS([cwd]);
 	}
 
 	return {
-		changeDirectory,
-		pasteFiles,
-		createFolder,
 		revealCwdInOSExplorer,
 	};
 }

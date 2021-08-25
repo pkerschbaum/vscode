@@ -25,41 +25,16 @@ import {
 } from 'vs/nex/platform/file-types';
 import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
 import { getDistinctParents, NexFileSystem } from 'vs/nex/platform/logic/file-system';
-import { getNativeFileIconDataURL, onFileDragStart } from 'vs/nex/ipc/electron-sandbox/nex';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
-import { useTagsActions } from 'vs/nex/platform/tag.hooks';
+import * as tagHooks from 'vs/nex/platform/tag.hooks';
 import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
 import { strings } from 'vs/nex/base/utils/strings.util';
 
 const logger = createLogger('file.hooks');
 
-export type FileActions = ReturnType<typeof useFileActions>;
-
-export function useFileActions() {
+export function useScheduleMoveFilesToTrash() {
 	const dispatch = useDispatch();
-	const processes = useFileProviderProcesses();
-
-	const fileSystem = useNexFileSystem();
-	const clipboard = useNexClipboard();
-	const storage = useNexStorage();
-
-	const refreshFiles = useRefreshFiles();
-	const tagsActions = useTagsActions();
-
-	useRerenderOnEventFire(
-		storage.onDataChanged,
-		React.useCallback((storageKey) => storageKey === STORAGE_KEY.RESOURCES_TO_TAGS, []),
-	);
-
-	async function openFile(uri: UriComponents) {
-		const executablePath = URI.from(uri).fsPath;
-
-		const errorMessage = await shell.openPath(executablePath);
-		if (!strings.isNullishOrEmpty(errorMessage)) {
-			logger.error(`electron shell openItem did not succeed`, undefined, { uri, errorMessage });
-		}
-	}
 
 	function scheduleMoveFilesToTrash(uris: UriComponents[]) {
 		const deleteProcess: Omit<DeleteProcess, 'status'> = {
@@ -69,6 +44,19 @@ export function useFileActions() {
 		};
 		dispatch(actions.addDeleteProcess(deleteProcess));
 	}
+
+	return {
+		scheduleMoveFilesToTrash,
+	};
+}
+
+export function useRunDeleteProcess() {
+	const dispatch = useDispatch();
+	const processes = useFileProviderProcesses();
+
+	const fileSystem = useNexFileSystem();
+
+	const refreshFiles = useRefreshFiles();
 
 	async function runDeleteProcess(deleteProcessId: string, options: { useTrash: boolean }) {
 		const deleteProcess = processes.find((process) => process.id === deleteProcessId);
@@ -107,14 +95,61 @@ export function useFileActions() {
 		await Promise.all(distinctParents.map((directory) => refreshFiles(directory)));
 	}
 
+	return {
+		runDeleteProcess,
+	};
+}
+
+export function useRemoveProcess() {
+	const dispatch = useDispatch();
+
 	function removeProcess(processId: string) {
 		dispatch(actions.removeProcess({ id: processId }));
 	}
+
+	return {
+		removeProcess,
+	};
+}
+
+export function useOpenFile() {
+	async function openFile(uri: UriComponents) {
+		const executablePath = URI.from(uri).fsPath;
+
+		const errorMessage = await shell.openPath(executablePath);
+		if (!strings.isNullishOrEmpty(errorMessage)) {
+			logger.error(`electron shell openItem did not succeed`, undefined, { uri, errorMessage });
+		}
+	}
+
+	return {
+		openFile,
+	};
+}
+
+export function useCutOrCopyFiles() {
+	const dispatch = useDispatch();
+
+	const clipboard = useNexClipboard();
 
 	async function cutOrCopyFiles(files: UriComponents[], cut: boolean) {
 		await clipboard.writeResources(files.map((file) => URI.from(file)));
 		dispatch(actions.cutOrCopyFiles({ cut }));
 	}
+
+	return {
+		cutOrCopyFiles,
+	};
+}
+
+export function useRenameFile() {
+	const fileSystem = useNexFileSystem();
+
+	const refreshFiles = useRefreshFiles();
+
+	const { getTagsOfFile } = useGetTagsOfFile();
+	const { addTags } = useAddTags();
+	const { removeTags } = useRemoveTags();
 
 	async function renameFile(sourceFileURI: UriComponents, newName: string) {
 		const sourceFileStat = await fileSystem.resolve(URI.from(sourceFileURI), {
@@ -137,6 +172,14 @@ export function useFileActions() {
 		const distinctParents = getDistinctParents([sourceFileURI, targetFileURI]);
 		await Promise.all(distinctParents.map((directory) => refreshFiles(directory)));
 	}
+
+	return {
+		renameFile,
+	};
+}
+
+export function useResolveDeep() {
+	const fileSystem = useNexFileSystem();
 
 	async function resolveDeep(targetToResolve: UriComponents, targetStat: IFileStatWithMetadata) {
 		const fileStatMap: FileStatMap = {};
@@ -162,6 +205,21 @@ export function useFileActions() {
 		}
 	}
 
+	return {
+		resolveDeep,
+	};
+}
+
+export function useGetTagsOfFile() {
+	const storage = useNexStorage();
+
+	const { getTags } = tagHooks.useGetTags();
+
+	useRerenderOnEventFire(
+		storage.onDataChanged,
+		React.useCallback((storageKey) => storageKey === STORAGE_KEY.RESOURCES_TO_TAGS, []),
+	);
+
 	function getTagsOfFile(file: { uri: UriComponents; ctime: number }): Tag[] {
 		const tagIdsOfFile = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS)?.[
 			URI.from(file.uri).toString()
@@ -175,7 +233,7 @@ export function useFileActions() {
 			return [];
 		}
 
-		const tags = tagsActions.getTags();
+		const tags = getTags();
 		const tagsOfFile = Object.entries(tags)
 			.map(([id, otherValues]) => ({ ...otherValues, id }))
 			.filter((tag) => tagIdsOfFile.tags.some((tagId) => tagId === tag.id));
@@ -185,10 +243,26 @@ export function useFileActions() {
 		return tagsOfFile;
 	}
 
+	return {
+		getTagsOfFile,
+	};
+}
+
+export function useAddTags() {
+	const fileSystem = useNexFileSystem();
+	const storage = useNexStorage();
+
+	const { getTags } = tagHooks.useGetTags();
+
+	useRerenderOnEventFire(
+		storage.onDataChanged,
+		React.useCallback((storageKey) => storageKey === STORAGE_KEY.RESOURCES_TO_TAGS, []),
+	);
+
 	async function addTags(files: UriComponents[], tagIds: string[]) {
 		logger.debug(`adding tags to files...`, { files, tagIds });
 
-		const existingTagIds = Object.keys(tagsActions.getTags());
+		const existingTagIds = Object.keys(getTags());
 		const invalidTagIds = tagIds.filter(
 			(tagId) => !existingTagIds.find((existing) => existing === tagId),
 		);
@@ -218,6 +292,19 @@ export function useFileActions() {
 		logger.debug(`tags to files added and stored in storage!`);
 	}
 
+	return {
+		addTags,
+	};
+}
+
+export function useRemoveTags() {
+	const storage = useNexStorage();
+
+	useRerenderOnEventFire(
+		storage.onDataChanged,
+		React.useCallback((storageKey) => storageKey === STORAGE_KEY.RESOURCES_TO_TAGS, []),
+	);
+
 	function removeTags(files: UriComponents[], tagIds: string[]) {
 		logger.debug(`removing tags from files...`, { files, tagIds });
 
@@ -243,18 +330,7 @@ export function useFileActions() {
 	}
 
 	return {
-		scheduleMoveFilesToTrash,
-		runDeleteProcess,
-		removeProcess,
-		openFile,
-		cutOrCopyFiles,
-		renameFile,
-		resolveDeep,
-		addTags,
-		getTagsOfFile,
 		removeTags,
-		onFileDragStart,
-		getNativeFileIconDataURL,
 	};
 }
 
@@ -276,9 +352,9 @@ export async function executeCopyOrMove({
 	cancellationTokenSource?: CancellationTokenSource;
 	progressCb?: (args: ProgressCbArgs) => void;
 	fileTagActions: {
-		getTagsOfFile: FileActions['getTagsOfFile'];
-		addTags: FileActions['addTags'];
-		removeTags: FileActions['removeTags'];
+		getTagsOfFile: ReturnType<typeof useGetTagsOfFile>['getTagsOfFile'];
+		addTags: ReturnType<typeof useAddTags>['addTags'];
+		removeTags: ReturnType<typeof useRemoveTags>['removeTags'];
 	};
 	refreshFiles: (directory: UriComponents) => Promise<void>;
 	fileSystem: NexFileSystem;
