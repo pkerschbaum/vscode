@@ -94,10 +94,12 @@ const Root: React.FC<{ appDependencies: AppDependencies }> = ({ appDependencies 
 	);
 };
 
-const RenderOnCountChange: React.FC<{
+type RenderOnCountChangeProps = {
 	renderCount: number;
 	children: React.ReactElement;
-}> = React.memo(
+};
+
+const RenderOnCountChange: React.FC<RenderOnCountChangeProps> = React.memo(
 	({ children }) => {
 		logger.info(`(re-)rendering entire react tree...`);
 		return children;

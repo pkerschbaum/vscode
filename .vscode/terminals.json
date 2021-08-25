@@ -13,7 +13,7 @@
 			"cwd": "[cwd]",
 			"execute": false,
 			"recycle": true,
-			"commands": ["./scripts/code.sh"]
+			"commands": ["./scripts/code.bat"]
 		}
 	]
 }

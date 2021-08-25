@@ -7,6 +7,8 @@ export const objects = {
 	undefinedIfEmpty,
 	shallowCopy,
 	deepCopyJson,
+	shallowIsEqual,
+	shallowIsEqualIgnoreFunctions,
 };
 
 function isEmpty(obj: ObjectLiteral) {
@@ -44,4 +46,29 @@ function shallowCopy<T>(inObject: T): T {
 
 function deepCopyJson<T>(inObj: IsJsonable<T>): IsJsonable<T> {
 	return JSON.parse(JSON.stringify(inObj));
+}
+
+// https://stackoverflow.com/a/52323412/1700319
+function shallowIsEqual(obj1: ObjectLiteral, objToCompareWith: ObjectLiteral) {
+	return (
+		Object.keys(obj1).length === Object.keys(objToCompareWith).length &&
+		Object.keys(obj1).every(
+			(key) => objToCompareWith.hasOwnProperty(key) && obj1[key] === objToCompareWith[key],
+		)
+	);
+}
+
+// used for function components, like PureRenderWithoutHandlers https://medium.com/@ryanflorence/react-inline-functions-and-performance-bdff784f5578
+function shallowIsEqualIgnoreFunctions(obj1: ObjectLiteral, objToCompareWith: ObjectLiteral) {
+	if (Object.keys(obj1).length !== Object.keys(objToCompareWith).length) {
+		return false;
+	}
+
+	return Object.keys(obj1).every((key) => {
+		if (typeof obj1[key] === 'function') {
+			return true;
+		}
+
+		return objToCompareWith.hasOwnProperty(key) && obj1[key] === objToCompareWith[key];
+	});
 }

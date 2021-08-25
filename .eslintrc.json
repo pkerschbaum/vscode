@@ -1016,7 +1016,8 @@
 			"rules": {
 				"code-no-unexternalized-strings": "off",
 				"header/header": "off",
-				"react/prop-types": "off"
+				"react/prop-types": "off",
+				"@typescript-eslint/return-await": "error"
 			}
 		},
 		{

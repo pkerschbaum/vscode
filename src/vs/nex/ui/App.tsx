@@ -22,6 +22,7 @@ import { KEYS } from 'vs/nex/ui/constants';
 import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
+import { objects } from 'vs/nex/base/utils/objects.util';
 
 export const App: React.FC = () => {
 	const explorers = useFileProviderExplorers();
@@ -89,28 +90,11 @@ export const App: React.FC = () => {
 							component="div"
 							disableRipple
 							label={
-								<Button css={commonStyles.fullWidth}>
-									<Stack css={commonStyles.fullWidth} justifyContent="space-between">
-										<Box component="span">
-											{uriHelper.extractNameAndExtension(explorer.cwd).fileName}
-										</Box>
-										<Tooltip title={removeExplorerActionDisabled ? '' : 'Close tab'}>
-											<Box component="span">
-												<IconButton
-													css={styles.tabIconButton}
-													size="small"
-													disabled={removeExplorerActionDisabled}
-													onClick={(e) => {
-														e.stopPropagation();
-														appActions.removeExplorerPanel(explorer.explorerId);
-													}}
-												>
-													<CloseOutlinedIcon />
-												</IconButton>
-											</Box>
-										</Tooltip>
-									</Stack>
-								</Button>
+								<ExplorerPanelTab
+									label={uriHelper.extractNameAndExtension(explorer.cwd).fileName}
+									removeExplorerActionDisabled={removeExplorerActionDisabled}
+									onRemove={() => appActions.removeExplorerPanel(explorer.explorerId)}
+								/>
 							}
 							value={explorer.explorerId}
 						/>
@@ -160,11 +144,45 @@ export const App: React.FC = () => {
 	);
 };
 
-const ExplorerPanelContainer: React.FC<{ explorerId: string }> = ({ explorerId }) => {
+type ExplorerPanelTabProps = {
+	label: string;
+	removeExplorerActionDisabled: boolean;
+	onRemove: () => void;
+};
+
+const ExplorerPanelTab = React.memo<ExplorerPanelTabProps>(
+	(props) => (
+		<Button css={commonStyles.fullWidth}>
+			<Stack css={commonStyles.fullWidth} justifyContent="space-between">
+				<Box component="span">{props.label}</Box>
+				<Tooltip title={props.removeExplorerActionDisabled ? '' : 'Close tab'}>
+					<Box component="span">
+						<IconButton
+							css={styles.tabIconButton}
+							size="small"
+							disabled={props.removeExplorerActionDisabled}
+							onClick={(e) => {
+								e.stopPropagation();
+								props.onRemove();
+							}}
+						>
+							<CloseOutlinedIcon />
+						</IconButton>
+					</Box>
+				</Tooltip>
+			</Stack>
+		</Button>
+	),
+	objects.shallowIsEqualIgnoreFunctions,
+);
+
+type ExplorerPanelContainerProps = { explorerId: string };
+
+const ExplorerPanelContainer = React.memo<ExplorerPanelContainerProps>(({ explorerId }) => {
 	const cwd = useFileProviderCwd(explorerId);
 
 	return <ExplorerPanel key={URI.from(cwd).toString()} explorerId={explorerId} />;
-};
+});
 
 type TabPanelProps = {
 	index: string;
