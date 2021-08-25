@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { useRecoilState, useResetRecoilState } from 'recoil';
 import { Box, Chip, Divider, Skeleton, TextField } from '@material-ui/core';
 import { matchSorter } from 'match-sorter';
 
@@ -17,7 +16,9 @@ import { TableBody } from 'vs/nex/ui/elements/DataTable/TableBody';
 import { TableHead } from 'vs/nex/ui/elements/DataTable/TableHead';
 import {
 	FileForUI,
+	useFileProviderFileIdSelectionGotStartedWith,
 	useFileProviderFiles,
+	useFileProviderFilterInput,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import {
 	useCutOrCopyFiles,
@@ -27,7 +28,10 @@ import {
 	useRenameFile,
 	useScheduleMoveFilesToTrash,
 } from 'vs/nex/platform/file.hooks';
-import { useChangeDirectory } from 'vs/nex/platform/explorer.hooks';
+import {
+	useChangeDirectory,
+	useChangeFileIdSelectionGotStartedWith,
+} from 'vs/nex/platform/explorer.hooks';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
 import { strings } from 'vs/nex/base/utils/strings.util';
@@ -35,11 +39,7 @@ import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
 import { usePrevious } from 'vs/nex/ui/utils/events.hooks';
 import { ExplorerActions } from 'vs/nex/ui/ExplorerActions';
-import {
-	fileIdSelectionGotStartedWithState,
-	filterInputState,
-	PanelActions,
-} from 'vs/nex/ui/PanelActions';
+import { PanelActions } from 'vs/nex/ui/PanelActions';
 import { getNativeFileIconDataURL, onFileDragStart } from 'vs/nex/ipc/electron-sandbox/nex';
 
 const USE_NATIVE_ICON_FOR_REGEX = /(?:exe|ico|dll)/i;
@@ -56,18 +56,6 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 
 	const [idsOfSelectedFiles, setIdsOfSelectedFiles] = React.useState<string[]>([]);
 	const [fileToRenameId, setFileToRenameId] = React.useState<string | undefined>();
-	const resetFilterInput = useResetRecoilState(filterInputState);
-	const resetFileIdSelectionGotStartedWith = useResetRecoilState(
-		fileIdSelectionGotStartedWithState,
-	);
-
-	React.useEffect(
-		function resetSharedStateOnMount() {
-			resetFilterInput();
-			resetFileIdSelectionGotStartedWith();
-		},
-		[resetFileIdSelectionGotStartedWith, resetFilterInput],
-	);
 
 	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
 	let fileToRename: FileForUI | undefined;
@@ -171,6 +159,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 					<TableBody>
 						{dataAvailable ? (
 							<FilesTableBody
+								explorerId={explorerId}
 								filesToShow={filesToShowWithTags}
 								selectedFiles={selectedFiles}
 								selectFiles={selectFiles}
@@ -194,6 +183,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 };
 
 type FilesTableBodyProps = {
+	explorerId: string;
 	filesToShow: FileForUI[];
 	selectedFiles: FileForUI[];
 	selectFiles: (files: FileForUI[]) => void;
@@ -204,6 +194,7 @@ type FilesTableBodyProps = {
 };
 
 const FilesTableBody: React.FC<FilesTableBodyProps> = ({
+	explorerId,
 	filesToShow,
 	selectedFiles,
 	selectFiles,
@@ -212,7 +203,23 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 	renameFile,
 	abortRename,
 }) => {
-	const [filterInput] = useRecoilState(filterInputState);
+	const filterInput = useFileProviderFilterInput(explorerId);
+	const fileIdSelectionGotStartedWith = useFileProviderFileIdSelectionGotStartedWith(explorerId);
+	const { changeFileIdSelectionGotStartedWith } =
+		useChangeFileIdSelectionGotStartedWith(explorerId);
+
+	const lengthOfSelectedFiles = selectedFiles.length;
+	const idOfFirstSelectedFile = selectedFiles[0]?.id;
+	React.useEffect(() => {
+		if (lengthOfSelectedFiles === 1 && fileIdSelectionGotStartedWith !== idOfFirstSelectedFile) {
+			changeFileIdSelectionGotStartedWith(idOfFirstSelectedFile);
+		}
+	}, [
+		lengthOfSelectedFiles,
+		idOfFirstSelectedFile,
+		fileIdSelectionGotStartedWith,
+		changeFileIdSelectionGotStartedWith,
+	]);
 
 	/*
 	 * Compute files to show:
@@ -269,6 +276,7 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 					filesToShow={filesToShow}
 					selectedFiles={selectedFiles}
 					selectFiles={selectFiles}
+					fileIdSelectionGotStartedWith={fileIdSelectionGotStartedWith}
 					openFileOrDirectory={openFileOrDirectory}
 					fileToRename={fileToRename}
 					renameFile={renameFile}
@@ -285,6 +293,7 @@ type FilesTableRowProps = {
 	filesToShow: FileForUI[];
 	selectedFiles: FileForUI[];
 	selectFiles: (files: FileForUI[]) => void;
+	fileIdSelectionGotStartedWith?: string;
 	openFileOrDirectory: (file: FileForUI) => void;
 	fileToRename?: FileForUI;
 	renameFile: (fileToRename: FileForUI, newName: string) => void;
@@ -298,6 +307,7 @@ const FilesTableRow: React.FC<FilesTableRowProps> = ({
 	filesToShow,
 	selectedFiles,
 	selectFiles,
+	fileIdSelectionGotStartedWith,
 	openFileOrDirectory,
 	fileToRename,
 	renameFile,
@@ -308,15 +318,6 @@ const FilesTableRow: React.FC<FilesTableRowProps> = ({
 	const { removeTags } = useRemoveTags();
 
 	const [nativeIconDataURL, setNativeIconDataURL] = React.useState<string | undefined>();
-	const [fileIdSelectionGotStartedWith, setFileIdSelectionGotStartedWith] = useRecoilState(
-		fileIdSelectionGotStartedWithState,
-	);
-
-	React.useEffect(() => {
-		if (selectedFiles.length === 1) {
-			setFileIdSelectionGotStartedWith(selectedFiles[0].id);
-		}
-	}, [selectedFiles, setFileIdSelectionGotStartedWith]);
 
 	const fsPath = URI.from(fileForRow.uri).fsPath;
 	const extension = fileForRow.extension;

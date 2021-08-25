@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { render } from 'react-dom';
-import { RecoilRoot } from 'recoil';
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { CssBaseline } from '@material-ui/core';
@@ -76,12 +75,10 @@ const Root: React.FC<{ appDependencies: AppDependencies }> = ({ appDependencies 
 								<NexStorageProvider value={appDependencies.storage}>
 									<ClipboardResourcesContext>
 										<ThemeProvider theme={theme}>
-											<RecoilRoot>
-												<Provider store={store}>
-													<CssBaseline />
-													<App />
-												</Provider>
-											</RecoilRoot>
+											<Provider store={store}>
+												<CssBaseline />
+												<App />
+											</Provider>
 										</ThemeProvider>
 									</ClipboardResourcesContext>
 								</NexStorageProvider>

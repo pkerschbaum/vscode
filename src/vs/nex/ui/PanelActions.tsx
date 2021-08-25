@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { atom, useRecoilState } from 'recoil';
 import { Button, Divider, TextField, Tooltip } from '@material-ui/core';
 import ArrowUpwardOutlinedIcon from '@material-ui/icons/ArrowUpwardOutlined';
 import FolderOutlinedIcon from '@material-ui/icons/FolderOutlined';
@@ -10,11 +9,14 @@ import { Stack } from 'vs/nex/ui/layouts/Stack';
 import {
 	FileForUI,
 	useFileProviderCwd,
+	useFileProviderFileIdSelectionGotStartedWith,
 	useFileProviderFiles,
+	useFileProviderFilterInput,
 	useFileProviderFocusedExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import {
 	useChangeDirectory,
+	useChangeFilterInput,
 	usePasteFiles,
 	useRevealCwdInOSExplorer,
 } from 'vs/nex/platform/explorer.hooks';
@@ -23,14 +25,6 @@ import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
 import { functions } from 'vs/nex/base/utils/functions.util';
 
 const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
-export const filterInputState = atom({
-	key: 'filterInputState',
-	default: '',
-});
-export const fileIdSelectionGotStartedWithState = atom({
-	key: 'fileIdSelectionGotStartedWith',
-	default: undefined as string | undefined,
-});
 
 type PanelActionsProps = {
 	explorerId: string;
@@ -64,7 +58,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 	const { revealCwdInOSExplorer } = useRevealCwdInOSExplorer(explorerId);
 
 	const filterInputRef = React.useRef<HTMLDivElement>(null);
-	const [fileIdSelectionGotStartedWith] = useRecoilState(fileIdSelectionGotStartedWithState);
+	const fileIdSelectionGotStartedWith = useFileProviderFileIdSelectionGotStartedWith(explorerId);
 
 	const isFocusedExplorer = explorerId === focusedExplorerId;
 	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
@@ -237,7 +231,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 	return (
 		<>
 			<Stack alignItems="flex-end">
-				<FilterInput filterInputRef={filterInputRef} />
+				<FilterInput filterInputRef={filterInputRef} explorerId={explorerId} />
 			</Stack>
 			<Divider orientation="vertical" flexItem />
 			<Stack alignItems="flex-end">
@@ -284,10 +278,12 @@ const CwdInput: React.FC<CwdInputProps> = ({ cwd, onSubmit }) => {
 
 type FilterInputProps = {
 	filterInputRef: React.RefObject<HTMLDivElement>;
+	explorerId: string;
 };
 
-const FilterInput: React.FC<FilterInputProps> = ({ filterInputRef }) => {
-	const [filterInput, setFilterInput] = useRecoilState(filterInputState);
+const FilterInput: React.FC<FilterInputProps> = ({ filterInputRef, explorerId }) => {
+	const filterInput = useFileProviderFilterInput(explorerId);
+	const { changeFilterInput } = useChangeFilterInput(explorerId);
 
 	return (
 		<TextField
@@ -319,7 +315,7 @@ const FilterInput: React.FC<FilterInputProps> = ({ filterInputRef }) => {
 			value={filterInput}
 			onChange={(e) => {
 				const newVal = e.target.value.trimStart();
-				setFilterInput(newVal);
+				changeFilterInput(newVal);
 
 				// if input is empty now, blur the input field
 				if (newVal === '' && filterInputRef.current !== null) {

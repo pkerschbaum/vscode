@@ -1,3 +1,5 @@
+import * as React from 'react';
+
 import * as resources from 'vs/base/common/resources';
 import * as uuid from 'vs/base/common/uuid';
 import { extname, basename } from 'vs/base/common/path';
@@ -258,6 +260,38 @@ export function useRevealCwdInOSExplorer(explorerId: string) {
 
 	return {
 		revealCwdInOSExplorer,
+	};
+}
+
+export function useChangeFilterInput(explorerId: string) {
+	const dispatch = useDispatch();
+
+	function changeFilterInput(newFilterInput: string) {
+		dispatch(actions.changeFilterInput({ explorerId, newFilterInput }));
+	}
+
+	return {
+		changeFilterInput,
+	};
+}
+
+export function useChangeFileIdSelectionGotStartedWith(explorerId: string) {
+	const dispatch = useDispatch();
+
+	const changeFileIdSelectionGotStartedWith = React.useCallback(
+		(newFileIdSelectionGotStartedWith: string) => {
+			dispatch(
+				actions.changeFileIdSelectionGotStartedWith({
+					explorerId,
+					newFileIdSelectionGotStartedWith,
+				}),
+			);
+		},
+		[dispatch, explorerId],
+	);
+
+	return {
+		changeFileIdSelectionGotStartedWith,
 	};
 }
 

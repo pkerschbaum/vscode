@@ -25,6 +25,12 @@ export const useFileProviderExplorers = () =>
 export const useFileProviderCwd = (explorerId: string) =>
 	useSelector((state) => state.fileProvider.explorers[explorerId].cwd);
 
+export const useFileProviderFilterInput = (explorerId: string) =>
+	useSelector((state) => state.fileProvider.explorers[explorerId].filterInput);
+
+export const useFileProviderFileIdSelectionGotStartedWith = (explorerId: string) =>
+	useSelector((state) => state.fileProvider.explorers[explorerId].fileIdSelectionGotStartedWith);
+
 export const useFileProviderFocusedExplorerId = () =>
 	useSelector((state) => state.fileProvider.focusedExplorerId);
 
