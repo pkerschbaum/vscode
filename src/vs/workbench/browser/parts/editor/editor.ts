@@ -13,7 +13,7 @@ import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ISerializableView } from 'vs/base/browser/ui/grid/grid';
 import { getIEditor } from 'vs/editor/browser/editorBrowser';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { withNullAsUndefined } from 'vs/base/common/types';
+import { isObject, withNullAsUndefined } from 'vs/base/common/types';
 import { IEditorOptions, ITextEditorOptions } from 'vs/platform/editor/common/editor';
 
 export interface IEditorPartCreationOptions {
@@ -54,7 +54,22 @@ export function getEditorPartOptions(configurationService: IConfigurationService
 
 	const config = configurationService.getValue<IWorkbenchEditorConfiguration>();
 	if (config?.workbench?.editor) {
+
+		// Assign all primitive configuration over
 		Object.assign(options, config.workbench.editor);
+
+		// Special handle array types and convert to Set
+		if (isObject(config.workbench.editor.experimentalAutoLockGroups)) {
+			options.experimentalAutoLockGroups = new Set();
+
+			for (const [editorId, enablement] of Object.entries(config.workbench.editor.experimentalAutoLockGroups)) {
+				if (enablement === true) {
+					options.experimentalAutoLockGroups.add(editorId);
+				}
+			}
+		} else {
+			options.experimentalAutoLockGroups = undefined;
+		}
 	}
 
 	return options;
@@ -162,4 +177,15 @@ export interface EditorServiceImpl extends IEditorService {
 	 * Emitted when the list of most recently active editors change.
 	 */
 	readonly onDidMostRecentlyActiveEditorsChange: Event<void>;
+}
+
+export interface IInternalEditorOpenOptions {
+
+	/**
+	 * Optimization: when we know that many editors open at once,
+	 * setting `skipTitleUpdate` for the `openEditor` call will
+	 * not bother to update the title area control. The caller has
+	 * to manually ensure the title area control is updated.
+	 */
+	skipTitleUpdate?: boolean;
 }

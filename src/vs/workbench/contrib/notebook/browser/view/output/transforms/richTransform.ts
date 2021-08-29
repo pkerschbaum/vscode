@@ -70,15 +70,16 @@ class StreamRendererContrib extends Disposable implements IOutputRendererContrib
 	}
 
 	render(output: ICellOutputViewModel, item: IOutputItemDto, container: HTMLElement, notebookUri: URI): IRenderOutput {
+		const disposables = new DisposableStore();
 		const linkDetector = this.instantiationService.createInstance(LinkDetector);
 
 		const text = getStringValue(item);
 		const contentNode = DOM.$('span.output-stream');
 		const lineLimit = this.configurationService.getValue<number>(TextOutputLineLimit) ?? 30;
-		truncatedArrayOfString(notebookUri, output.cellViewModel, Math.max(lineLimit, 6), contentNode, [text], linkDetector, this.openerService, this.themeService);
+		truncatedArrayOfString(notebookUri, output.cellViewModel, Math.max(lineLimit, 6), contentNode, [text], disposables, linkDetector, this.openerService, this.themeService);
 		container.appendChild(contentNode);
 
-		return { type: RenderOutputType.Mainframe };
+		return { type: RenderOutputType.Mainframe, disposable: disposables };
 	}
 }
 
@@ -171,15 +172,16 @@ class PlainTextRendererContrib extends Disposable implements IOutputRendererCont
 	}
 
 	render(output: ICellOutputViewModel, item: IOutputItemDto, container: HTMLElement, notebookUri: URI): IRenderOutput {
+		const disposables = new DisposableStore();
 		const linkDetector = this.instantiationService.createInstance(LinkDetector);
 
 		const str = getStringValue(item);
 		const contentNode = DOM.$('.output-plaintext');
 		const lineLimit = this.configurationService.getValue<number>(TextOutputLineLimit) ?? 30;
-		truncatedArrayOfString(notebookUri, output.cellViewModel, Math.max(lineLimit, 6), contentNode, [str], linkDetector, this.openerService, this.themeService);
+		truncatedArrayOfString(notebookUri, output.cellViewModel, Math.max(lineLimit, 6), contentNode, [str], disposables, linkDetector, this.openerService, this.themeService);
 		container.appendChild(contentNode);
 
-		return { type: RenderOutputType.Mainframe, supportAppend: true };
+		return { type: RenderOutputType.Mainframe, supportAppend: true, disposable: disposables };
 	}
 }
 
@@ -254,7 +256,7 @@ class ImgRendererContrib extends Disposable implements IOutputRendererContributi
 	render(output: ICellOutputViewModel, item: IOutputItemDto, container: HTMLElement, notebookUri: URI): IRenderOutput {
 		const disposable = new DisposableStore();
 
-		const blob = new Blob([item.data], { type: item.mime });
+		const blob = new Blob([item.data.buffer], { type: item.mime });
 		const src = URL.createObjectURL(blob);
 		disposable.add(toDisposable(() => URL.revokeObjectURL(src)));
 
@@ -281,6 +283,5 @@ OutputRendererRegistry.registerOutputTransform(StderrRendererContrib);
 
 // --- utils ---
 export function getStringValue(item: IOutputItemDto): string {
-	// todo@jrieken NOT proper, should be VSBuffer
-	return new TextDecoder().decode(item.data);
+	return item.data.toString();
 }

@@ -1735,6 +1735,11 @@ export class TerminalLink implements vscode.TerminalLink {
 	}
 }
 
+export enum TerminalLocation {
+	Panel = 1,
+	Editor = 2,
+}
+
 export class TerminalProfile implements vscode.TerminalProfile {
 	constructor(
 		public options: vscode.TerminalOptions | vscode.ExtensionTerminalOptions
@@ -1762,7 +1767,7 @@ export enum TaskPanelKind {
 }
 
 @es5ClassCompat
-export class TaskGroup implements vscode.TaskGroup2 {
+export class TaskGroup implements vscode.TaskGroup {
 
 	isDefault?: boolean;
 	private _id: string;
@@ -1790,11 +1795,11 @@ export class TaskGroup implements vscode.TaskGroup2 {
 		}
 	}
 
-	constructor(id: string, _label: string) {
+	constructor(id: string, public readonly label: string) {
 		if (typeof id !== 'string') {
 			throw illegalArgument('name');
 		}
-		if (typeof _label !== 'string') {
+		if (typeof label !== 'string') {
 			throw illegalArgument('name');
 		}
 		this._id = id;
@@ -2911,9 +2916,7 @@ export class FileDecoration {
 	badge?: string;
 	tooltip?: string;
 	color?: vscode.ThemeColor;
-	priority?: number;
 	propagate?: boolean;
-
 
 	constructor(badge?: string, tooltip?: string, color?: ThemeColor) {
 		this.badge = badge;
@@ -3302,13 +3305,6 @@ export enum TestResultState {
 	Errored = 6
 }
 
-export enum TestMessageSeverity {
-	Error = 0,
-	Warning = 1,
-	Information = 2,
-	Hint = 3
-}
-
 export enum TestRunProfileKind {
 	Run = 1,
 	Debug = 2,
@@ -3337,6 +3333,18 @@ export class TestMessage implements vscode.TestMessage {
 	}
 
 	constructor(public message: string | vscode.MarkdownString) { }
+}
+
+@es5ClassCompat
+export class TestTag implements vscode.TestTag {
+	constructor(
+		public readonly id: string,
+		public readonly label?: string,
+	) {
+		if (/\s/.test(id)) {
+			throw new Error(`Test tag ID "${id}" may not include whitespace`);
+		}
+	}
 }
 
 //#endregion

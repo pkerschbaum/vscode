@@ -40,8 +40,8 @@ export class NotebookSerializer implements vscode.NotebookSerializer {
 			}
 		}
 
-		// Then compute indent from the contents
-		const indentAmount = contents ? detectIndent(contents).indent : ' ';
+		// Then compute indent from the contents (only use first 1K characters as a perf optimization)
+		const indentAmount = contents ? detectIndent(contents.substring(0, 1_000)).indent : ' ';
 
 		const preferredCellLanguage = getPreferredLanguage(json.metadata);
 		// Ensure we always have a blank cell.
@@ -74,10 +74,10 @@ export class NotebookSerializer implements vscode.NotebookSerializer {
 	}
 
 	public serializeNotebook(data: vscode.NotebookData, _token: vscode.CancellationToken): Uint8Array {
-		return new TextEncoder().encode(this.serialize(data));
+		return new TextEncoder().encode(this.serializeNotebookToString(data));
 	}
 
-	private serialize(data: vscode.NotebookData): string {
+	public serializeNotebookToString(data: vscode.NotebookData): string {
 		const notebookContent: Partial<nbformat.INotebookContent> = data.metadata?.custom || {};
 		notebookContent.cells = notebookContent.cells || [];
 		notebookContent.nbformat = notebookContent.nbformat || 4;

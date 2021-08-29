@@ -7,7 +7,6 @@ import 'vs/workbench/workbench.web.main';
 import { main } from 'vs/workbench/browser/web.main';
 import { UriComponents, URI } from 'vs/base/common/uri';
 import { IWebSocketFactory, IWebSocket } from 'vs/platform/remote/browser/browserSocketFactory';
-import { IExtensionManifest } from 'vs/platform/extensions/common/extensions';
 import { IURLCallbackProvider } from 'vs/workbench/services/url/browser/urlService';
 import { LogLevel } from 'vs/platform/log/common/log';
 import { IUpdateProvider, IUpdate } from 'vs/workbench/services/update/browser/updateService';
@@ -22,12 +21,6 @@ import { TunnelProviderFeatures } from 'vs/platform/remote/common/tunnel';
 
 interface IResourceUriProvider {
 	(uri: URI): URI;
-}
-
-interface IStaticExtension {
-	packageJSON: IExtensionManifest;
-	extensionLocation: UriComponents;
-	isBuiltin?: boolean;
 }
 
 /**
@@ -82,7 +75,7 @@ interface ITunnelOptions {
 	protocol?: string;
 }
 
-export interface TunnelCreationOptions {
+interface TunnelCreationOptions {
 
 	/**
 	 * True when the local operating system will require elevation to use the requested local port.
@@ -145,7 +138,7 @@ interface IHomeIndicator {
 
 	/**
 	 * The icon name for the home indicator. This needs to be one of the existing
-	 * icons from our Codicon icon set. For example `sync`.
+	 * icons from our Codicon icon set. For example `code`.
 	 */
 	icon: string;
 
@@ -153,6 +146,45 @@ interface IHomeIndicator {
 	 * A tooltip that will appear while hovering over the home indicator.
 	 */
 	title: string;
+}
+
+interface IWelcomeBanner {
+
+	/**
+	 * Welcome banner message to appear as text.
+	 */
+	message: string;
+
+	/**
+	 * Optional icon for the banner. This needs to be one of the existing
+	 * icons from our Codicon icon set. For example `code`. If not provided,
+	 * a default icon will be used.
+	 */
+	icon?: string;
+
+	/**
+	 * Optional actions to appear as links after the welcome banner message.
+	 */
+	actions?: IWelcomeBannerAction[];
+}
+
+interface IWelcomeBannerAction {
+
+	/**
+	 * The link to open when clicking. Supports command invocation when
+	 * using the `command:<commandId>` value.
+	 */
+	href: string;
+
+	/**
+	 * The label to show for the action link.
+	 */
+	label: string;
+
+	/**
+	 * A tooltip that will appear while hovering over the action link.
+	 */
+	title?: string;
 }
 
 interface IWindowIndicator {
@@ -210,10 +242,12 @@ interface IPosition {
 }
 
 interface IRange {
+
 	/**
 	 * The start position. It is before or equal to end position.
 	 */
 	readonly start: IPosition;
+
 	/**
 	 * The end position. It is after or equal to start position.
 	 */
@@ -230,7 +264,11 @@ interface IDefaultEditor {
 interface IDefaultLayout {
 	readonly views?: IDefaultView[];
 	readonly editors?: IDefaultEditor[];
-	/** Forces this layout to be applied even if this isn't the first time the workspace has been opened */
+
+	/**
+	 * Forces this layout to be applied even if this isn't
+	 * the first time the workspace has been opened
+	 */
 	readonly force?: boolean;
 }
 
@@ -346,12 +384,6 @@ interface IWorkbenchConstructionOptions {
 	readonly credentialsProvider?: ICredentialsProvider;
 
 	/**
-	 * Add static extensions that cannot be uninstalled but only be disabled.
-	 * @deprecated. Use `additionalBuiltinExtensions` instead.
-	 */
-	readonly staticExtensions?: readonly IStaticExtension[];
-
-	/**
 	 * Additional builtin extensions that cannot be uninstalled but only be disabled.
 	 * It can be one of the following:
 	 * 	- `ExtensionId`: id of the extension that is available in Marketplace
@@ -432,6 +464,12 @@ interface IWorkbenchConstructionOptions {
 	readonly homeIndicator?: IHomeIndicator;
 
 	/**
+	 * Optional welcome banner to appear above the workbench. Can be dismissed by the
+	 * user.
+	 */
+	readonly welcomeBanner?: IWelcomeBanner;
+
+	/**
 	 * Optional override for the product configuration properties.
 	 */
 	readonly productConfiguration?: Partial<IProductConfiguration>;
@@ -500,6 +538,7 @@ interface IPerformanceMark {
 interface IWorkbench {
 
 	commands: {
+
 		/**
 		 * @see [executeCommand](#commands.executeCommand)
 		 */
@@ -507,12 +546,21 @@ interface IWorkbench {
 	}
 
 	env: {
+
+		/**
+		 * @see [getUriScheme](#env.getUriScheme)
+		 */
 		readonly uriScheme: string;
+
 		/**
 		 * @see [retrievePerformanceMarks](#commands.retrievePerformanceMarks)
 		 */
 		retrievePerformanceMarks(): Promise<[string, readonly IPerformanceMark[]][]>;
-		openUri(uri: URI): Promise<boolean>;
+
+		/**
+		 * @see [openUri](#env.openUri)
+		 */
+		openUri(target: URI): Promise<boolean>;
 	}
 
 	/**
@@ -613,13 +661,23 @@ namespace env {
 		return workbench.env.retrievePerformanceMarks();
 	}
 
+	/**
+	 * @returns the scheme to use for opening the associated desktop
+	 * experience via protocol handler.
+	 */
 	export async function getUriScheme(): Promise<string> {
 		const workbench = await workbenchPromise;
+
 		return workbench.env.uriScheme;
 	}
 
+	/**
+	 * Allows to open a `URI` with the standard opener service of the
+	 * workbench.
+	 */
 	export async function openUri(target: URI): Promise<boolean> {
 		const workbench = await workbenchPromise;
+
 		return workbench.env.openUri(target);
 	}
 }
@@ -652,10 +710,6 @@ export {
 
 	// Credentials
 	ICredentialsProvider,
-
-	// Static Extensions
-	IStaticExtension,
-	IExtensionManifest,
 
 	// Callbacks
 	IURLCallbackProvider,
@@ -692,6 +746,8 @@ export {
 
 	// Branding
 	IHomeIndicator,
+	IWelcomeBanner,
+	IWelcomeBannerAction,
 	IProductConfiguration,
 	IWindowIndicator,
 	IInitialColorTheme,

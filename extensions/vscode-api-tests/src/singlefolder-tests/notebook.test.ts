@@ -3,11 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import 'mocha';
 import * as assert from 'assert';
-import * as vscode from 'vscode';
-import { createRandomFile, asPromise, disposeAll, closeAllEditors, revertAllDirty, saveAllEditors, assertNoRpc } from '../utils';
+import 'mocha';
 import { TextDecoder } from 'util';
+import * as vscode from 'vscode';
+import { asPromise, assertNoRpc, closeAllEditors, createRandomFile, disposeAll, revertAllDirty, saveAllEditors } from '../utils';
 
 async function createRandomNotebookFile() {
 	return createRandomFile('', undefined, '.vsctestnb');
@@ -136,7 +136,7 @@ const apiTestContentProvider: vscode.NotebookContentProvider = {
 	}
 };
 
-suite('Notebook API tests', function () {
+suite.skip('Notebook API tests', function () {
 
 	const testDisposables: vscode.Disposable[] = [];
 	const suiteDisposables: vscode.Disposable[] = [];
@@ -858,7 +858,6 @@ suite('Notebook API tests', function () {
 		assert.ok(cell.executionSummary);
 		assert.strictEqual(cell.executionSummary!.success, true);
 		assert.strictEqual(typeof cell.executionSummary!.executionOrder, 'number');
-
 	});
 
 	test('initialize executionSummary', async () => {
@@ -873,7 +872,7 @@ suite('Notebook API tests', function () {
 	});
 });
 
-suite('statusbar', () => {
+suite.skip('statusbar', () => {
 	const emitter = new vscode.EventEmitter<vscode.NotebookCell>();
 	const onDidCallProvide = emitter.event;
 	const suiteDisposables: vscode.Disposable[] = [];
@@ -911,7 +910,7 @@ suite('statusbar', () => {
 	});
 });
 
-suite('Notebook API tests (metadata)', function () {
+suite.skip('Notebook API tests (metadata)', function () {
 	const testDisposables: vscode.Disposable[] = [];
 	const suiteDisposables: vscode.Disposable[] = [];
 

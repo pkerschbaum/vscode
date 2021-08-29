@@ -14,8 +14,10 @@ import { Extensions as ConfigurationExtensions, IConfigurationRegistry } from 'v
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { Registry } from 'vs/platform/registry/common/platform';
+import { ActiveEditorContext } from 'vs/workbench/common/editor';
 import { NOTEBOOK_ACTIONS_CATEGORY } from 'vs/workbench/contrib/notebook/browser/contrib/coreActions';
-import { getNotebookEditorFromEditorPane, ICellViewModel, INotebookEditor, NOTEBOOK_CELL_LINE_NUMBERS, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_IS_ACTIVE_EDITOR } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
+import { getNotebookEditorFromEditorPane, ICellViewModel, INotebookEditor, NOTEBOOK_CELL_LINE_NUMBERS, NOTEBOOK_EDITOR_FOCUSED } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
+import { NotebookEditor } from 'vs/workbench/contrib/notebook/browser/notebookEditor';
 import { NotebookCellInternalMetadata } from 'vs/workbench/contrib/notebook/common/notebookCommon';
 import { NotebookOptions } from 'vs/workbench/contrib/notebook/common/notebookOptions';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
@@ -46,7 +48,7 @@ export class CellEditorOptions extends Disposable {
 
 	private _value: IEditorOptions;
 	private _lineNumbers: 'on' | 'off' | 'inherit' = 'inherit';
-	private readonly _onDidChange = new Emitter<void>();
+	private readonly _onDidChange = this._register(new Emitter<void>());
 	readonly onDidChange: Event<void> = this._onDidChange.event;
 	private _localDisposableStore = this._register(new DisposableStore());
 
@@ -114,11 +116,6 @@ export class CellEditorOptions extends Disposable {
 		return computed;
 	}
 
-	override dispose(): void {
-		this._onDidChange.dispose();
-		super.dispose();
-	}
-
 	getValue(internalMetadata?: NotebookCellInternalMetadata): IEditorOptions {
 		return {
 			...this._value,
@@ -165,20 +162,13 @@ registerAction2(class ToggleLineNumberAction extends Action2 {
 			id: 'notebook.toggleLineNumbers',
 			title: { value: localize('notebook.toggleLineNumbers', "Toggle Notebook Line Numbers"), original: 'Toggle Notebook Line Numbers' },
 			precondition: NOTEBOOK_EDITOR_FOCUSED,
-			menu: [{
-				id: MenuId.EditorTitle,
-				group: 'notebookLayout',
-				order: 2,
-				when: ContextKeyExpr.and(
-					NOTEBOOK_IS_ACTIVE_EDITOR,
-					ContextKeyExpr.notEquals('config.notebook.globalToolbar', true)
-				)
-			}, {
-				id: MenuId.NotebookToolbar,
-				group: 'notebookLayout',
-				order: 2,
-				when: ContextKeyExpr.equals('config.notebook.globalToolbar', true)
-			}],
+			menu: [
+				{
+					id: MenuId.NotebookToolbar,
+					group: 'notebookLayout',
+					order: 2,
+					when: ContextKeyExpr.equals('config.notebook.globalToolbar', true)
+				}],
 			category: NOTEBOOK_ACTIONS_CATEGORY,
 			f1: true,
 			toggled: {
@@ -205,7 +195,7 @@ registerAction2(class ToggleActiveLineNumberAction extends Action2 {
 		super({
 			id: 'notebook.cell.toggleLineNumbers',
 			title: 'Show Cell Line Numbers',
-			precondition: NOTEBOOK_EDITOR_FOCUSED,
+			precondition: ActiveEditorContext.isEqualTo(NotebookEditor.ID),
 			menu: [{
 				id: MenuId.NotebookCellTitle,
 				group: 'View',

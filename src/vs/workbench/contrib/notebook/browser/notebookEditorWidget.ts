@@ -34,7 +34,7 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { ILayoutService } from 'vs/platform/layout/browser/layoutService';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { contrastBorder, diffInserted, diffRemoved, editorBackground, errorForeground, focusBorder, foreground, listInactiveSelectionBackground, registerColor, scrollbarSliderActiveBackground, scrollbarSliderBackground, scrollbarSliderHoverBackground, textBlockQuoteBackground, textBlockQuoteBorder, textLinkActiveForeground, textLinkForeground, textPreformatForeground, transparent } from 'vs/platform/theme/common/colorRegistry';
+import { contrastBorder, diffInserted, diffRemoved, editorBackground, errorForeground, focusBorder, foreground, listInactiveSelectionBackground, registerColor, scrollbarSliderActiveBackground, scrollbarSliderBackground, scrollbarSliderHoverBackground, textBlockQuoteBackground, textBlockQuoteBorder, textLinkActiveForeground, textLinkForeground, textPreformatForeground, toolbarHoverBackground, transparent } from 'vs/platform/theme/common/colorRegistry';
 import { IThemeService, registerThemingParticipant } from 'vs/platform/theme/common/themeService';
 import { PANEL_BORDER } from 'vs/workbench/common/theme';
 import { debugIconStartForeground } from 'vs/workbench/contrib/debug/browser/debugColors';
@@ -76,6 +76,10 @@ export class ListViewInfoAccessor extends Disposable {
 		readonly list: INotebookCellList
 	) {
 		super();
+	}
+
+	setScrollTop(scrollTop: number) {
+		this.list.scrollTop = scrollTop;
 	}
 
 	scrollToBottom() {
@@ -186,8 +190,8 @@ export class ListViewInfoAccessor extends Disposable {
 		return this.list.setHiddenAreas(_ranges, true);
 	}
 
-	getVisibleRangesPlusViewportAboveBelow(): ICellRange[] {
-		return this.list?.getVisibleRangesPlusViewportAboveBelow() ?? [];
+	getVisibleRangesPlusViewportBelow(): ICellRange[] {
+		return this.list?.getVisibleRangesPlusViewportBelow() ?? [];
 	}
 
 	triggerScroll(event: IMouseWheelEvent) {
@@ -1195,7 +1199,7 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditor 
 				this._outputFocus.set(false);
 				this.updateEditorFocus();
 
-				if (this._overlayContainer.contains(document.activeElement)) {
+				if (!this._overlayContainer.contains(document.activeElement)) {
 					this._webviewFocused = false;
 				}
 			}));
@@ -1578,23 +1582,26 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditor 
 			return;
 		}
 
-		const topInserToolbarHeight = this._notebookOptions.computeTopInserToolbarHeight(this.viewModel?.viewType);
-
 		this._dimension = new DOM.Dimension(dimension.width, dimension.height);
-		DOM.size(this._body, dimension.width, dimension.height - (this._notebookTopToolbar?.useGlobalToolbar ? /** Toolbar height */ 26 : 0));
-		if (this._list.getRenderHeight() < dimension.height - topInserToolbarHeight) {
+		const newBodyHeight = Math.max(dimension.height - (this._notebookTopToolbar?.useGlobalToolbar ? /** Toolbar height */ 26 : 0), 0);
+		DOM.size(this._body, dimension.width, newBodyHeight);
+
+		const topInserToolbarHeight = this._notebookOptions.computeTopInserToolbarHeight(this.viewModel?.viewType);
+		const newCellListHeight = Math.max(dimension.height - topInserToolbarHeight, 0);
+		if (this._list.getRenderHeight() < newCellListHeight) {
 			// the new dimension is larger than the list viewport, update its additional height first, otherwise the list view will move down a bit (as the `scrollBottom` will move down)
-			this._list.updateOptions({ additionalScrollHeight: this._allowScrollBeyondLastLine() ? Math.max(0, (dimension.height - topInserToolbarHeight - 50)) : topInserToolbarHeight });
-			this._list.layout(dimension.height - topInserToolbarHeight, dimension.width);
+			this._list.updateOptions({ additionalScrollHeight: this._allowScrollBeyondLastLine() ? Math.max(0, (newCellListHeight - 50)) : topInserToolbarHeight });
+			this._list.layout(newCellListHeight, dimension.width);
 		} else {
 			// the new dimension is smaller than the list viewport, if we update the additional height, the `scrollBottom` will move up, which moves the whole list view upwards a bit. So we run a layout first.
-			this._list.layout(dimension.height - topInserToolbarHeight, dimension.width);
-			this._list.updateOptions({ additionalScrollHeight: this._allowScrollBeyondLastLine() ? Math.max(0, (dimension.height - topInserToolbarHeight - 50)) : topInserToolbarHeight });
+			this._list.layout(newCellListHeight, dimension.width);
+			this._list.updateOptions({ additionalScrollHeight: this._allowScrollBeyondLastLine() ? Math.max(0, (newCellListHeight - 50)) : topInserToolbarHeight });
 		}
 
 		this._overlayContainer.style.visibility = 'visible';
 		this._overlayContainer.style.display = 'block';
 		this._overlayContainer.style.position = 'absolute';
+		this._overlayContainer.style.overflow = 'hidden';
 
 		const containerRect = this._overlayContainer.parentElement?.getBoundingClientRect();
 		this._overlayContainer.style.top = `${this._shadowElementViewInfo!.top - (containerRect?.top || 0)}px`;
@@ -1795,8 +1802,12 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditor 
 		return this._listViewInfoAccessor.setHiddenAreas(_ranges);
 	}
 
-	getVisibleRangesPlusViewportAboveBelow(): ICellRange[] {
-		return this._listViewInfoAccessor.getVisibleRangesPlusViewportAboveBelow();
+	getVisibleRangesPlusViewportBelow(): ICellRange[] {
+		return this._listViewInfoAccessor.getVisibleRangesPlusViewportBelow();
+	}
+
+	setScrollTop(scrollTop: number) {
+		this._listViewInfoAccessor.setScrollTop(scrollTop);
 	}
 
 	triggerScroll(event: IMouseWheelEvent) {
@@ -2458,7 +2469,7 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditor 
 
 	//#region --- webview IPC ----
 
-	private readonly _onDidReceiveMessage = new Emitter<INotebookWebviewMessage>();
+	private readonly _onDidReceiveMessage = this._register(new Emitter<INotebookWebviewMessage>());
 
 	readonly onDidReceiveMessage: Event<INotebookWebviewMessage> = this._onDidReceiveMessage.event;
 
@@ -2956,6 +2967,19 @@ registerThemingParticipant((theme, collector) => {
 	if (scrollbarSliderActiveBackgroundColor) {
 		collector.addRule(` .notebookOverlay .cell-list-container > .monaco-list > .monaco-scrollable-element > .scrollbar > .slider.active { background: ${scrollbarSliderActiveBackgroundColor}; } `);
 	}
+
+	const toolbarHoverBackgroundColor = theme.getColor(toolbarHoverBackground);
+	if (toolbarHoverBackgroundColor) {
+		collector.addRule(`
+		.monaco-workbench .notebookOverlay > .cell-list-container > .monaco-list > .monaco-scrollable-element > .monaco-list-rows > .monaco-list-row .expandInputIcon:hover {
+			background-color: ${toolbarHoverBackgroundColor};
+		}
+		.monaco-workbench .notebookOverlay > .cell-list-container > .monaco-list > .monaco-scrollable-element > .monaco-list-rows > .monaco-list-row .expandOutputIcon:hover {
+			background-color: ${toolbarHoverBackgroundColor};
+		}
+	`);
+	}
+
 
 	// case ChangeType.Modify: return theme.getColor(editorGutterModifiedBackground);
 	// case ChangeType.Add: return theme.getColor(editorGutterAddedBackground);

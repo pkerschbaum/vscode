@@ -124,6 +124,9 @@ import 'vs/workbench/contrib/preferences/browser/keyboardLayoutPicker';
 // Debug
 import 'vs/workbench/contrib/debug/browser/extensionHostDebugService';
 
+// Welcome Banner
+import 'vs/workbench/contrib/welcome/banner/browser/welcomeBanner.contribution';
+
 // Webview
 import 'vs/workbench/contrib/webview/browser/webview.web.contribution';
 
@@ -140,9 +143,6 @@ import 'vs/workbench/contrib/tasks/browser/taskService';
 
 // Tags
 import 'vs/workbench/contrib/tags/browser/workspaceTagsService';
-
-// Telemetry Opt Out
-import 'vs/workbench/contrib/welcome/telemetryOptOut/browser/telemetryOptOut.contribution';
 
 // Issues
 import 'vs/workbench/contrib/issue/browser/issue.web.contribution';

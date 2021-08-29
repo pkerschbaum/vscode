@@ -396,23 +396,14 @@ function configureCrashReporter() {
 	// Start crash reporter for all processes
 	const productName = (product.crashReporter ? product.crashReporter.productName : undefined) || product.nameShort;
 	const companyName = (product.crashReporter ? product.crashReporter.companyName : undefined) || 'Microsoft';
-	if (process.env['VSCODE_DEV']) {
-		crashReporter.start({
-			companyName: companyName,
-			productName: `${productName} Dev`,
-			submitURL,
-			uploadToServer: false,
-			compress: true
-		});
-	} else {
-		crashReporter.start({
-			companyName: companyName,
-			productName: productName,
-			submitURL,
-			uploadToServer: !crashReporterDirectory,
-			compress: true
-		});
-	}
+	const uploadToServer = !process.env['VSCODE_DEV'] && submitURL && !crashReporterDirectory;
+	crashReporter.start({
+		companyName,
+		productName: process.env['VSCODE_DEV'] ? `${productName} Dev` : productName,
+		submitURL,
+		uploadToServer,
+		compress: true
+	});
 }
 
 /**
@@ -571,7 +562,7 @@ async function resolveNlsConfiguration() {
 			nlsConfiguration = { locale: 'en', availableLanguages: {} };
 		} else {
 
-			// See above the comment about the loader and case sensitiviness
+			// See above the comment about the loader and case sensitiveness
 			appLocale = appLocale.toLowerCase();
 
 			const { getNLSConfiguration } = require('./vs/base/node/languagePacks');

@@ -67,7 +67,7 @@ class NotebookViewportContribution extends Disposable implements INotebookEditor
 			return;
 		}
 
-		const visibleRanges = this._notebookEditor.getVisibleRangesPlusViewportAboveBelow();
+		const visibleRanges = this._notebookEditor.getVisibleRangesPlusViewportBelow();
 		cellRangesToIndexes(visibleRanges).forEach(index => {
 			const cell = this._notebookEditor.viewModel?.viewCells[index];
 
@@ -80,6 +80,10 @@ class NotebookViewportContribution extends Disposable implements INotebookEditor
 	}
 
 	private _renderCell(viewCell: CodeCellViewModel) {
+		if (viewCell.metadata.outputCollapsed) {
+			return;
+		}
+
 		const outputs = viewCell.outputsViewModels;
 		for (let output of outputs) {
 			const [mimeTypes, pick] = output.resolveMimeTypes(this._notebookEditor.textModel!, undefined);

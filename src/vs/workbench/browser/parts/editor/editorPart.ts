@@ -13,7 +13,7 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { IView, orthogonal, LayoutPriority, IViewSize, Direction, SerializableGrid, Sizing, ISerializedGrid, Orientation, GridBranchNode, isGridBranchNode, GridNode, createSerializedGrid, Grid } from 'vs/base/browser/ui/grid/grid';
 import { GroupIdentifier, IEditorPartOptions, IEditorPartOptionsChangeEvent } from 'vs/workbench/common/editor';
 import { EDITOR_GROUP_BORDER, EDITOR_PANE_BACKGROUND } from 'vs/workbench/common/theme';
-import { distinct, coalesce } from 'vs/base/common/arrays';
+import { distinct, coalesce, firstOrDefault } from 'vs/base/common/arrays';
 import { IEditorGroupsAccessor, IEditorGroupView, getEditorPartOptions, impactsEditorPartOptions, IEditorPartCreationOptions } from 'vs/workbench/browser/parts/editor/editor';
 import { EditorGroupView } from 'vs/workbench/browser/parts/editor/editorGroupView';
 import { IConfigurationService, IConfigurationChangeEvent } from 'vs/platform/configuration/common/configuration';
@@ -97,6 +97,9 @@ export class EditorPart extends Part implements IEditorGroupsService, IEditorGro
 
 	private readonly _onDidChangeGroupIndex = this._register(new Emitter<IEditorGroupView>());
 	readonly onDidChangeGroupIndex = this._onDidChangeGroupIndex.event;
+
+	private readonly _onDidChangeGroupLocked = this._register(new Emitter<IEditorGroupView>());
+	readonly onDidChangeGroupLocked = this._onDidChangeGroupLocked.event;
 
 	private readonly _onDidActivateGroup = this._register(new Emitter<IEditorGroupView>());
 	readonly onDidActivateGroup = this._onDidActivateGroup.event;
@@ -206,6 +209,9 @@ export class EditorPart extends Part implements IEditorGroupsService, IEditorGro
 		return (this.gridWidget && this.gridWidget.orientation === Orientation.VERTICAL) ? GroupOrientation.VERTICAL : GroupOrientation.HORIZONTAL;
 	}
 
+	private _isReady = false;
+	get isReady(): boolean { return this._isReady; }
+
 	private whenReadyResolve: (() => void) | undefined;
 	readonly whenReady = new Promise<void>(resolve => (this.whenReadyResolve = resolve));
 
@@ -250,7 +256,7 @@ export class EditorPart extends Part implements IEditorGroupsService, IEditorGro
 		return this.groupViews.get(identifier);
 	}
 
-	findGroup(scope: IFindGroupScope, source: IEditorGroupView | GroupIdentifier = this.activeGroup, wrap?: boolean): IEditorGroupView {
+	findGroup(scope: IFindGroupScope, source: IEditorGroupView | GroupIdentifier = this.activeGroup, wrap?: boolean): IEditorGroupView | undefined {
 
 		// by direction
 		if (typeof scope.direction === 'number') {
@@ -265,7 +271,7 @@ export class EditorPart extends Part implements IEditorGroupsService, IEditorGro
 		throw new Error('invalid arguments');
 	}
 
-	private doFindGroupByDirection(direction: GroupDirection, source: IEditorGroupView | GroupIdentifier, wrap?: boolean): IEditorGroupView {
+	private doFindGroupByDirection(direction: GroupDirection, source: IEditorGroupView | GroupIdentifier, wrap?: boolean): IEditorGroupView | undefined {
 		const sourceGroupView = this.assertGroupView(source);
 
 		// Find neighbours and sort by our MRU list
@@ -275,7 +281,7 @@ export class EditorPart extends Part implements IEditorGroupsService, IEditorGro
 		return neighbours[0];
 	}
 
-	private doFindGroupByLocation(location: GroupLocation, source: IEditorGroupView | GroupIdentifier, wrap?: boolean): IEditorGroupView {
+	private doFindGroupByLocation(location: GroupLocation, source: IEditorGroupView | GroupIdentifier, wrap?: boolean): IEditorGroupView | undefined {
 		const sourceGroupView = this.assertGroupView(source);
 		const groups = this.getGroups(GroupsOrder.GRID_APPEARANCE);
 		const index = groups.indexOf(sourceGroupView);
@@ -286,14 +292,14 @@ export class EditorPart extends Part implements IEditorGroupsService, IEditorGro
 			case GroupLocation.LAST:
 				return groups[groups.length - 1];
 			case GroupLocation.NEXT:
-				let nextGroup = groups[index + 1];
+				let nextGroup: IEditorGroupView | undefined = groups[index + 1];
 				if (!nextGroup && wrap) {
 					nextGroup = this.doFindGroupByLocation(GroupLocation.FIRST, source);
 				}
 
 				return nextGroup;
 			case GroupLocation.PREVIOUS:
-				let previousGroup = groups[index - 1];
+				let previousGroup: IEditorGroupView | undefined = groups[index - 1];
 				if (!previousGroup && wrap) {
 					previousGroup = this.doFindGroupByLocation(GroupLocation.LAST, source);
 				}
@@ -543,6 +549,9 @@ export class EditorPart extends Part implements IEditorGroupsService, IEditorGro
 				case GroupChangeKind.GROUP_INDEX:
 					this._onDidChangeGroupIndex.fire(groupView);
 					break;
+				case GroupChangeKind.GROUP_LOCKED:
+					this._onDidChangeGroupLocked.fire(groupView);
+					break;
 			}
 		}));
 
@@ -624,7 +633,7 @@ export class EditorPart extends Part implements IEditorGroupsService, IEditorGro
 
 	removeGroup(group: IEditorGroupView | GroupIdentifier): void {
 		const groupView = this.assertGroupView(group);
-		if (this.groupViews.size === 1) {
+		if (this.count === 1) {
 			return; // Cannot remove the last root group
 		}
 
@@ -677,6 +686,11 @@ export class EditorPart extends Part implements IEditorGroupsService, IEditorGro
 
 		// Update container
 		this.updateContainer();
+
+		// Update locked state: clear when we are at just 1 group
+		if (this.count === 1) {
+			firstOrDefault(this.groups)?.lock(false);
+		}
 
 		// Event
 		this._onDidRemoveGroup.fire(groupView);
@@ -837,6 +851,7 @@ export class EditorPart extends Part implements IEditorGroupsService, IEditorGro
 
 		// Signal ready
 		this.whenReadyResolve?.();
+		this._isReady = true;
 
 		// Signal restored
 		Promises.settled(this.groups.map(group => group.whenRestored)).finally(() => {
@@ -1066,7 +1081,7 @@ export class EditorPart extends Part implements IEditorGroupsService, IEditorGro
 	}
 
 	private get isEmpty(): boolean {
-		return this.groupViews.size === 1 && this._activeGroup.isEmpty;
+		return this.count === 1 && this._activeGroup.isEmpty;
 	}
 
 	setBoundarySashes(sashes: IBoundarySashes): void {

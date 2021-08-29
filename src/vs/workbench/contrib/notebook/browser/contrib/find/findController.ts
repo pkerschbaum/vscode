@@ -171,6 +171,7 @@ export class NotebookFindWidget extends SimpleFindReplaceWidget implements INote
 
 	replace(initialFindInput?: string, initialReplaceInput?: string) {
 		super.showWithReplace(initialFindInput, initialReplaceInput);
+		this._state.change({ searchString: initialFindInput ?? '', replaceString: initialReplaceInput ?? '', isRevealed: true }, false);
 		this._replaceInput.select();
 
 		if (this._showTimeout === null) {
@@ -331,6 +332,10 @@ StartFindAction.addImplementation(100, (accessor: ServicesAccessor, codeEditor: 
 	const editor = getNotebookEditorFromEditorPane(editorService.activeEditorPane);
 
 	if (!editor) {
+		return false;
+	}
+
+	if (!editor.hasEditorFocus() && !editor.hasWebviewFocus()) {
 		return false;
 	}
 

@@ -74,6 +74,9 @@ export function renderMarkdown(markdown: IMarkdownString, options: MarkdownRende
 		}
 		let uri = URI.revive(data);
 		if (isDomUri) {
+			if (href.startsWith(Schemas.data + ':')) {
+				return href;
+			}
 			// this URI will end up as "src"-attribute of a dom node
 			// and because of that special rewriting needs to be done
 			// so that the URI uses a protocol that's understood by
@@ -186,9 +189,9 @@ export function renderMarkdown(markdown: IMarkdownString, options: MarkdownRende
 	}
 
 	if (options.actionHandler) {
-		const onClick = options.actionHandler.disposeables.add(new DomEmitter(element, 'click'));
-		const onAuxClick = options.actionHandler.disposeables.add(new DomEmitter(element, 'auxclick'));
-		options.actionHandler.disposeables.add(Event.any(onClick.event, onAuxClick.event)(e => {
+		const onClick = options.actionHandler.disposables.add(new DomEmitter(element, 'click'));
+		const onAuxClick = options.actionHandler.disposables.add(new DomEmitter(element, 'auxclick'));
+		options.actionHandler.disposables.add(Event.any(onClick.event, onAuxClick.event)(e => {
 			const mouseEvent = new StandardMouseEvent(e);
 			if (!mouseEvent.leftButton && !mouseEvent.middleButton) {
 				return;
