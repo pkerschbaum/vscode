@@ -220,28 +220,31 @@ export function useGetTagsOfFile() {
 		React.useCallback((storageKey) => storageKey === STORAGE_KEY.RESOURCES_TO_TAGS, []),
 	);
 
-	function getTagsOfFile(file: { uri: UriComponents; ctime: number }): Tag[] {
-		const tagIdsOfFile = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS)?.[
-			URI.from(file.uri).toString()
-		];
+	const getTagsOfFile = React.useCallback(
+		(file: { uri: UriComponents; ctime: number }): Tag[] => {
+			const tagIdsOfFile = storage.get(STORAGE_KEY.RESOURCES_TO_TAGS)?.[
+				URI.from(file.uri).toString()
+			];
 
-		if (
-			tagIdsOfFile === undefined ||
-			tagIdsOfFile.tags.length === 0 ||
-			tagIdsOfFile.ctimeOfFile !== file.ctime
-		) {
-			return [];
-		}
+			if (
+				tagIdsOfFile === undefined ||
+				tagIdsOfFile.tags.length === 0 ||
+				tagIdsOfFile.ctimeOfFile !== file.ctime
+			) {
+				return [];
+			}
 
-		const tags = getTags();
-		const tagsOfFile = Object.entries(tags)
-			.map(([id, otherValues]) => ({ ...otherValues, id }))
-			.filter((tag) => tagIdsOfFile.tags.some((tagId) => tagId === tag.id));
+			const tags = getTags();
+			const tagsOfFile = Object.entries(tags)
+				.map(([id, otherValues]) => ({ ...otherValues, id }))
+				.filter((tag) => tagIdsOfFile.tags.some((tagId) => tagId === tag.id));
 
-		logger.debug(`got tags of file from storage`, { file, tagsOfFile });
+			logger.debug(`got tags of file from storage`, { file, tagsOfFile });
 
-		return tagsOfFile;
-	}
+			return tagsOfFile;
+		},
+		[storage, getTags],
+	);
 
 	return {
 		getTagsOfFile,

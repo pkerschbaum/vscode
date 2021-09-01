@@ -13,7 +13,7 @@ export const ExplorerPanelContainer = React.memo<ExplorerPanelContainerProps>(
 		const cwd = useFileProviderCwd(explorerId);
 
 		return (
-			<ExplorerContextProvider key={URI.from(cwd).toString()}>
+			<ExplorerContextProvider key={URI.from(cwd).toString()} explorerId={explorerId}>
 				<MemoizedExplorerPanel explorerId={explorerId} />
 			</ExplorerContextProvider>
 		);

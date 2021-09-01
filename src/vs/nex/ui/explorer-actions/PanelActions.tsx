@@ -7,9 +7,7 @@ import { URI, UriComponents } from 'vs/base/common/uri';
 
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import {
-	FileForUI,
 	useFileProviderCwd,
-	useFileProviderFiles,
 	useFileProviderFocusedExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import {
@@ -18,9 +16,14 @@ import {
 	useRevealCwdInOSExplorer,
 } from 'vs/nex/platform/explorer.hooks';
 import {
+	useExplorerId,
 	useFileIdSelectionGotStartedWith,
+	useFiles,
 	useFilterInput,
+	useIdsOfSelectedFiles,
+	useSelectedFiles,
 	useSetFilterInput,
+	useSetIdsOfSelectedFiles,
 } from 'vs/nex/ui/Explorer.context';
 import { KEYS, MOUSE_BUTTONS } from 'vs/nex/ui/constants';
 import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
@@ -29,11 +32,6 @@ import { functions } from 'vs/nex/base/utils/functions.util';
 const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
 
 type PanelActionsProps = {
-	explorerId: string;
-	filesToShow: FileForUI[];
-	idsOfSelectedFiles: string[];
-	setIdsOfSelectedFiles: (val: string[]) => void;
-
 	openSelectedFiles: () => void;
 	scheduleDeleteSelectedFiles: () => void;
 	copySelectedFiles: () => void;
@@ -41,18 +39,13 @@ type PanelActionsProps = {
 };
 
 export const PanelActions: React.FC<PanelActionsProps> = ({
-	explorerId,
-	filesToShow,
-	idsOfSelectedFiles,
-	setIdsOfSelectedFiles,
-
 	openSelectedFiles,
 	scheduleDeleteSelectedFiles,
 	copySelectedFiles,
 	cutSelectedFiles,
 }) => {
+	const explorerId = useExplorerId();
 	const cwd = useFileProviderCwd(explorerId);
-	const { files } = useFileProviderFiles(explorerId);
 	const focusedExplorerId = useFileProviderFocusedExplorerId();
 
 	const { changeDirectory } = useChangeDirectory(explorerId);
@@ -61,9 +54,12 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 
 	const filterInputRef = React.useRef<HTMLDivElement>(null);
 	const fileIdSelectionGotStartedWith = useFileIdSelectionGotStartedWith();
+	const files = useFiles();
+	const idsOfSelectedFiles = useIdsOfSelectedFiles();
+	const setIdsOfSelectedFiles = useSetIdsOfSelectedFiles();
+	const selectedFiles = useSelectedFiles();
 
 	const isFocusedExplorer = explorerId === focusedExplorerId;
-	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
 
 	function navigateUp() {
 		changeDirectory(URI.joinPath(URI.from(cwd), '..').path);
@@ -72,12 +68,12 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 	function changeSelectedFile(e: KeyboardEvent) {
 		e.preventDefault();
 
-		if (filesToShow.length < 1) {
+		if (files.length < 1) {
 			return;
 		}
 
 		if (e.key === KEYS.ARROW_UP || e.key === KEYS.ARROW_DOWN) {
-			const selectedFilesInfos = filesToShow
+			const selectedFilesInfos = files
 				.map((file, idx) => ({
 					file,
 					idx,
@@ -90,7 +86,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 
 			if (selectedFilesInfos.length === 0 || fileIdSelectionGotStartedWithIndex === undefined) {
 				// If no file is selected, just select the first file
-				setIdsOfSelectedFiles([filesToShow[0].id]);
+				setIdsOfSelectedFiles([files[0].id]);
 				return;
 			}
 
@@ -106,16 +102,16 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 					 * UP without shift key is pressed
 					 * --> select the file above the file which got selected first (if file above exists)
 					 */
-					setIdsOfSelectedFiles([filesToShow[fileIdSelectionGotStartedWithIndex - 1].id]);
+					setIdsOfSelectedFiles([files[fileIdSelectionGotStartedWithIndex - 1].id]);
 				} else if (
 					e.key === KEYS.ARROW_DOWN &&
-					filesToShow.length > fileIdSelectionGotStartedWithIndex + 1
+					files.length > fileIdSelectionGotStartedWithIndex + 1
 				) {
 					/*
 					 * DOWN without shift key is pressed
 					 * --> select the file below the file which got selected first (if file below exists)
 					 */
-					setIdsOfSelectedFiles([filesToShow[fileIdSelectionGotStartedWithIndex + 1].id]);
+					setIdsOfSelectedFiles([files[fileIdSelectionGotStartedWithIndex + 1].id]);
 				}
 			} else {
 				if (e.key === KEYS.ARROW_UP) {
@@ -134,10 +130,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 						 * SHIFT+UP is pressed and the selection was started upwards. Or, there is only one file selected at the moment.
 						 * --> The user wants to add the file above all selected files to the selection.
 						 */
-						setIdsOfSelectedFiles([
-							filesToShow[firstSelectedFileIndex - 1].id,
-							...idsOfSelectedFiles,
-						]);
+						setIdsOfSelectedFiles([files[firstSelectedFileIndex - 1].id, ...idsOfSelectedFiles]);
 					}
 				} else if (e.key === KEYS.ARROW_DOWN) {
 					if (selectedFilesInfos.length > 1 && !selectionWasStartedDownwards) {
@@ -148,24 +141,21 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 						setIdsOfSelectedFiles(
 							idsOfSelectedFiles.filter((id) => id !== selectedFilesInfos[0].file.id),
 						);
-					} else if (filesToShow.length > lastSelectedFileIndex + 1) {
+					} else if (files.length > lastSelectedFileIndex + 1) {
 						/*
 						 * SHIFT+DOWN is pressed and the selection was started downwards. Or, there is only one file selected at the moment.
 						 * --> The user wants to add the file after all selected files to the selection.
 						 */
-						setIdsOfSelectedFiles([
-							...idsOfSelectedFiles,
-							filesToShow[lastSelectedFileIndex + 1].id,
-						]);
+						setIdsOfSelectedFiles([...idsOfSelectedFiles, files[lastSelectedFileIndex + 1].id]);
 					}
 				}
 			}
 		} else if (e.key === KEYS.PAGE_UP) {
-			setIdsOfSelectedFiles([filesToShow[0].id]);
+			setIdsOfSelectedFiles([files[0].id]);
 		} else if (e.key === KEYS.PAGE_DOWN) {
-			setIdsOfSelectedFiles([filesToShow[filesToShow.length - 1].id]);
+			setIdsOfSelectedFiles([files[files.length - 1].id]);
 		} else if (e.key === KEYS.A) {
-			setIdsOfSelectedFiles(filesToShow.map((file) => file.id));
+			setIdsOfSelectedFiles(files.map((file) => file.id));
 		} else {
 			throw new Error(`key not implemented. e.key=${e.key}`);
 		}

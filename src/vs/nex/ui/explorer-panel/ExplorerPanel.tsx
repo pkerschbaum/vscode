@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { Box, Chip, Divider, Skeleton, TextField } from '@material-ui/core';
-import { matchSorter } from 'match-sorter';
 
 import { URI } from 'vs/base/common/uri';
 
@@ -20,7 +19,6 @@ import {
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import {
 	useCutOrCopyFiles,
-	useGetTagsOfFile,
 	useOpenFile,
 	useRemoveTags,
 	useRenameFile,
@@ -29,13 +27,17 @@ import {
 import { useChangeDirectory } from 'vs/nex/platform/explorer.hooks';
 import {
 	useFileIdSelectionGotStartedWith,
+	useFilesToShow,
+	useFileToRename,
 	useFilterInput,
+	useSelectedFiles,
 	useSetFileIdSelectionGotStartedWith,
+	useSetFileToRenameId,
+	useSetIdsOfSelectedFiles,
 } from 'vs/nex/ui/Explorer.context';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
 import { strings } from 'vs/nex/base/utils/strings.util';
-import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
 import { usePrevious } from 'vs/nex/ui/utils/events.hooks';
 import { ExplorerActions } from 'vs/nex/ui/explorer-actions/ExplorerActions';
@@ -45,23 +47,17 @@ import { getNativeFileIconDataURL, onFileDragStart } from 'vs/nex/ipc/electron-s
 const USE_NATIVE_ICON_FOR_REGEX = /(?:exe|ico|dll)/i;
 
 export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) => {
-	const { dataAvailable, files } = useFileProviderFiles(explorerId);
+	const { dataAvailable } = useFileProviderFiles(explorerId);
 
 	const { changeDirectory } = useChangeDirectory(explorerId);
 	const { openFile } = useOpenFile();
 	const { scheduleMoveFilesToTrash } = useScheduleMoveFilesToTrash();
 	const { cutOrCopyFiles } = useCutOrCopyFiles();
-	const { getTagsOfFile } = useGetTagsOfFile();
 	const { renameFile } = useRenameFile();
 
-	const [idsOfSelectedFiles, setIdsOfSelectedFiles] = React.useState<string[]>([]);
-	const [fileToRenameId, setFileToRenameId] = React.useState<string | undefined>();
+	const setFileToRenameId = useSetFileToRenameId();
 
-	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
-	let fileToRename: FileForUI | undefined;
-	if (fileToRenameId) {
-		fileToRename = files.find((file) => file.id === fileToRenameId);
-	}
+	const selectedFiles = useSelectedFiles();
 
 	const openSelectedFiles = () => {
 		if (selectedFiles.length === 1 && selectedFiles[0].fileType === FILE_TYPE.DIRECTORY) {
@@ -101,15 +97,6 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 		triggerRenameForSelectedFiles,
 	};
 
-	const filesToShowWithTags: FileForUI[] = files.map((file) => ({
-		...file,
-		tags: file.ctime === undefined ? [] : getTagsOfFile({ uri: file.uri, ctime: file.ctime }),
-	}));
-
-	function selectFiles(files: FileForUI[]) {
-		setIdsOfSelectedFiles(files.map((file) => file.id));
-	}
-
 	function openFileOrDirectory(file: FileForUI) {
 		if (file.fileType === FILE_TYPE.DIRECTORY) {
 			changeDirectory(file.uri.path);
@@ -130,19 +117,9 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 	return (
 		<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
 			<Stack alignItems="stretch">
-				<PanelActions
-					explorerId={explorerId}
-					filesToShow={filesToShowWithTags}
-					idsOfSelectedFiles={idsOfSelectedFiles}
-					setIdsOfSelectedFiles={setIdsOfSelectedFiles}
-					{...fileEditActions}
-				/>
+				<PanelActions {...fileEditActions} />
 				<Divider orientation="vertical" flexItem />
-				<ExplorerActions
-					explorerId={explorerId}
-					selectedFiles={selectedFiles}
-					{...fileEditActions}
-				/>
+				<ExplorerActions {...fileEditActions} />
 			</Stack>
 
 			<Box css={[commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical]}>
@@ -159,12 +136,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 					<TableBody>
 						{dataAvailable ? (
 							<FilesTableBody
-								explorerId={explorerId}
-								filesToShow={filesToShowWithTags}
-								selectedFiles={selectedFiles}
-								selectFiles={selectFiles}
 								openFileOrDirectory={openFileOrDirectory}
-								fileToRename={fileToRename}
 								renameFile={renameFileHandler}
 								abortRename={abortRename}
 							/>
@@ -183,29 +155,28 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 };
 
 type FilesTableBodyProps = {
-	explorerId: string;
-	filesToShow: FileForUI[];
-	selectedFiles: FileForUI[];
-	selectFiles: (files: FileForUI[]) => void;
 	openFileOrDirectory: (file: FileForUI) => void;
-	fileToRename?: FileForUI;
 	renameFile: (fileToRename: FileForUI, newName: string) => void;
 	abortRename: () => void;
 };
 
 const FilesTableBody: React.FC<FilesTableBodyProps> = ({
-	explorerId,
-	filesToShow,
-	selectedFiles,
-	selectFiles,
 	openFileOrDirectory,
-	fileToRename,
 	renameFile,
 	abortRename,
 }) => {
+	const selectedFiles = useSelectedFiles();
+	const fileToRename = useFileToRename();
+	const filesToShow = useFilesToShow();
+	const setIdsOfSelectedFiles = useSetIdsOfSelectedFiles();
+
 	const filterInput = useFilterInput();
 	const fileIdSelectionGotStartedWith = useFileIdSelectionGotStartedWith();
 	const setFileIdSelectionGotStartedWith = useSetFileIdSelectionGotStartedWith();
+
+	function selectFiles(files: FileForUI[]) {
+		setIdsOfSelectedFiles(files.map((file) => file.id));
+	}
 
 	const lengthOfSelectedFiles = selectedFiles.length;
 	const idOfFirstSelectedFile = selectedFiles[0]?.id;
@@ -219,43 +190,6 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 		fileIdSelectionGotStartedWith,
 		setFileIdSelectionGotStartedWith,
 	]);
-
-	/*
-	 * Compute files to show:
-	 * - if no filter input is given, just sort the files.
-	 *   Directories first and files second. Each section sorted by name.
-	 * - otherwise, let "match-sorter" do its job for filtering and sorting.
-	 */
-	if (strings.isNullishOrEmpty(filterInput)) {
-		filesToShow = arrays
-			.wrap(filesToShow)
-			.stableSort((a, b) => {
-				if (a.name.toLocaleLowerCase() < b.name.toLocaleLowerCase()) {
-					return -1;
-				} else if (a.name.toLocaleLowerCase() > b.name.toLocaleLowerCase()) {
-					return 1;
-				}
-				return 0;
-			})
-			.stableSort((a, b) => {
-				if (a.fileType === FILE_TYPE.DIRECTORY && b.fileType === FILE_TYPE.FILE) {
-					return -1;
-				} else if (a.fileType === FILE_TYPE.FILE && b.fileType === FILE_TYPE.DIRECTORY) {
-					return 1;
-				}
-				return 0;
-			})
-			.getValue();
-	} else {
-		filesToShow = arrays
-			.wrap(filesToShow)
-			.matchSort(filterInput, {
-				// avoid "WORD STARTS WITH" ranking of match-sorter by replacing each blank with another character
-				keys: [(file) => file.name.replace(' ', '_')],
-				threshold: matchSorter.rankings.CONTAINS,
-			})
-			.getValue();
-	}
 
 	// on mount, and every time the filter input changes, reset selection (just select the first file)
 	const prevFilterInput = usePrevious(filterInput);

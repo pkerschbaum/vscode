@@ -41,12 +41,14 @@ export function useGetTags() {
 		React.useCallback((storageKey) => storageKey === STORAGE_KEY.TAGS, []),
 	);
 
+	const getTags = React.useCallback(() => {
+		const tags = storage.get(STORAGE_KEY.TAGS) ?? {};
+		logger.debug(`got tags from storage`, { tags });
+		return tags;
+	}, [storage]);
+
 	return {
-		getTags: () => {
-			const tags = storage.get(STORAGE_KEY.TAGS) ?? {};
-			logger.debug(`got tags from storage`, { tags });
-			return tags;
-		},
+		getTags,
 	};
 }
 

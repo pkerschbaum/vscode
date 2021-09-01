@@ -15,21 +15,19 @@ import { TextBox } from 'vs/nex/ui/elements/TextBox';
 import { AddTag } from 'vs/nex/ui/explorer-actions/AddTag';
 import { CreateFolder } from 'vs/nex/ui/explorer-actions/CreateFolder';
 import {
-	FileForUI,
 	useFileProviderDraftPasteState,
 	useFileProviderFocusedExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import { useAddTags } from 'vs/nex/platform/file.hooks';
 import { useCreateFolder, usePasteFiles } from 'vs/nex/platform/explorer.hooks';
 import { useAddTag, useGetTags, useRemoveTags } from 'vs/nex/platform/tag.hooks';
+import { useExplorerId, useSelectedFiles } from 'vs/nex/ui/Explorer.context';
 import { useClipboardResources } from 'vs/nex/NexClipboard.context';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
 import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
 
 type ExplorerActionsProps = {
-	explorerId: string;
-	selectedFiles: FileForUI[];
 	openSelectedFiles: () => void;
 	scheduleDeleteSelectedFiles: () => void;
 	copySelectedFiles: () => void;
@@ -48,8 +46,6 @@ export const ExplorerActions: React.FC<ExplorerActionsProps> = (props) => {
 };
 
 const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: string }> = ({
-	explorerId,
-	selectedFiles,
 	focusedExplorerId,
 	openSelectedFiles,
 	scheduleDeleteSelectedFiles,
@@ -58,6 +54,8 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps & { focusedExplorerId: 
 	triggerRenameForSelectedFiles,
 }) => {
 	const draftPasteState = useFileProviderDraftPasteState();
+	const selectedFiles = useSelectedFiles();
+	const explorerId = useExplorerId();
 
 	const { pasteFiles } = usePasteFiles(focusedExplorerId);
 	const { createFolder } = useCreateFolder(focusedExplorerId);
