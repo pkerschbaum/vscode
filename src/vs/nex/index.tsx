@@ -17,11 +17,11 @@ import { createTheme } from 'vs/nex/theme';
 import { ThemeProvider } from 'vs/nex/theme.provider';
 import { store } from 'vs/nex/platform/store/store';
 import { useDebounce } from 'vs/nex/platform/store/util/hooks.util';
-import { ModeServiceProvider } from 'vs/nex/ModeService.provider';
-import { ModelServiceProvider } from 'vs/nex/ModelService.provider';
-import { NexFileSystemProvider } from 'vs/nex/NexFileSystem.provider';
-import { ClipboardResourcesContext, NexClipboardProvider } from 'vs/nex/NexClipboard.provider';
-import { NexStorageProvider } from 'vs/nex/NexStorage.provider';
+import { ModeServiceProvider } from 'vs/nex/ModeService.context';
+import { ModelServiceProvider } from 'vs/nex/ModelService.context';
+import { NexFileSystemProvider } from 'vs/nex/NexFileSystem.context';
+import { ClipboardResourcesContext, NexClipboardProvider } from 'vs/nex/NexClipboard.context';
+import { NexStorageProvider } from 'vs/nex/NexStorage.context';
 
 const logger = createLogger('index');
 const queryClient = new QueryClient();

@@ -22,7 +22,7 @@ import {
 import { useAddTags } from 'vs/nex/platform/file.hooks';
 import { useCreateFolder, usePasteFiles } from 'vs/nex/platform/explorer.hooks';
 import { useAddTag, useGetTags, useRemoveTags } from 'vs/nex/platform/tag.hooks';
-import { useClipboardResources } from 'vs/nex/NexClipboard.provider';
+import { useClipboardResources } from 'vs/nex/NexClipboard.context';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
 import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';

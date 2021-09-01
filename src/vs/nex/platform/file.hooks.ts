@@ -8,9 +8,9 @@ import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { IFileStatWithMetadata } from 'vs/platform/files/common/files';
 
 import { actions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
-import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
-import { useNexClipboard } from 'vs/nex/NexClipboard.provider';
-import { useNexStorage } from 'vs/nex/NexStorage.provider';
+import { useNexFileSystem } from 'vs/nex/NexFileSystem.context';
+import { useNexClipboard } from 'vs/nex/NexClipboard.context';
+import { useNexStorage } from 'vs/nex/NexStorage.context';
 import { useDispatch } from 'vs/nex/platform/store/store';
 import {
 	useFileProviderProcesses,

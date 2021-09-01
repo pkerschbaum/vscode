@@ -1,4 +1,4 @@
-import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
+import { useNexFileSystem } from 'vs/nex/NexFileSystem.context';
 import { useDispatch } from 'vs/nex/platform/store/store';
 import {
 	actions,

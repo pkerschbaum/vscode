@@ -1,5 +1,3 @@
-import * as React from 'react';
-
 import * as resources from 'vs/base/common/resources';
 import * as uuid from 'vs/base/common/uuid';
 import { extname, basename } from 'vs/base/common/path';
@@ -11,8 +9,8 @@ import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { IFileStat } from 'vs/platform/files/common/files';
 
 import { actions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
-import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
-import { useClipboardResources } from 'vs/nex/NexClipboard.provider';
+import { useNexFileSystem } from 'vs/nex/NexFileSystem.context';
+import { useClipboardResources } from 'vs/nex/NexClipboard.context';
 import { useDispatch } from 'vs/nex/platform/store/store';
 import { PROCESS_STATUS, PROCESS_TYPE, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
 import { createLogger } from 'vs/nex/base/logger/logger';
@@ -260,38 +258,6 @@ export function useRevealCwdInOSExplorer(explorerId: string) {
 
 	return {
 		revealCwdInOSExplorer,
-	};
-}
-
-export function useChangeFilterInput(explorerId: string) {
-	const dispatch = useDispatch();
-
-	function changeFilterInput(newFilterInput: string) {
-		dispatch(actions.changeFilterInput({ explorerId, newFilterInput }));
-	}
-
-	return {
-		changeFilterInput,
-	};
-}
-
-export function useChangeFileIdSelectionGotStartedWith(explorerId: string) {
-	const dispatch = useDispatch();
-
-	const changeFileIdSelectionGotStartedWith = React.useCallback(
-		(newFileIdSelectionGotStartedWith: string) => {
-			dispatch(
-				actions.changeFileIdSelectionGotStartedWith({
-					explorerId,
-					newFileIdSelectionGotStartedWith,
-				}),
-			);
-		},
-		[dispatch, explorerId],
-	);
-
-	return {
-		changeFileIdSelectionGotStartedWith,
 	};
 }
 

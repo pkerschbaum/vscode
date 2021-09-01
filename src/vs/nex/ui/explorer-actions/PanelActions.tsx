@@ -9,17 +9,19 @@ import { Stack } from 'vs/nex/ui/layouts/Stack';
 import {
 	FileForUI,
 	useFileProviderCwd,
-	useFileProviderFileIdSelectionGotStartedWith,
 	useFileProviderFiles,
-	useFileProviderFilterInput,
 	useFileProviderFocusedExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import {
 	useChangeDirectory,
-	useChangeFilterInput,
 	usePasteFiles,
 	useRevealCwdInOSExplorer,
 } from 'vs/nex/platform/explorer.hooks';
+import {
+	useFileIdSelectionGotStartedWith,
+	useFilterInput,
+	useSetFilterInput,
+} from 'vs/nex/ui/Explorer.context';
 import { KEYS, MOUSE_BUTTONS } from 'vs/nex/ui/constants';
 import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
 import { functions } from 'vs/nex/base/utils/functions.util';
@@ -58,7 +60,7 @@ export const PanelActions: React.FC<PanelActionsProps> = ({
 	const { revealCwdInOSExplorer } = useRevealCwdInOSExplorer(explorerId);
 
 	const filterInputRef = React.useRef<HTMLDivElement>(null);
-	const fileIdSelectionGotStartedWith = useFileProviderFileIdSelectionGotStartedWith(explorerId);
+	const fileIdSelectionGotStartedWith = useFileIdSelectionGotStartedWith();
 
 	const isFocusedExplorer = explorerId === focusedExplorerId;
 	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
@@ -282,8 +284,8 @@ type FilterInputProps = {
 };
 
 const FilterInput: React.FC<FilterInputProps> = ({ filterInputRef, explorerId }) => {
-	const filterInput = useFileProviderFilterInput(explorerId);
-	const { changeFilterInput } = useChangeFilterInput(explorerId);
+	const filterInput = useFilterInput();
+	const setFilterInput = useSetFilterInput();
 
 	return (
 		<TextField
@@ -315,7 +317,7 @@ const FilterInput: React.FC<FilterInputProps> = ({ filterInputRef, explorerId })
 			value={filterInput}
 			onChange={(e) => {
 				const newVal = e.target.value.trimStart();
-				changeFilterInput(newVal);
+				setFilterInput(newVal);
 
 				// if input is empty now, blur the input field
 				if (newVal === '' && filterInputRef.current !== null) {

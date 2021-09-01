@@ -16,9 +16,7 @@ import { TableBody } from 'vs/nex/ui/elements/DataTable/TableBody';
 import { TableHead } from 'vs/nex/ui/elements/DataTable/TableHead';
 import {
 	FileForUI,
-	useFileProviderFileIdSelectionGotStartedWith,
 	useFileProviderFiles,
-	useFileProviderFilterInput,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import {
 	useCutOrCopyFiles,
@@ -28,10 +26,12 @@ import {
 	useRenameFile,
 	useScheduleMoveFilesToTrash,
 } from 'vs/nex/platform/file.hooks';
+import { useChangeDirectory } from 'vs/nex/platform/explorer.hooks';
 import {
-	useChangeDirectory,
-	useChangeFileIdSelectionGotStartedWith,
-} from 'vs/nex/platform/explorer.hooks';
+	useFileIdSelectionGotStartedWith,
+	useFilterInput,
+	useSetFileIdSelectionGotStartedWith,
+} from 'vs/nex/ui/Explorer.context';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
 import { strings } from 'vs/nex/base/utils/strings.util';
@@ -203,22 +203,21 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 	renameFile,
 	abortRename,
 }) => {
-	const filterInput = useFileProviderFilterInput(explorerId);
-	const fileIdSelectionGotStartedWith = useFileProviderFileIdSelectionGotStartedWith(explorerId);
-	const { changeFileIdSelectionGotStartedWith } =
-		useChangeFileIdSelectionGotStartedWith(explorerId);
+	const filterInput = useFilterInput();
+	const fileIdSelectionGotStartedWith = useFileIdSelectionGotStartedWith();
+	const setFileIdSelectionGotStartedWith = useSetFileIdSelectionGotStartedWith();
 
 	const lengthOfSelectedFiles = selectedFiles.length;
 	const idOfFirstSelectedFile = selectedFiles[0]?.id;
 	React.useEffect(() => {
 		if (lengthOfSelectedFiles === 1 && fileIdSelectionGotStartedWith !== idOfFirstSelectedFile) {
-			changeFileIdSelectionGotStartedWith(idOfFirstSelectedFile);
+			setFileIdSelectionGotStartedWith(idOfFirstSelectedFile);
 		}
 	}, [
 		lengthOfSelectedFiles,
 		idOfFirstSelectedFile,
 		fileIdSelectionGotStartedWith,
-		changeFileIdSelectionGotStartedWith,
+		setFileIdSelectionGotStartedWith,
 	]);
 
 	/*

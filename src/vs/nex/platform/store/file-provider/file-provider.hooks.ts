@@ -5,9 +5,9 @@ import { URI, UriComponents } from 'vs/base/common/uri';
 import { FileKind } from 'vs/platform/files/common/files';
 import { getIconClasses } from 'vs/editor/common/services/getIconClasses';
 
-import { useModelService } from 'vs/nex/ModelService.provider';
-import { useModeService } from 'vs/nex/ModeService.provider';
-import { useNexFileSystem } from 'vs/nex/NexFileSystem.provider';
+import { useModelService } from 'vs/nex/ModelService.context';
+import { useModeService } from 'vs/nex/ModeService.context';
+import { useNexFileSystem } from 'vs/nex/NexFileSystem.context';
 import { useSelector } from 'vs/nex/platform/store/store';
 import { File, FILE_TYPE, PROCESS_STATUS, PROCESS_TYPE, Tag } from 'vs/nex/platform/file-types';
 import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
@@ -24,12 +24,6 @@ export const useFileProviderExplorers = () =>
 
 export const useFileProviderCwd = (explorerId: string) =>
 	useSelector((state) => state.fileProvider.explorers[explorerId].cwd);
-
-export const useFileProviderFilterInput = (explorerId: string) =>
-	useSelector((state) => state.fileProvider.explorers[explorerId].filterInput);
-
-export const useFileProviderFileIdSelectionGotStartedWith = (explorerId: string) =>
-	useSelector((state) => state.fileProvider.explorers[explorerId].fileIdSelectionGotStartedWith);
 
 export const useFileProviderFocusedExplorerId = () =>
 	useSelector((state) => state.fileProvider.focusedExplorerId);

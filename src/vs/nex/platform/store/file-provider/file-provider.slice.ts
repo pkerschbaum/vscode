@@ -18,8 +18,6 @@ export type FileProviderState = {
 		[id: string]: {
 			cwd: UriComponents;
 			scheduledToRemove?: boolean;
-			filterInput: string;
-			fileIdSelectionGotStartedWith?: string;
 		};
 	};
 	focusedExplorerId?: string;
@@ -45,16 +43,6 @@ type ChangeCwdPayload = {
 
 type ChangeFocusedExplorerPayload = {
 	explorerId: string;
-};
-
-type ChangeFilterInputPayload = {
-	explorerId: string;
-	newFilterInput: string;
-};
-
-type ChangeFileIdSelectionGotStartedWithPayload = {
-	explorerId: string;
-	newFileIdSelectionGotStartedWith: string;
 };
 
 type CutOrCopyFilesPayload = {
@@ -105,10 +93,6 @@ export const actions = {
 	markExplorerForRemoval: createAction<RemoveExplorerPayload>('EXPLORER_MARKED_FOR_REMOVAL'),
 	removeExplorer: createAction<RemoveExplorerPayload>('EXPLORER_REMOVED'),
 	changeCwd: createAction<ChangeCwdPayload>('CWD_CHANGED'),
-	changeFilterInput: createAction<ChangeFilterInputPayload>('FILTER_INPUT_CHANGED'),
-	changeFileIdSelectionGotStartedWith: createAction<ChangeFileIdSelectionGotStartedWithPayload>(
-		'FILE_ID_SELECTION_GOT_STARTED_WITH_CHANGED',
-	),
 	changeFocusedExplorer: createAction<ChangeFocusedExplorerPayload>('FOCUSED_EXPLORER_CHANGED'),
 	cutOrCopyFiles: createAction<CutOrCopyFilesPayload>('FILES_CUT_OR_COPIED'),
 	addPasteProcess: createAction<AddPasteProcessPayload>('PASTE_PROCESS_ADDED'),
@@ -130,7 +114,7 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 				);
 			}
 
-			state.explorers[explorerId] = { cwd, filterInput: '' };
+			state.explorers[explorerId] = { cwd };
 			if (state.focusedExplorerId === undefined) {
 				state.focusedExplorerId = explorerId;
 			}
@@ -167,31 +151,7 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 				);
 			}
 
-			state.explorers[explorerId] = { cwd: newCwd, filterInput: '' };
-		})
-		.addCase(actions.changeFilterInput, (state, action) => {
-			const { explorerId, newFilterInput } = action.payload;
-
-			if (!isExplorerIdPresent(state, explorerId)) {
-				throw new Error(
-					`event must be dispatched with an existing explorerId, ` +
-						`but given explorerId is not present in state! explorerId=${explorerId}`,
-				);
-			}
-
-			state.explorers[explorerId].filterInput = newFilterInput;
-		})
-		.addCase(actions.changeFileIdSelectionGotStartedWith, (state, action) => {
-			const { explorerId, newFileIdSelectionGotStartedWith } = action.payload;
-
-			if (!isExplorerIdPresent(state, explorerId)) {
-				throw new Error(
-					`event must be dispatched with an existing explorerId, ` +
-						`but given explorerId is not present in state! explorerId=${explorerId}`,
-				);
-			}
-
-			state.explorers[explorerId].fileIdSelectionGotStartedWith = newFileIdSelectionGotStartedWith;
+			state.explorers[explorerId] = { cwd: newCwd };
 		})
 		.addCase(actions.changeFocusedExplorer, (state, action) => {
 			const { explorerId } = action.payload;
