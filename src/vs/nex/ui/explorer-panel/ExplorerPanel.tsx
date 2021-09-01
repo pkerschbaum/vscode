@@ -4,7 +4,7 @@ import { matchSorter } from 'match-sorter';
 
 import { URI } from 'vs/base/common/uri';
 
-import { styles } from 'vs/nex/ui/ExplorerPanel.styles';
+import { styles } from 'vs/nex/ui/explorer-panel/ExplorerPanel.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { TextBox } from 'vs/nex/ui/elements/TextBox';
@@ -38,8 +38,8 @@ import { strings } from 'vs/nex/base/utils/strings.util';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
 import { usePrevious } from 'vs/nex/ui/utils/events.hooks';
-import { ExplorerActions } from 'vs/nex/ui/ExplorerActions';
-import { PanelActions } from 'vs/nex/ui/PanelActions';
+import { ExplorerActions } from 'vs/nex/ui/explorer-actions/ExplorerActions';
+import { PanelActions } from 'vs/nex/ui/explorer-actions/PanelActions';
 import { getNativeFileIconDataURL, onFileDragStart } from 'vs/nex/ipc/electron-sandbox/nex';
 
 const USE_NATIVE_ICON_FOR_REGEX = /(?:exe|ico|dll)/i;

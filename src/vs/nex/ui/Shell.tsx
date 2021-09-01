@@ -3,15 +3,12 @@ import { Box, Tabs, Tab, Button, IconButton, Tooltip } from '@material-ui/core';
 import AddCircleOutlineOutlinedIcon from '@material-ui/icons/AddCircleOutlineOutlined';
 import CloseOutlinedIcon from '@material-ui/icons/CloseOutlined';
 
-import { URI } from 'vs/base/common/uri';
-
-import { styles } from 'vs/nex/ui/App.styles';
+import { styles } from 'vs/nex/ui/Shell.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
-import { ExplorerPanel } from 'vs/nex/ui/ExplorerPanel';
+import { ExplorerPanelContainer } from 'vs/nex/ui/ExplorerPanelContainer';
 import { ProcessCard } from 'vs/nex/ui/process/ProcessCard';
 import {
-	useFileProviderCwd,
 	useFileProviderExplorers,
 	useFileProviderFocusedExplorerId,
 	useFileProviderProcesses,
@@ -28,7 +25,7 @@ import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { objects } from 'vs/nex/base/utils/objects.util';
 
-export const App: React.FC = () => {
+export const Shell: React.FC = () => {
 	const explorers = useFileProviderExplorers();
 	const focusedExplorerId = useFileProviderFocusedExplorerId();
 	const processes = useFileProviderProcesses();
@@ -180,16 +177,6 @@ const ExplorerPanelTab = React.memo<ExplorerPanelTabProps>(function ExplorerPane
 		</Button>
 	);
 }, objects.shallowIsEqualIgnoreFunctions);
-
-type ExplorerPanelContainerProps = { explorerId: string };
-
-const ExplorerPanelContainer = React.memo<ExplorerPanelContainerProps>(
-	function ExplorerPanelContainer({ explorerId }) {
-		const cwd = useFileProviderCwd(explorerId);
-
-		return <ExplorerPanel key={URI.from(cwd).toString()} explorerId={explorerId} />;
-	},
-);
 
 type TabPanelProps = {
 	index: string;

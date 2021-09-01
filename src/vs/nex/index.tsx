@@ -12,7 +12,7 @@ import { NexFileSystem } from 'vs/nex/platform/logic/file-system';
 import { NexClipboard } from 'vs/nex/platform/logic/clipboard';
 import { NexStorage } from 'vs/nex/platform/logic/storage';
 import { createLogger } from 'vs/nex/base/logger/logger';
-import { App } from 'vs/nex/ui/App';
+import { Shell } from 'vs/nex/ui/Shell';
 import { createTheme } from 'vs/nex/theme';
 import { ThemeProvider } from 'vs/nex/theme.provider';
 import { store } from 'vs/nex/platform/store/store';
@@ -77,7 +77,7 @@ const Root: React.FC<{ appDependencies: AppDependencies }> = ({ appDependencies 
 										<ThemeProvider theme={theme}>
 											<Provider store={store}>
 												<CssBaseline />
-												<App />
+												<Shell />
 											</Provider>
 										</ThemeProvider>
 									</ClipboardResourcesContext>

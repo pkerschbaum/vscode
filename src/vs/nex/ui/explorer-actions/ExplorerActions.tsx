@@ -8,12 +8,12 @@ import EditOutlinedIcon from '@material-ui/icons/EditOutlined';
 import DeleteOutlinedIcon from '@material-ui/icons/DeleteOutlined';
 
 import { config } from 'vs/nex/config';
-import { styles } from 'vs/nex/ui/ExplorerActions.styles';
+import { styles } from 'vs/nex/ui/explorer-actions/ExplorerActions.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { TextBox } from 'vs/nex/ui/elements/TextBox';
-import { AddTag } from 'vs/nex/ui/AddTag';
-import { CreateFolder } from 'vs/nex/ui/CreateFolder';
+import { AddTag } from 'vs/nex/ui/explorer-actions/AddTag';
+import { CreateFolder } from 'vs/nex/ui/explorer-actions/CreateFolder';
 import {
 	FileForUI,
 	useFileProviderDraftPasteState,

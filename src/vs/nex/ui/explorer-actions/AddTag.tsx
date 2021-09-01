@@ -15,7 +15,7 @@ import {
 import CancelIcon from '@material-ui/icons/Cancel';
 import { css } from '@emotion/react';
 
-import { styles } from 'vs/nex/ui/AddTag.styles';
+import { styles } from 'vs/nex/ui/explorer-actions/AddTag.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { Tag } from 'vs/nex/platform/file-types';
