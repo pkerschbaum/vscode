@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, BoxProps } from '@material-ui/core';
+import { Box, BoxProps } from '@mui/material';
 
 import { styles } from 'vs/nex/ui/elements/TextBox.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';

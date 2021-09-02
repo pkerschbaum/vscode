@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Button, Popover, TextField } from '@material-ui/core';
-import CreateNewFolderOutlinedIcon from '@material-ui/icons/CreateNewFolderOutlined';
+import { Button, Popover, TextField } from '@mui/material';
+import CreateNewFolderOutlinedIcon from '@mui/icons-material/CreateNewFolderOutlined';
 
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { strings } from 'vs/nex/base/utils/strings.util';

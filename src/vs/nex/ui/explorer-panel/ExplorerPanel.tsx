@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, Chip, Skeleton, TextField } from '@material-ui/core';
+import { Box, Chip, Skeleton, TextField } from '@mui/material';
 
 import { URI } from 'vs/base/common/uri';
 

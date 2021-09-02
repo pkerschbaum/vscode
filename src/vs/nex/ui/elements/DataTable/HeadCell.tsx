@@ -1,4 +1,4 @@
-import { TableCell, TableCellProps, TableSortLabel } from '@material-ui/core';
+import { TableCell, TableCellProps, TableSortLabel } from '@mui/material';
 
 export enum SortDirection {
 	ASC = 'ASC',

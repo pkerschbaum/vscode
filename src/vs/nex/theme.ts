@@ -3,13 +3,13 @@ import {
 	createTheme as createMuiTheme,
 	ThemeOptions as MuiThemeOptions,
 	Theme as MuiTheme,
-} from '@material-ui/core/styles';
-import { Localization } from '@material-ui/core/locale';
+} from '@mui/material/styles';
+import { Localization } from '@mui/material/locale';
 import { css } from '@emotion/react';
 
 import { DELETE_PROCESS_STATUS, PASTE_PROCESS_STATUS } from 'vs/nex/platform/file-types';
 
-declare module '@material-ui/core/styles/createTheme' {
+declare module '@mui/material/styles/createTheme' {
 	interface Theme {
 		availableTagColors: string[];
 		processStatusColors: {

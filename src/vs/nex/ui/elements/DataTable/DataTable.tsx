@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Paper, Table, TableContainer } from '@material-ui/core';
+import { Paper, Table, TableContainer } from '@mui/material';
 import { css } from '@emotion/react';
 
 import { Stack } from 'vs/nex/ui/layouts/Stack';

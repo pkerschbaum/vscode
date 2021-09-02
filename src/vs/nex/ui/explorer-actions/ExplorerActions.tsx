@@ -1,13 +1,13 @@
 import * as React from 'react';
-import { Box, Button, Divider, TextField, Tooltip } from '@material-ui/core';
-import ArrowUpwardOutlinedIcon from '@material-ui/icons/ArrowUpwardOutlined';
-import FolderOutlinedIcon from '@material-ui/icons/FolderOutlined';
-import LaunchOutlinedIcon from '@material-ui/icons/LaunchOutlined';
-import ContentCopyOutlinedIcon from '@material-ui/icons/ContentCopyOutlined';
-import ContentCutOutlinedIcon from '@material-ui/icons/ContentCutOutlined';
-import ContentPasteOutlinedIcon from '@material-ui/icons/ContentPasteOutlined';
-import EditOutlinedIcon from '@material-ui/icons/EditOutlined';
-import DeleteOutlinedIcon from '@material-ui/icons/DeleteOutlined';
+import { Box, Button, Divider, TextField, Tooltip } from '@mui/material';
+import ArrowUpwardOutlinedIcon from '@mui/icons-material/ArrowUpwardOutlined';
+import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
+import LaunchOutlinedIcon from '@mui/icons-material/LaunchOutlined';
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
+import ContentCutOutlinedIcon from '@mui/icons-material/ContentCutOutlined';
+import ContentPasteOutlinedIcon from '@mui/icons-material/ContentPasteOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 
 import { URI, UriComponents } from 'vs/base/common/uri';
 

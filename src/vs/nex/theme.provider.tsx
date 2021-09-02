@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ThemeProvider as MuiThemeProvider, Theme } from '@material-ui/core/styles';
+import { ThemeProvider as MuiThemeProvider, Theme } from '@mui/material/styles';
 import { ThemeProvider as EmoThemeProvider } from '@emotion/react';
 
 export const ThemeProvider: React.FC<{

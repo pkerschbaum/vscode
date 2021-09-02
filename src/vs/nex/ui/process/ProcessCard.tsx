@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Paper, useTheme } from '@material-ui/core';
+import { Paper, useTheme } from '@mui/material';
 
 import { styles } from 'vs/nex/ui/process/ProcessCard.styles';
 import { Process, PROCESS_TYPE } from 'vs/nex/platform/file-types';

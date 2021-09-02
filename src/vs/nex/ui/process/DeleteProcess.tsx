@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { Button, IconButton, LinearProgress, Tooltip } from '@material-ui/core';
-import ClearAllIcon from '@material-ui/icons/ClearAll';
-import DeleteOutlineOutlinedIcon from '@material-ui/icons/DeleteOutlineOutlined';
-import DeleteForeverOutlinedIcon from '@material-ui/icons/DeleteForeverOutlined';
+import { Button, IconButton, LinearProgress, Tooltip } from '@mui/material';
+import ClearAllIcon from '@mui/icons-material/ClearAll';
+import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import DeleteForeverOutlinedIcon from '@mui/icons-material/DeleteForeverOutlined';
 
 import { URI } from 'vs/base/common/uri';
 

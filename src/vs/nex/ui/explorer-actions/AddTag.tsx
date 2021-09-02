@@ -11,8 +11,8 @@ import {
 	Paper,
 	TextField,
 	useTheme,
-} from '@material-ui/core';
-import CancelIcon from '@material-ui/icons/Cancel';
+} from '@mui/material';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { css } from '@emotion/react';
 
 import { styles } from 'vs/nex/ui/explorer-actions/AddTag.styles';

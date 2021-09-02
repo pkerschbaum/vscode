@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { TableHead as MuiTableHead, TableRow } from '@material-ui/core';
+import { TableHead as MuiTableHead, TableRow } from '@mui/material';
 
 type TableHeadProps = {
 	children: React.ReactNode[];

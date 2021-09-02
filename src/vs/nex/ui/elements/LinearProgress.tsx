@@ -4,7 +4,7 @@ import {
 	Box,
 	LinearProgress as MuiLinearProgress,
 	LinearProgressProps as MuiLinearProgressProps,
-} from '@material-ui/core';
+} from '@mui/material';
 
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { TextBox } from 'vs/nex/ui/elements/TextBox';

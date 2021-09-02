@@ -2,8 +2,8 @@ import * as React from 'react';
 import { render } from 'react-dom';
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { CssBaseline } from '@material-ui/core';
-import { enUS } from '@material-ui/core/locale';
+import { CssBaseline } from '@mui/material';
+import { enUS } from '@mui/material/locale';
 
 import { IModeService } from 'vs/editor/common/services/modeService';
 import { IModelService } from 'vs/editor/common/services/modelService';

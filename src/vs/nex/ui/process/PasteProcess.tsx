@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { Box, Button, IconButton, Tooltip } from '@material-ui/core';
-import DoubleArrowIcon from '@material-ui/icons/DoubleArrow';
-import ClearAllIcon from '@material-ui/icons/ClearAll';
+import { Box, Button, IconButton, Tooltip } from '@mui/material';
+import DoubleArrowIcon from '@mui/icons-material/DoubleArrow';
+import ClearAllIcon from '@mui/icons-material/ClearAll';
 
 import { URI } from 'vs/base/common/uri';
 

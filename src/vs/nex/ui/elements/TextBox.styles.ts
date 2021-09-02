@@ -3,7 +3,9 @@ import { css, Theme } from '@emotion/react';
 // adapted from https://github.com/mui-org/material-ui/blob/next/packages/material-ui/src/Typography/Typography.js
 
 export const styles = {
-	textBox: (theme: Theme) => theme.typography.body1.fontSize,
+	textBox: (theme: Theme) => css`
+		font-size: ${theme.typography.body1.fontSize};
+	`,
 
 	textBox_sm: (theme: Theme) => css`
 		font-size: ${theme.typography.body2.fontSize};

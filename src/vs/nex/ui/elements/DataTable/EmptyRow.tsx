@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { TableCell, TableRow } from '@material-ui/core';
+import { TableCell, TableRow } from '@mui/material';
 
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { ROW_HEIGHT } from 'vs/nex/ui/elements/DataTable/Row';

@@ -1,4 +1,4 @@
-import { TableRow, TableRowProps } from '@material-ui/core';
+import { TableRow, TableRowProps } from '@mui/material';
 
 export const ROW_HEIGHT = '3em';
 
