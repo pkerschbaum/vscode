@@ -32,9 +32,7 @@ import {
 	useFileIdSelectionGotStartedWith,
 	useFilesToShow,
 	useFileToRename,
-	useFilterInput,
 	useSelectedFiles,
-	useSetFileIdSelectionGotStartedWith,
 	useSetFileToRenameId,
 	useSetIdsOfSelectedFiles,
 } from 'vs/nex/ui/Explorer.context';
@@ -42,7 +40,6 @@ import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS } from 'vs/nex/ui/constants';
 import { strings } from 'vs/nex/base/utils/strings.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
-import { usePrevious } from 'vs/nex/ui/utils/events.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { ExplorerActions } from 'vs/nex/ui/explorer-actions/ExplorerActions';
 import { getNativeFileIconDataURL, onFileDragStart } from 'vs/nex/ipc/electron-sandbox/nex';
@@ -199,41 +196,7 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 	renameFile,
 	abortRename,
 }) => {
-	const selectedFiles = useSelectedFiles();
-	const fileToRename = useFileToRename();
 	const filesToShow = useFilesToShow();
-	const setIdsOfSelectedFiles = useSetIdsOfSelectedFiles();
-
-	const filterInput = useFilterInput();
-	const fileIdSelectionGotStartedWith = useFileIdSelectionGotStartedWith();
-	const setFileIdSelectionGotStartedWith = useSetFileIdSelectionGotStartedWith();
-
-	function selectFiles(files: FileForUI[]) {
-		setIdsOfSelectedFiles(files.map((file) => file.id));
-	}
-
-	const lengthOfSelectedFiles = selectedFiles.length;
-	const idOfFirstSelectedFile = selectedFiles[0]?.id;
-	React.useEffect(() => {
-		if (lengthOfSelectedFiles === 1 && fileIdSelectionGotStartedWith !== idOfFirstSelectedFile) {
-			setFileIdSelectionGotStartedWith(idOfFirstSelectedFile);
-		}
-	}, [
-		lengthOfSelectedFiles,
-		idOfFirstSelectedFile,
-		fileIdSelectionGotStartedWith,
-		setFileIdSelectionGotStartedWith,
-	]);
-
-	// on mount, and every time the filter input changes, reset selection (just select the first file)
-	const prevFilterInput = usePrevious(filterInput);
-	const isMounting = prevFilterInput === undefined;
-	const filterInputChanged = filterInput !== prevFilterInput;
-	React.useEffect(() => {
-		if ((isMounting || filterInputChanged) && filesToShow.length > 0) {
-			selectFiles([filesToShow[0]]);
-		}
-	});
 
 	return (
 		<>
@@ -241,11 +204,7 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 				<FilesTableRow
 					key={fileForRow.id}
 					filesToShow={filesToShow}
-					selectedFiles={selectedFiles}
-					selectFiles={selectFiles}
-					fileIdSelectionGotStartedWith={fileIdSelectionGotStartedWith}
 					openFileOrDirectory={openFileOrDirectory}
-					fileToRename={fileToRename}
 					renameFile={renameFile}
 					abortRename={abortRename}
 					fileForRow={fileForRow}
@@ -258,11 +217,7 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 
 type FilesTableRowProps = {
 	filesToShow: FileForUI[];
-	selectedFiles: FileForUI[];
-	selectFiles: (files: FileForUI[]) => void;
-	fileIdSelectionGotStartedWith?: string;
 	openFileOrDirectory: (file: FileForUI) => void;
-	fileToRename?: FileForUI;
 	renameFile: (fileToRename: FileForUI, newName: string) => void;
 	abortRename: () => void;
 
@@ -272,17 +227,21 @@ type FilesTableRowProps = {
 
 const FilesTableRow: React.FC<FilesTableRowProps> = ({
 	filesToShow,
-	selectedFiles,
-	selectFiles,
-	fileIdSelectionGotStartedWith,
 	openFileOrDirectory,
-	fileToRename,
 	renameFile,
 	abortRename,
 	fileForRow,
 	idxOfFileForRow,
 }) => {
+	const selectedFiles = useSelectedFiles();
+	const fileToRename = useFileToRename();
+	const fileIdSelectionGotStartedWith = useFileIdSelectionGotStartedWith();
+	const setIdsOfSelectedFiles = useSetIdsOfSelectedFiles();
 	const { removeTags } = useRemoveTags();
+
+	function selectFiles(files: FileForUI[]) {
+		setIdsOfSelectedFiles(files.map((file) => file.id));
+	}
 
 	const [nativeIconDataURL, setNativeIconDataURL] = React.useState<string | undefined>();
 

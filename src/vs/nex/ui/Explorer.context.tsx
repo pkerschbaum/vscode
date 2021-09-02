@@ -9,6 +9,7 @@ import {
 	FileForUI,
 	useFileProviderFiles,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
+import { usePrevious } from 'vs/nex/ui/utils/events.hooks';
 
 type ExplorerContextValue = {
 	values: {
@@ -106,6 +107,29 @@ export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (
 		return result;
 	}, [filterInput, filesWithTags]);
 
+	const lengthOfSelectedFiles = selectedFiles.length;
+	const idOfFirstSelectedFile = selectedFiles[0]?.id;
+	React.useEffect(() => {
+		if (lengthOfSelectedFiles === 1 && fileIdSelectionGotStartedWith !== idOfFirstSelectedFile) {
+			setFileIdSelectionGotStartedWith(idOfFirstSelectedFile);
+		}
+	}, [
+		lengthOfSelectedFiles,
+		idOfFirstSelectedFile,
+		fileIdSelectionGotStartedWith,
+		setFileIdSelectionGotStartedWith,
+	]);
+
+	// on mount, and every time the filter input changes, reset selection (just select the first file)
+	const prevFilterInput = usePrevious(filterInput);
+	const isMounting = prevFilterInput === undefined;
+	const filterInputChanged = filterInput !== prevFilterInput;
+	React.useEffect(() => {
+		if ((isMounting || filterInputChanged) && filesToShow.length > 0) {
+			setIdsOfSelectedFiles([filesToShow[0].id]);
+		}
+	}, [isMounting, filterInputChanged, filesToShow]);
+
 	return (
 		<ExplorerContext.Provider
 			value={{
@@ -189,11 +213,6 @@ export function useFileToRename() {
 export function useSetFilterInput() {
 	const contextValue = useExplorerContext();
 	return contextValue.actions.setFilterInput;
-}
-
-export function useSetFileIdSelectionGotStartedWith() {
-	const contextValue = useExplorerContext();
-	return contextValue.actions.setFileIdSelectionGotStartedWith;
 }
 
 export function useSetIdsOfSelectedFiles() {

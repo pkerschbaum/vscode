@@ -233,12 +233,11 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps> = ({
 		{ condition: (e) => e.altKey && e.key === KEYS.ARROW_LEFT, handler: navigateUp },
 		{
 			condition: (e) =>
-				e.key !== KEYS.BACKSPACE &&
+				!e.altKey &&
+				!e.ctrlKey &&
 				e.key !== KEYS.SHIFT &&
 				e.key !== KEYS.TAB &&
 				e.key !== KEYS.F2 &&
-				!e.altKey &&
-				!e.ctrlKey &&
 				filterInputRef.current !== null,
 			handler: () => {
 				if (filterInputRef.current !== null) {
