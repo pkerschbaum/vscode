@@ -19,8 +19,13 @@ export type Process = {
 	id: string;
 } & (
 	| {
-			status: PROCESS_STATUS.RUNNING | PROCESS_STATUS.SUCCESS;
+			status:
+				| PROCESS_STATUS.RUNNING
+				| PROCESS_STATUS.SUCCESS
+				| PROCESS_STATUS.ABORT_REQUESTED
+				| PROCESS_STATUS.ABORT_SUCCESS;
 			type: PROCESS_TYPE.PASTE;
+			pasteShouldMove: boolean;
 			sourceUris: UriComponents[];
 			totalSize: number;
 			bytesProcessed: number;
@@ -31,6 +36,7 @@ export type Process = {
 	| {
 			status: PROCESS_STATUS.FAILURE;
 			type: PROCESS_TYPE.PASTE;
+			pasteShouldMove: boolean;
 			sourceUris: UriComponents[];
 			totalSize: number;
 			bytesProcessed: number;
@@ -60,6 +66,8 @@ export enum PROCESS_STATUS {
 	RUNNING = 'RUNNING',
 	SUCCESS = 'SUCCESS',
 	FAILURE = 'FAILURE',
+	ABORT_REQUESTED = 'ABORT_REQUESTED',
+	ABORT_SUCCESS = 'ABORT_SUCCESS',
 }
 
 export enum PROCESS_TYPE {

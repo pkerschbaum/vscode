@@ -9,6 +9,7 @@ export const objects = {
 	deepCopyJson,
 	shallowIsEqual,
 	shallowIsEqualIgnoreFunctions,
+	hasMessageProp,
 };
 
 function isEmpty(obj: ObjectLiteral) {
@@ -71,4 +72,12 @@ function shallowIsEqualIgnoreFunctions(obj1: ObjectLiteral, objToCompareWith: Ob
 
 		return objToCompareWith.hasOwnProperty(key) && obj1[key] === objToCompareWith[key];
 	});
+}
+
+function hasMessageProp(obj: unknown): obj is { message: string } {
+	return (
+		typeof obj === 'object' &&
+		obj !== null &&
+		typeof (obj as { message?: unknown }).message === 'string'
+	);
 }

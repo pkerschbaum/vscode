@@ -136,7 +136,7 @@ export function usePasteFiles(explorerId: string) {
 		let totalSize = 0;
 		let bytesProcessed = 0;
 		let progressOfAtLeastOneSourceIsIndeterminate = false;
-		let cancellationTokenSource = new CancellationTokenSource();
+		const cancellationTokenSource = new CancellationTokenSource();
 		const statusPerFile: {
 			[uri: string]: { bytesProcessed: number };
 		} = {};
@@ -158,6 +158,7 @@ export function usePasteFiles(explorerId: string) {
 		dispatch(
 			actions.addPasteProcess({
 				type: PROCESS_TYPE.PASTE,
+				pasteShouldMove: draftPasteState.pasteShouldMove,
 				sourceUris: clipboardResources.map((resource) => resource.toJSON()),
 				id,
 				totalSize,
@@ -190,7 +191,10 @@ export function usePasteFiles(explorerId: string) {
 		}, UPDATE_INTERVAL_MS);
 
 		try {
-			cancellationTokenSource.token.onCancellationRequested(() => clearInterval(intervalId));
+			cancellationTokenSource.token.onCancellationRequested(() => {
+				clearInterval(intervalId);
+				dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.ABORT_REQUESTED }));
+			});
 
 			await Promise.all(
 				pasteInfos.map((pasteInfo) =>
@@ -206,7 +210,11 @@ export function usePasteFiles(explorerId: string) {
 				),
 			);
 
-			dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.SUCCESS }));
+			if (!cancellationTokenSource.token.isCancellationRequested) {
+				dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.SUCCESS }));
+			} else {
+				dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.ABORT_SUCCESS }));
+			}
 		} catch (err: unknown) {
 			dispatch(
 				actions.updatePasteProcess({

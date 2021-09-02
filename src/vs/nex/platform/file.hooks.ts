@@ -30,6 +30,7 @@ import { CustomError } from 'vs/nex/base/custom-error';
 import * as tagHooks from 'vs/nex/platform/tag.hooks';
 import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
 import { strings } from 'vs/nex/base/utils/strings.util';
+import { objects } from 'vs/nex/base/utils/objects.util';
 
 const logger = createLogger('file.hooks');
 
@@ -375,6 +376,20 @@ export async function executeCopyOrMove({
 
 	try {
 		await operation;
+
+		// Also copy tags to destination
+		const tagsOfSourceFile = fileTagActions
+			.getTagsOfFile({
+				uri: sourceFileURI,
+				ctime: sourceFileStat.ctime,
+			})
+			.map((t) => t.id);
+		await fileTagActions.addTags([targetFileURI], tagsOfSourceFile);
+
+		// If move operation was performed, remove tags from source URI
+		if (pasteShouldMove) {
+			fileTagActions.removeTags([sourceFileURI], tagsOfSourceFile);
+		}
 	} catch (err: unknown) {
 		/*
 		 * If an error occurs during copy/move, perform cleanup.
@@ -386,24 +401,16 @@ export async function executeCopyOrMove({
 		} catch {
 			// ignore
 		}
-		throw err;
+
+		if (objects.hasMessageProp(err) && err.message.includes('due to cancellation')) {
+			// paste got cancelled --> don't let error bubble up
+			return;
+		} else {
+			throw err;
+		}
+	} finally {
+		// invalidate files of the target directory
+		const distinctParents = getDistinctParents([sourceFileURI, targetFileURI]);
+		await Promise.all(distinctParents.map((directory) => refreshFiles(directory)));
 	}
-
-	// Also copy tags to destination
-	const tagsOfSourceFile = fileTagActions
-		.getTagsOfFile({
-			uri: sourceFileURI,
-			ctime: sourceFileStat.ctime,
-		})
-		.map((t) => t.id);
-	await fileTagActions.addTags([targetFileURI], tagsOfSourceFile);
-
-	// If move operation was performed, remove tags from source URI
-	if (pasteShouldMove) {
-		fileTagActions.removeTags([sourceFileURI], tagsOfSourceFile);
-	}
-
-	// invalidate files of the target directory
-	const distinctParents = getDistinctParents([sourceFileURI, targetFileURI]);
-	await Promise.all(distinctParents.map((directory) => refreshFiles(directory)));
 }

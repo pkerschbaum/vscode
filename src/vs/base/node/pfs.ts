@@ -581,7 +581,7 @@ async function doCopy(source: string, target: string, payload: ICopyPayload, add
 
 	// Folder
 	if (stat.isDirectory()) {
-		return doCopyDirectory(source, target, stat.mode & COPY_MODE_MASK, payload);
+		return doCopyDirectory(source, target, stat.mode & COPY_MODE_MASK, payload, additionalArgs);
 	}
 
 	// File or file-like
@@ -590,7 +590,7 @@ async function doCopy(source: string, target: string, payload: ICopyPayload, add
 	}
 }
 
-async function doCopyDirectory(source: string, target: string, mode: number, payload: ICopyPayload): Promise<void> {
+async function doCopyDirectory(source: string, target: string, mode: number, payload: ICopyPayload, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
 
 	// Create folder
 	await Promises.mkdir(target, { recursive: true, mode });
@@ -598,7 +598,7 @@ async function doCopyDirectory(source: string, target: string, mode: number, pay
 	// Copy each file recursively
 	const files = await readdir(source);
 	for (const file of files) {
-		await doCopy(join(source, file), join(target, file), payload);
+		await doCopy(join(source, file), join(target, file), payload, additionalArgs);
 	}
 }
 
@@ -618,12 +618,27 @@ async function doCopyFile(source: string, target: string, mode: number, addition
 	return new Promise((resolve, reject) => {
 		const reader = fs.createReadStream(source);
 		const writer = fs.createWriteStream(target, { mode });
+		const progressWatcher = new stream.Transform({
+			transform(chunk: Buffer, _, callback) {
+				if (additionalArgs?.progressCb) {
+					additionalArgs.progressCb({ newBytesRead: chunk.byteLength, forSource: sourceUri });
+				}
+				if (!!additionalArgs?.token?.isCancellationRequested) {
+					callback(new Error(`aborted doCopyFile due to cancellation`));
+				} else {
+					callback(undefined, chunk);
+				}
+			}
+		});
 		const sourceUri = URI.file(source);
 
 		let finished = false;
 		const finish = (error?: Error) => {
 			if (!finished) {
 				finished = true;
+				reader.destroy();
+				writer.destroy();
+				progressWatcher.destroy();
 
 				// in error cases, pass to callback
 				if (error) {
@@ -642,18 +657,6 @@ async function doCopyFile(source: string, target: string, mode: number, addition
 		// we are done (underlying fd has been closed)
 		writer.once('close', () => finish());
 
-		const progressWatcher = new stream.Transform({
-			transform(chunk: Buffer, _, callback) {
-				if (additionalArgs?.progressCb) {
-					additionalArgs.progressCb({ newBytesRead: chunk.byteLength, forSource: sourceUri });
-				}
-				if (!!additionalArgs?.token?.isCancellationRequested) {
-					callback(new Error(`aborted doCopyFile due to cancellation`));
-				} else {
-					callback(undefined, chunk);
-				}
-			}
-		});
 		progressWatcher.once('error', error => finish(error));
 
 		// start piping

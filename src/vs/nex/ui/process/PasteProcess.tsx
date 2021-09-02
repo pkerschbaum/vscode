@@ -44,6 +44,19 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 			);
 			break;
 		}
+		case PROCESS_STATUS.ABORT_REQUESTED: {
+			content = (
+				<TextBox>
+					Cancellation requested, cleaning up files/folders which were currently{' '}
+					{process.pasteShouldMove ? 'moved' : 'copied'}...
+				</TextBox>
+			);
+			break;
+		}
+		case PROCESS_STATUS.ABORT_SUCCESS: {
+			content = <TextBox>Cancellation done</TextBox>;
+			break;
+		}
 		default: {
 			assertUnreachable(process);
 		}
@@ -76,7 +89,8 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 				</Stack>
 
 				{(process.status === PROCESS_STATUS.SUCCESS ||
-					process.status === PROCESS_STATUS.FAILURE) && (
+					process.status === PROCESS_STATUS.FAILURE ||
+					process.status === PROCESS_STATUS.ABORT_SUCCESS) && (
 					<Tooltip title="Discard card">
 						<IconButton autoFocus size="large" onClick={() => removeProcess(process.id)}>
 							<ClearAllIcon fontSize="inherit" />
@@ -87,27 +101,32 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 
 			{content}
 
-			<Box css={[commonStyles.fullWidth, styles.linearProgressBox]}>
-				<LinearProgress
-					value={percentageBytesProcessed}
-					variant={
-						process.progressOfAtLeastOneSourceIsIndeterminate &&
-						process.status === PROCESS_STATUS.RUNNING
-							? 'indeterminate'
-							: 'determinate'
-					}
-				/>
-			</Box>
-
-			{process.status !== PROCESS_STATUS.SUCCESS && (
-				<Stack spacing={0.5}>
-					<TextBox>
-						{formatter.bytes(process.bytesProcessed, { unit: smallestUnitOfTotalSize })}
-					</TextBox>
-					<TextBox>/</TextBox>
-					<TextBox>{formatter.bytes(process.totalSize, { unit: smallestUnitOfTotalSize })}</TextBox>
-				</Stack>
+			{process.status !== PROCESS_STATUS.ABORT_SUCCESS && (
+				<Box css={[commonStyles.fullWidth, styles.linearProgressBox]}>
+					<LinearProgress
+						value={percentageBytesProcessed}
+						variant={
+							process.progressOfAtLeastOneSourceIsIndeterminate &&
+							process.status === PROCESS_STATUS.RUNNING
+								? 'indeterminate'
+								: 'determinate'
+						}
+					/>
+				</Box>
 			)}
+
+			{process.status !== PROCESS_STATUS.SUCCESS &&
+				process.status !== PROCESS_STATUS.ABORT_SUCCESS && (
+					<Stack spacing={0.5}>
+						<TextBox>
+							{formatter.bytes(process.bytesProcessed, { unit: smallestUnitOfTotalSize })}
+						</TextBox>
+						<TextBox>/</TextBox>
+						<TextBox>
+							{formatter.bytes(process.totalSize, { unit: smallestUnitOfTotalSize })}
+						</TextBox>
+					</Stack>
+				)}
 
 			{process.status === PROCESS_STATUS.RUNNING && (
 				<Button onClick={() => process.cancellationTokenSource.cancel()}>Cancel</Button>

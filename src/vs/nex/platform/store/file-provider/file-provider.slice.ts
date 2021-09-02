@@ -60,8 +60,12 @@ type UpdatePasteProcessPayload =
 	  }
 	| {
 			id: string;
-			status?: PROCESS_STATUS.FAILURE;
+			status: PROCESS_STATUS.FAILURE;
 			error: string;
+	  }
+	| {
+			id: string;
+			status: PROCESS_STATUS.ABORT_REQUESTED | PROCESS_STATUS.ABORT_SUCCESS;
 	  };
 
 type AddDeleteProcessPayload = Omit<DeleteProcess, 'status'>;
@@ -195,7 +199,9 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 
 				if (
 					action.payload.status === PROCESS_STATUS.SUCCESS ||
-					action.payload.status === PROCESS_STATUS.FAILURE
+					action.payload.status === PROCESS_STATUS.FAILURE ||
+					action.payload.status === PROCESS_STATUS.ABORT_REQUESTED ||
+					action.payload.status === PROCESS_STATUS.ABORT_SUCCESS
 				) {
 					process.cancellationTokenSource.dispose();
 				}
