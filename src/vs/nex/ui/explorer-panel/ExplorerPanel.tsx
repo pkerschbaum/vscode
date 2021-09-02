@@ -355,7 +355,7 @@ const FilesTableRow: React.FC<FilesTableRowProps> = ({
 			<Cell>
 				<Stack>
 					<Stack
-						css={styles.fileIcon}
+						css={[commonStyles.fullWidth, styles.fileIcon]}
 						className={nativeIconDataURL ? undefined : fileForRow.iconClasses.join(' ')}
 					>
 						{nativeIconDataURL && (
