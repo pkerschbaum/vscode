@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, Chip, Divider, Skeleton, TextField } from '@material-ui/core';
+import { Box, Chip, Skeleton, TextField } from '@material-ui/core';
 
 import { URI } from 'vs/base/common/uri';
 
@@ -41,7 +41,6 @@ import { strings } from 'vs/nex/base/utils/strings.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
 import { usePrevious } from 'vs/nex/ui/utils/events.hooks';
 import { ExplorerActions } from 'vs/nex/ui/explorer-actions/ExplorerActions';
-import { PanelActions } from 'vs/nex/ui/explorer-actions/PanelActions';
 import { getNativeFileIconDataURL, onFileDragStart } from 'vs/nex/ipc/electron-sandbox/nex';
 
 const USE_NATIVE_ICON_FOR_REGEX = /(?:exe|ico|dll)/i;
@@ -116,11 +115,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 
 	return (
 		<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
-			<Stack alignItems="stretch">
-				<PanelActions {...fileEditActions} />
-				<Divider orientation="vertical" flexItem />
-				<ExplorerActions {...fileEditActions} />
-			</Stack>
+			<ExplorerActions {...fileEditActions} />
 
 			<Box css={[commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical]}>
 				<DataTable>

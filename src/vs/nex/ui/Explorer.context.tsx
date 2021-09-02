@@ -156,7 +156,7 @@ export function useIdsOfSelectedFiles() {
 	return contextValue.values.idsOfSelectedFiles;
 }
 
-// derived values
+// computed/pass-through values
 export function useExplorerId() {
 	const contextValue = useExplorerContext();
 	return contextValue.values.explorerId;
