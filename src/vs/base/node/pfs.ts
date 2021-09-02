@@ -602,6 +602,7 @@ async function doCopyDirectory(source: string, target: string, mode: number, pay
 	}
 }
 
+const COPY_FILE_HIGHWATERMARK = 1024 * 1024; // 1 MB
 async function doCopyFile(source: string, target: string, mode: number, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
 
 	/*
@@ -616,9 +617,10 @@ async function doCopyFile(source: string, target: string, mode: number, addition
 	}
 
 	return new Promise((resolve, reject) => {
-		const reader = fs.createReadStream(source);
-		const writer = fs.createWriteStream(target, { mode });
+		const reader = fs.createReadStream(source, { highWaterMark: COPY_FILE_HIGHWATERMARK });
+		const writer = fs.createWriteStream(target, { mode, highWaterMark: COPY_FILE_HIGHWATERMARK });
 		const progressWatcher = new stream.Transform({
+			highWaterMark: COPY_FILE_HIGHWATERMARK,
 			transform(chunk: Buffer, _, callback) {
 				if (additionalArgs?.progressCb) {
 					additionalArgs.progressCb({ newBytesRead: chunk.byteLength, forSource: sourceUri });

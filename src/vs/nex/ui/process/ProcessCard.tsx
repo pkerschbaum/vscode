@@ -10,8 +10,22 @@ import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 export const ProcessCard: React.FC<{ process: Process }> = ({ process }) => {
 	const { processStatusColors } = useTheme();
 
+	let backgroundColor;
+	switch (process.type) {
+		case PROCESS_TYPE.PASTE: {
+			backgroundColor = processStatusColors.pasteProcess[process.status];
+			break;
+		}
+		case PROCESS_TYPE.DELETE: {
+			backgroundColor = processStatusColors.deleteProcess[process.status];
+			break;
+		}
+		default:
+			assertUnreachable(process);
+	}
+
 	return (
-		<Paper css={styles.card} style={{ backgroundColor: processStatusColors[process.status] }}>
+		<Paper css={styles.card} style={{ backgroundColor }}>
 			{process.type === PROCESS_TYPE.PASTE ? (
 				<PasteProcess process={process} />
 			) : process.type === PROCESS_TYPE.DELETE ? (

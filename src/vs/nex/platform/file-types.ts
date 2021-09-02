@@ -1,7 +1,6 @@
 import { UriComponents } from 'vs/base/common/uri';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 
-import { NarrowUnion } from 'vs/nex/base/utils/types.util';
 import { IFileStatWithMetadata } from 'vs/platform/files/common/files';
 
 export enum FILE_TYPE {
@@ -15,59 +14,20 @@ export enum RESOURCES_SCHEME {
 	FILE_SYSTEM = 'file://',
 }
 
-export type Process = {
-	id: string;
-} & (
-	| {
-			status:
-				| PROCESS_STATUS.RUNNING
-				| PROCESS_STATUS.SUCCESS
-				| PROCESS_STATUS.ABORT_REQUESTED
-				| PROCESS_STATUS.ABORT_SUCCESS;
-			type: PROCESS_TYPE.PASTE;
-			pasteShouldMove: boolean;
-			sourceUris: UriComponents[];
-			totalSize: number;
-			bytesProcessed: number;
-			progressOfAtLeastOneSourceIsIndeterminate: boolean;
-			destinationFolder: UriComponents;
-			cancellationTokenSource: CancellationTokenSource;
-	  }
-	| {
-			status: PROCESS_STATUS.FAILURE;
-			type: PROCESS_TYPE.PASTE;
-			pasteShouldMove: boolean;
-			sourceUris: UriComponents[];
-			totalSize: number;
-			bytesProcessed: number;
-			progressOfAtLeastOneSourceIsIndeterminate: boolean;
-			destinationFolder: UriComponents;
-			cancellationTokenSource: CancellationTokenSource;
-			error: string;
-	  }
-	| {
-			status:
-				| PROCESS_STATUS.PENDING_FOR_USER_INPUT
-				| PROCESS_STATUS.RUNNING
-				| PROCESS_STATUS.SUCCESS;
-			type: PROCESS_TYPE.DELETE;
-			uris: UriComponents[];
-	  }
-	| {
-			status: PROCESS_STATUS.FAILURE;
-			type: PROCESS_TYPE.DELETE;
-			uris: UriComponents[];
-			error: string;
-	  }
-);
-
-export enum PROCESS_STATUS {
-	PENDING_FOR_USER_INPUT = 'PENDING_FOR_USER_INPUT',
-	RUNNING = 'RUNNING',
+export enum PASTE_PROCESS_STATUS {
+	RUNNING_DETERMINING_TOTALSIZE = 'RUNNING_DETERMINING_TOTALSIZE',
+	RUNNING_PERFORMING_PASTE = 'RUNNING_PERFORMING_PASTE',
 	SUCCESS = 'SUCCESS',
 	FAILURE = 'FAILURE',
 	ABORT_REQUESTED = 'ABORT_REQUESTED',
 	ABORT_SUCCESS = 'ABORT_SUCCESS',
+}
+
+export enum DELETE_PROCESS_STATUS {
+	PENDING_FOR_USER_INPUT = 'PENDING_FOR_USER_INPUT',
+	RUNNING = 'RUNNING',
+	SUCCESS = 'SUCCESS',
+	FAILURE = 'FAILURE',
 }
 
 export enum PROCESS_TYPE {
@@ -75,9 +35,49 @@ export enum PROCESS_TYPE {
 	DELETE = 'DELETE',
 }
 
-export type PasteProcess = NarrowUnion<Process, 'type', PROCESS_TYPE.PASTE>;
+export type Process = PasteProcess | DeleteProcess;
 
-export type DeleteProcess = NarrowUnion<Process, 'type', PROCESS_TYPE.DELETE>;
+export type PasteProcess = {
+	id: string;
+	type: PROCESS_TYPE.PASTE;
+	pasteShouldMove: boolean;
+	sourceUris: UriComponents[];
+	destinationFolder: UriComponents;
+	cancellationTokenSource: CancellationTokenSource;
+	totalSize: number;
+	bytesProcessed: number;
+	progressOfAtLeastOneSourceIsIndeterminate: boolean;
+} & (
+	| {
+			status:
+				| PASTE_PROCESS_STATUS.RUNNING_DETERMINING_TOTALSIZE
+				| PASTE_PROCESS_STATUS.RUNNING_PERFORMING_PASTE
+				| PASTE_PROCESS_STATUS.SUCCESS
+				| PASTE_PROCESS_STATUS.ABORT_REQUESTED
+				| PASTE_PROCESS_STATUS.ABORT_SUCCESS;
+	  }
+	| {
+			status: PASTE_PROCESS_STATUS.FAILURE;
+			error: string;
+	  }
+);
+
+export type DeleteProcess = {
+	id: string;
+	type: PROCESS_TYPE.DELETE;
+	uris: UriComponents[];
+} & (
+	| {
+			status:
+				| DELETE_PROCESS_STATUS.PENDING_FOR_USER_INPUT
+				| DELETE_PROCESS_STATUS.RUNNING
+				| DELETE_PROCESS_STATUS.SUCCESS;
+	  }
+	| {
+			status: DELETE_PROCESS_STATUS.FAILURE;
+			error: string;
+	  }
+);
 
 export type FileMap = {
 	[stringifiedUri: string]: File | undefined;

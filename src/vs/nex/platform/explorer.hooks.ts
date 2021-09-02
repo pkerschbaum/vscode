@@ -12,7 +12,7 @@ import { actions } from 'vs/nex/platform/store/file-provider/file-provider.slice
 import { useNexFileSystem } from 'vs/nex/NexFileSystem.context';
 import { useClipboardResources } from 'vs/nex/NexClipboard.context';
 import { useDispatch } from 'vs/nex/platform/store/store';
-import { PROCESS_STATUS, PROCESS_TYPE, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
+import { PASTE_PROCESS_STATUS, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
 import {
@@ -30,7 +30,7 @@ import {
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { objects } from 'vs/nex/base/utils/objects.util';
 
-const UPDATE_INTERVAL_MS = 300;
+const UPDATE_INTERVAL_MS = 500;
 const logger = createLogger('explorer.hooks');
 
 export function useChangeDirectory(explorerId: string) {
@@ -89,9 +89,27 @@ export function usePasteFiles(explorerId: string) {
 
 		const destinationFolder = URI.from(cwd);
 		const destinationFolderStat = await fileSystem.resolve(destinationFolder);
+		const id = uuid.generateUuid();
+		const cancellationTokenSource = new CancellationTokenSource();
 
 		// clear draft paste state (neither cut&paste nor copy&paste is designed to be repeatable)
 		dispatch(actions.clearDraftPasteState());
+
+		// add the paste process about to start
+		dispatch(
+			actions.addPasteProcess({
+				id,
+				pasteShouldMove: draftPasteState.pasteShouldMove,
+				sourceUris: clipboardResources.map((resource) => resource.toJSON()),
+				destinationFolder: destinationFolder.toJSON(),
+				cancellationTokenSource,
+			}),
+		);
+
+		// register listener on cancellation token so that if cancellation gets requested, "ABORT_REQUESTED" state gets dispatched
+		cancellationTokenSource.token.onCancellationRequested(() => {
+			dispatch(actions.updatePasteProcess({ id, status: PASTE_PROCESS_STATUS.ABORT_REQUESTED }));
+		});
 
 		// for each file/folder to paste, check for some required conditions and prepare target URI
 		const pasteInfos = (
@@ -131,12 +149,16 @@ export function usePasteFiles(explorerId: string) {
 			)
 		).filter(objects.isNotNullish);
 
+		// if cancellation was requested in the meantime, abort paste process
+		if (cancellationTokenSource.token.isCancellationRequested) {
+			dispatch(actions.updatePasteProcess({ id, status: PASTE_PROCESS_STATUS.ABORT_SUCCESS }));
+			return;
+		}
+
 		// after target URI got prepared, initialize paste status fields and gather totalSize
-		const id = uuid.generateUuid();
 		let totalSize = 0;
 		let bytesProcessed = 0;
 		let progressOfAtLeastOneSourceIsIndeterminate = false;
-		const cancellationTokenSource = new CancellationTokenSource();
 		const statusPerFile: {
 			[uri: string]: { bytesProcessed: number };
 		} = {};
@@ -154,19 +176,23 @@ export function usePasteFiles(explorerId: string) {
 			}),
 		);
 
-		// dispatch infos about the paste process about to start
+		// if cancellation was requested in the meantime, abort paste process
+		if (cancellationTokenSource.token.isCancellationRequested) {
+			dispatch(actions.updatePasteProcess({ id, status: PASTE_PROCESS_STATUS.ABORT_SUCCESS }));
+			return;
+		}
+
 		dispatch(
-			actions.addPasteProcess({
-				type: PROCESS_TYPE.PASTE,
-				pasteShouldMove: draftPasteState.pasteShouldMove,
-				sourceUris: clipboardResources.map((resource) => resource.toJSON()),
+			actions.updatePasteProcess({
 				id,
+				status: PASTE_PROCESS_STATUS.RUNNING_PERFORMING_PASTE,
 				totalSize,
 				bytesProcessed,
 				progressOfAtLeastOneSourceIsIndeterminate,
-				destinationFolder: destinationFolder.toJSON(),
-				cancellationTokenSource,
 			}),
+		);
+		dispatch(
+			actions.updatePasteProcess({ id, status: PASTE_PROCESS_STATUS.RUNNING_PERFORMING_PASTE }),
 		);
 
 		// perform paste
@@ -193,7 +219,6 @@ export function usePasteFiles(explorerId: string) {
 		try {
 			cancellationTokenSource.token.onCancellationRequested(() => {
 				clearInterval(intervalId);
-				dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.ABORT_REQUESTED }));
 			});
 
 			await Promise.all(
@@ -211,15 +236,15 @@ export function usePasteFiles(explorerId: string) {
 			);
 
 			if (!cancellationTokenSource.token.isCancellationRequested) {
-				dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.SUCCESS }));
+				dispatch(actions.updatePasteProcess({ id, status: PASTE_PROCESS_STATUS.SUCCESS }));
 			} else {
-				dispatch(actions.updatePasteProcess({ id, status: PROCESS_STATUS.ABORT_SUCCESS }));
+				dispatch(actions.updatePasteProcess({ id, status: PASTE_PROCESS_STATUS.ABORT_SUCCESS }));
 			}
 		} catch (err: unknown) {
 			dispatch(
 				actions.updatePasteProcess({
 					id,
-					status: PROCESS_STATUS.FAILURE,
+					status: PASTE_PROCESS_STATUS.FAILURE,
 					error: err instanceof Error ? err.message : `Unknown error occured`,
 				}),
 			);

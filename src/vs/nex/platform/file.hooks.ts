@@ -18,8 +18,8 @@ import {
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import {
 	DeleteProcess,
+	DELETE_PROCESS_STATUS,
 	FileStatMap,
-	PROCESS_STATUS,
 	PROCESS_TYPE,
 	Tag,
 } from 'vs/nex/platform/file-types';
@@ -65,7 +65,9 @@ export function useRunDeleteProcess() {
 			throw new Error(`could not find delete process, deleteProcessId=${deleteProcessId}`);
 		}
 
-		dispatch(actions.updateDeleteProcess({ id: deleteProcessId, status: PROCESS_STATUS.RUNNING }));
+		dispatch(
+			actions.updateDeleteProcess({ id: deleteProcessId, status: DELETE_PROCESS_STATUS.RUNNING }),
+		);
 
 		// delete all files (in parallel)
 		try {
@@ -83,13 +85,15 @@ export function useRunDeleteProcess() {
 			dispatch(
 				actions.updateDeleteProcess({
 					id: deleteProcessId,
-					status: PROCESS_STATUS.FAILURE,
+					status: DELETE_PROCESS_STATUS.FAILURE,
 					error: err instanceof Error ? err.message : `Unknown error occured`,
 				}),
 			);
 		}
 
-		dispatch(actions.updateDeleteProcess({ id: deleteProcessId, status: PROCESS_STATUS.SUCCESS }));
+		dispatch(
+			actions.updateDeleteProcess({ id: deleteProcessId, status: DELETE_PROCESS_STATUS.SUCCESS }),
+		);
 
 		// invalidate files of all affected directories
 		const distinctParents = getDistinctParents(deleteProcess.uris);

@@ -2,14 +2,15 @@ import { createAction, createReducer } from '@reduxjs/toolkit';
 
 import * as uuid from 'vs/base/common/uuid';
 import { UriComponents } from 'vs/base/common/uri';
+import { CancellationTokenSource } from 'vs/base/common/cancellation';
 
 import { createLogger } from 'vs/nex/base/logger/logger';
 import {
 	Process,
-	PROCESS_STATUS,
+	PASTE_PROCESS_STATUS,
 	DeleteProcess,
-	PasteProcess,
 	PROCESS_TYPE,
+	DELETE_PROCESS_STATUS,
 } from 'vs/nex/platform/file-types';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 
@@ -49,23 +50,34 @@ type CutOrCopyFilesPayload = {
 	cut: boolean;
 };
 
-type AddPasteProcessPayload = Omit<PasteProcess, 'status'>;
+type AddPasteProcessPayload = {
+	id: string;
+	pasteShouldMove: boolean;
+	sourceUris: UriComponents[];
+	destinationFolder: UriComponents;
+	cancellationTokenSource: CancellationTokenSource;
+};
 
 type UpdatePasteProcessPayload =
 	| {
 			id: string;
-			bytesProcessed?: number;
-			progressOfAtLeastOneSourceIsIndeterminate?: boolean;
-			status?: PROCESS_STATUS.RUNNING | PROCESS_STATUS.SUCCESS;
+			status: PASTE_PROCESS_STATUS.RUNNING_DETERMINING_TOTALSIZE | PASTE_PROCESS_STATUS.SUCCESS;
 	  }
 	| {
 			id: string;
-			status: PROCESS_STATUS.FAILURE;
+			status?: PASTE_PROCESS_STATUS.RUNNING_PERFORMING_PASTE;
+			totalSize?: number;
+			bytesProcessed?: number;
+			progressOfAtLeastOneSourceIsIndeterminate?: boolean;
+	  }
+	| {
+			id: string;
+			status: PASTE_PROCESS_STATUS.FAILURE;
 			error: string;
 	  }
 	| {
 			id: string;
-			status: PROCESS_STATUS.ABORT_REQUESTED | PROCESS_STATUS.ABORT_SUCCESS;
+			status: PASTE_PROCESS_STATUS.ABORT_REQUESTED | PASTE_PROCESS_STATUS.ABORT_SUCCESS;
 	  };
 
 type AddDeleteProcessPayload = Omit<DeleteProcess, 'status'>;
@@ -73,11 +85,11 @@ type AddDeleteProcessPayload = Omit<DeleteProcess, 'status'>;
 type UpdateDeleteProcessPayload =
 	| {
 			id: string;
-			status: PROCESS_STATUS.RUNNING | PROCESS_STATUS.SUCCESS;
+			status: DELETE_PROCESS_STATUS.RUNNING | DELETE_PROCESS_STATUS.SUCCESS;
 	  }
 	| {
 			id: string;
-			status: PROCESS_STATUS.FAILURE;
+			status: DELETE_PROCESS_STATUS.FAILURE;
 			error: string;
 	  };
 
@@ -173,7 +185,14 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 			state.draftPasteState = { pasteShouldMove: action.payload.cut };
 		})
 		.addCase(actions.addPasteProcess, (state, action) => {
-			state.processes.push({ ...action.payload, status: PROCESS_STATUS.RUNNING });
+			state.processes.push({
+				...action.payload,
+				type: PROCESS_TYPE.PASTE,
+				status: PASTE_PROCESS_STATUS.RUNNING_DETERMINING_TOTALSIZE,
+				totalSize: 0,
+				bytesProcessed: 0,
+				progressOfAtLeastOneSourceIsIndeterminate: false,
+			});
 		})
 		.addCase(actions.updatePasteProcess, (state, action) => {
 			const process = state.processes.find((p) => p.id === action.payload.id);
@@ -183,6 +202,9 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 				return;
 			}
 
+			if ('totalSize' in action.payload && action.payload.totalSize !== undefined) {
+				process.totalSize = action.payload.totalSize;
+			}
 			if ('bytesProcessed' in action.payload && action.payload.bytesProcessed !== undefined) {
 				process.bytesProcessed = action.payload.bytesProcessed;
 			}
@@ -198,23 +220,25 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 				process.status = action.payload.status;
 
 				if (
-					action.payload.status === PROCESS_STATUS.SUCCESS ||
-					action.payload.status === PROCESS_STATUS.FAILURE ||
-					action.payload.status === PROCESS_STATUS.ABORT_REQUESTED ||
-					action.payload.status === PROCESS_STATUS.ABORT_SUCCESS
+					action.payload.status === PASTE_PROCESS_STATUS.SUCCESS ||
+					action.payload.status === PASTE_PROCESS_STATUS.FAILURE ||
+					action.payload.status === PASTE_PROCESS_STATUS.ABORT_SUCCESS
 				) {
 					process.cancellationTokenSource.dispose();
 				}
 				if (
-					process.status === PROCESS_STATUS.FAILURE &&
-					action.payload.status === PROCESS_STATUS.FAILURE
+					process.status === PASTE_PROCESS_STATUS.FAILURE &&
+					action.payload.status === PASTE_PROCESS_STATUS.FAILURE
 				) {
 					process.error = action.payload.error;
 				}
 			}
 		})
 		.addCase(actions.addDeleteProcess, (state, action) => {
-			state.processes.push({ ...action.payload, status: PROCESS_STATUS.PENDING_FOR_USER_INPUT });
+			state.processes.push({
+				...action.payload,
+				status: DELETE_PROCESS_STATUS.PENDING_FOR_USER_INPUT,
+			});
 		})
 		.addCase(actions.updateDeleteProcess, (state, action) => {
 			const process = state.processes.find((p) => p.id === action.payload.id);
@@ -232,8 +256,8 @@ export const reducer = createReducer(INITIAL_STATE, (builder) =>
 
 			process.status = action.payload.status;
 			if (
-				process.status === PROCESS_STATUS.FAILURE &&
-				action.payload.status === PROCESS_STATUS.FAILURE
+				process.status === DELETE_PROCESS_STATUS.FAILURE &&
+				action.payload.status === DELETE_PROCESS_STATUS.FAILURE
 			) {
 				process.error = action.payload.error;
 			}

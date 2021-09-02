@@ -10,7 +10,7 @@ import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { TextBox } from 'vs/nex/ui/elements/TextBox';
 import { LinearProgress } from 'vs/nex/ui/elements/LinearProgress';
-import { PasteProcess as PasteProcessType, PROCESS_STATUS } from 'vs/nex/platform/file-types';
+import { PasteProcess as PasteProcessType, PASTE_PROCESS_STATUS } from 'vs/nex/platform/file-types';
 import { useRemoveProcess } from 'vs/nex/platform/file.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
@@ -27,15 +27,23 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 	const destinationFolderLabel = formatter.file({ name: fileName, extension });
 	let content;
 	switch (process.status) {
-		case PROCESS_STATUS.RUNNING: {
+		case PASTE_PROCESS_STATUS.RUNNING_DETERMINING_TOTALSIZE: {
+			content = (
+				<TextBox>
+					Determining total size of files to {process.pasteShouldMove ? 'move' : 'copy'}...
+				</TextBox>
+			);
+			break;
+		}
+		case PASTE_PROCESS_STATUS.RUNNING_PERFORMING_PASTE: {
 			content = undefined;
 			break;
 		}
-		case PROCESS_STATUS.SUCCESS: {
+		case PASTE_PROCESS_STATUS.SUCCESS: {
 			content = <TextBox>Files transferred successfully</TextBox>;
 			break;
 		}
-		case PROCESS_STATUS.FAILURE: {
+		case PASTE_PROCESS_STATUS.FAILURE: {
 			content = (
 				<Stack direction="column" alignItems="flex-start">
 					<TextBox>Error occured during transfer of the files:</TextBox>
@@ -44,7 +52,7 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 			);
 			break;
 		}
-		case PROCESS_STATUS.ABORT_REQUESTED: {
+		case PASTE_PROCESS_STATUS.ABORT_REQUESTED: {
 			content = (
 				<TextBox>
 					Cancellation requested, cleaning up files/folders which were currently{' '}
@@ -53,8 +61,10 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 			);
 			break;
 		}
-		case PROCESS_STATUS.ABORT_SUCCESS: {
-			content = <TextBox>Cancellation done</TextBox>;
+		case PASTE_PROCESS_STATUS.ABORT_SUCCESS: {
+			content = (
+				<TextBox>File {process.pasteShouldMove ? 'move' : 'copy'} process got cancelled</TextBox>
+			);
 			break;
 		}
 		default: {
@@ -63,9 +73,16 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 	}
 
 	const percentageBytesProcessed =
-		process.status === PROCESS_STATUS.SUCCESS
+		process.status === PASTE_PROCESS_STATUS.SUCCESS
 			? 100
 			: numbers.roundToDecimals((process.bytesProcessed / process.totalSize) * 100, 0);
+	const progressIndicatorVariant =
+		process.status === PASTE_PROCESS_STATUS.RUNNING_DETERMINING_TOTALSIZE ||
+		process.status === PASTE_PROCESS_STATUS.ABORT_REQUESTED ||
+		(process.progressOfAtLeastOneSourceIsIndeterminate &&
+			process.status === PASTE_PROCESS_STATUS.RUNNING_PERFORMING_PASTE)
+			? 'indeterminate'
+			: 'determinate';
 
 	return (
 		<Stack key={process.id} direction="column" alignItems="stretch">
@@ -88,9 +105,9 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 					<TextBox fontBold>{destinationFolderLabel}</TextBox>
 				</Stack>
 
-				{(process.status === PROCESS_STATUS.SUCCESS ||
-					process.status === PROCESS_STATUS.FAILURE ||
-					process.status === PROCESS_STATUS.ABORT_SUCCESS) && (
+				{(process.status === PASTE_PROCESS_STATUS.SUCCESS ||
+					process.status === PASTE_PROCESS_STATUS.FAILURE ||
+					process.status === PASTE_PROCESS_STATUS.ABORT_SUCCESS) && (
 					<Tooltip title="Discard card">
 						<IconButton autoFocus size="large" onClick={() => removeProcess(process.id)}>
 							<ClearAllIcon fontSize="inherit" />
@@ -101,22 +118,19 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 
 			{content}
 
-			{process.status !== PROCESS_STATUS.ABORT_SUCCESS && (
+			{process.status !== PASTE_PROCESS_STATUS.ABORT_SUCCESS && (
 				<Box css={[commonStyles.fullWidth, styles.linearProgressBox]}>
 					<LinearProgress
+						// disable animation from indeterminate to determinate variant by resetting component on variant change (via key prop)
+						key={progressIndicatorVariant}
+						variant={progressIndicatorVariant}
 						value={percentageBytesProcessed}
-						variant={
-							process.progressOfAtLeastOneSourceIsIndeterminate &&
-							process.status === PROCESS_STATUS.RUNNING
-								? 'indeterminate'
-								: 'determinate'
-						}
 					/>
 				</Box>
 			)}
 
-			{process.status !== PROCESS_STATUS.SUCCESS &&
-				process.status !== PROCESS_STATUS.ABORT_SUCCESS && (
+			{process.status !== PASTE_PROCESS_STATUS.SUCCESS &&
+				process.status !== PASTE_PROCESS_STATUS.ABORT_SUCCESS && (
 					<Stack spacing={0.5}>
 						<TextBox>
 							{formatter.bytes(process.bytesProcessed, { unit: smallestUnitOfTotalSize })}
@@ -128,7 +142,8 @@ export const PasteProcess: React.FC<{ process: PasteProcessType }> = ({ process 
 					</Stack>
 				)}
 
-			{process.status === PROCESS_STATUS.RUNNING && (
+			{(process.status === PASTE_PROCESS_STATUS.RUNNING_DETERMINING_TOTALSIZE ||
+				process.status === PASTE_PROCESS_STATUS.RUNNING_PERFORMING_PASTE) && (
 				<Button onClick={() => process.cancellationTokenSource.cancel()}>Cancel</Button>
 			)}
 		</Stack>

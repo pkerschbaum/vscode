@@ -7,19 +7,29 @@ import {
 import { Localization } from '@material-ui/core/locale';
 import { css } from '@emotion/react';
 
-import { PROCESS_STATUS } from 'vs/nex/platform/file-types';
+import { DELETE_PROCESS_STATUS, PASTE_PROCESS_STATUS } from 'vs/nex/platform/file-types';
 
 declare module '@material-ui/core/styles/createTheme' {
 	interface Theme {
 		availableTagColors: string[];
 		processStatusColors: {
-			[status in PROCESS_STATUS]: string;
+			pasteProcess: {
+				[status in PASTE_PROCESS_STATUS]: string;
+			};
+			deleteProcess: {
+				[status in DELETE_PROCESS_STATUS]: string;
+			};
 		};
 	}
 	interface ThemeOptions {
 		availableTagColors: string[];
 		processStatusColors: {
-			[status in PROCESS_STATUS]: string;
+			pasteProcess: {
+				[status in PASTE_PROCESS_STATUS]: string;
+			};
+			deleteProcess: {
+				[status in DELETE_PROCESS_STATUS]: string;
+			};
 		};
 	}
 }
@@ -148,12 +158,20 @@ export const createTheme = (locale: Localization) => {
 		],
 
 		processStatusColors: {
-			[PROCESS_STATUS.PENDING_FOR_USER_INPUT]: '#A88518',
-			[PROCESS_STATUS.RUNNING]: PAPER_COLOR,
-			[PROCESS_STATUS.SUCCESS]: '#5B7E2F',
-			[PROCESS_STATUS.FAILURE]: '#B35C54',
-			[PROCESS_STATUS.ABORT_REQUESTED]: PAPER_COLOR,
-			[PROCESS_STATUS.ABORT_SUCCESS]: '#5B7E2F',
+			pasteProcess: {
+				[PASTE_PROCESS_STATUS.RUNNING_DETERMINING_TOTALSIZE]: PAPER_COLOR,
+				[PASTE_PROCESS_STATUS.RUNNING_PERFORMING_PASTE]: PAPER_COLOR,
+				[PASTE_PROCESS_STATUS.SUCCESS]: '#5B7E2F',
+				[PASTE_PROCESS_STATUS.FAILURE]: '#B35C54',
+				[PASTE_PROCESS_STATUS.ABORT_REQUESTED]: PAPER_COLOR,
+				[PASTE_PROCESS_STATUS.ABORT_SUCCESS]: '#5B7E2F',
+			},
+			deleteProcess: {
+				[DELETE_PROCESS_STATUS.PENDING_FOR_USER_INPUT]: '#A88518',
+				[DELETE_PROCESS_STATUS.RUNNING]: PAPER_COLOR,
+				[DELETE_PROCESS_STATUS.SUCCESS]: '#5B7E2F',
+				[DELETE_PROCESS_STATUS.FAILURE]: '#B35C54',
+			},
 		},
 	};
 

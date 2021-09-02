@@ -8,7 +8,10 @@ import { URI } from 'vs/base/common/uri';
 
 import { Stack } from 'vs/nex/ui/layouts/Stack';
 import { TextBox } from 'vs/nex/ui/elements/TextBox';
-import { DeleteProcess as DeleteProcessType, PROCESS_STATUS } from 'vs/nex/platform/file-types';
+import {
+	DeleteProcess as DeleteProcessType,
+	DELETE_PROCESS_STATUS,
+} from 'vs/nex/platform/file-types';
 import { useRemoveProcess, useRunDeleteProcess } from 'vs/nex/platform/file.hooks';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
@@ -20,7 +23,7 @@ export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ proces
 
 	let contentToRender;
 	switch (process.status) {
-		case PROCESS_STATUS.PENDING_FOR_USER_INPUT: {
+		case DELETE_PROCESS_STATUS.PENDING_FOR_USER_INPUT: {
 			contentToRender = (
 				<DeleteProcessCard process={process}>
 					<Button autoFocus onClick={() => runDeleteProcess(process.id, { useTrash: true })}>
@@ -40,7 +43,7 @@ export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ proces
 			);
 			break;
 		}
-		case PROCESS_STATUS.RUNNING: {
+		case DELETE_PROCESS_STATUS.RUNNING: {
 			contentToRender = (
 				<DeleteProcessCard process={process}>
 					<TextBox>Deletion is in progress...</TextBox>
@@ -49,7 +52,7 @@ export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ proces
 			);
 			break;
 		}
-		case PROCESS_STATUS.SUCCESS: {
+		case DELETE_PROCESS_STATUS.SUCCESS: {
 			contentToRender = (
 				<DeleteProcessCard process={process}>
 					<TextBox>Files deleted successfully</TextBox>
@@ -57,7 +60,7 @@ export const DeleteProcess: React.FC<{ process: DeleteProcessType }> = ({ proces
 			);
 			break;
 		}
-		case PROCESS_STATUS.FAILURE: {
+		case DELETE_PROCESS_STATUS.FAILURE: {
 			contentToRender = (
 				<DeleteProcessCard process={process}>
 					<Stack direction="column" alignItems="flex-start">
@@ -100,8 +103,8 @@ const DeleteProcessCard: React.FC<DeleteProcessCardProps> = ({ process, children
 					{process.uris.length > 2 && <TextBox fontBold>...</TextBox>}
 				</Stack>
 
-				{(process.status === PROCESS_STATUS.SUCCESS ||
-					process.status === PROCESS_STATUS.FAILURE) && (
+				{(process.status === DELETE_PROCESS_STATUS.SUCCESS ||
+					process.status === DELETE_PROCESS_STATUS.FAILURE) && (
 					<Tooltip title="Discard card">
 						<IconButton autoFocus size="large" onClick={() => removeProcess(process.id)}>
 							<ClearAllIcon fontSize="inherit" />
