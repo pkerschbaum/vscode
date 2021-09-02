@@ -162,11 +162,6 @@ export function useExplorerId() {
 	return contextValue.values.explorerId;
 }
 
-export function useFiles() {
-	const contextValue = useExplorerContext();
-	return contextValue.values.files;
-}
-
 export function useFilesToShow() {
 	const contextValue = useExplorerContext();
 	return contextValue.values.filesToShow;

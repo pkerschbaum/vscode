@@ -34,7 +34,7 @@ import { useAddTag, useGetTags, useRemoveTags } from 'vs/nex/platform/tag.hooks'
 import {
 	useExplorerId,
 	useFileIdSelectionGotStartedWith,
-	useFiles,
+	useFilesToShow,
 	useFilterInput,
 	useIdsOfSelectedFiles,
 	useSelectedFiles,
@@ -76,7 +76,7 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps> = ({
 }) => {
 	const explorerId = useExplorerId();
 	const cwd = useFileProviderCwd(explorerId);
-	const files = useFiles();
+	const filesToShow = useFilesToShow();
 	const draftPasteState = useFileProviderDraftPasteState();
 	const idsOfSelectedFiles = useIdsOfSelectedFiles();
 	const setIdsOfSelectedFiles = useSetIdsOfSelectedFiles();
@@ -101,12 +101,12 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps> = ({
 	function changeSelectedFile(e: KeyboardEvent) {
 		e.preventDefault();
 
-		if (files.length < 1) {
+		if (filesToShow.length < 1) {
 			return;
 		}
 
 		if (e.key === KEYS.ARROW_UP || e.key === KEYS.ARROW_DOWN) {
-			const selectedFilesInfos = files
+			const selectedFilesInfos = filesToShow
 				.map((file, idx) => ({
 					file,
 					idx,
@@ -119,7 +119,7 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps> = ({
 
 			if (selectedFilesInfos.length === 0 || fileIdSelectionGotStartedWithIndex === undefined) {
 				// If no file is selected, just select the first file
-				setIdsOfSelectedFiles([files[0].id]);
+				setIdsOfSelectedFiles([filesToShow[0].id]);
 				return;
 			}
 
@@ -135,16 +135,16 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps> = ({
 					 * UP without shift key is pressed
 					 * --> select the file above the file which got selected first (if file above exists)
 					 */
-					setIdsOfSelectedFiles([files[fileIdSelectionGotStartedWithIndex - 1].id]);
+					setIdsOfSelectedFiles([filesToShow[fileIdSelectionGotStartedWithIndex - 1].id]);
 				} else if (
 					e.key === KEYS.ARROW_DOWN &&
-					files.length > fileIdSelectionGotStartedWithIndex + 1
+					filesToShow.length > fileIdSelectionGotStartedWithIndex + 1
 				) {
 					/*
 					 * DOWN without shift key is pressed
 					 * --> select the file below the file which got selected first (if file below exists)
 					 */
-					setIdsOfSelectedFiles([files[fileIdSelectionGotStartedWithIndex + 1].id]);
+					setIdsOfSelectedFiles([filesToShow[fileIdSelectionGotStartedWithIndex + 1].id]);
 				}
 			} else {
 				if (e.key === KEYS.ARROW_UP) {
@@ -163,7 +163,10 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps> = ({
 						 * SHIFT+UP is pressed and the selection was started upwards. Or, there is only one file selected at the moment.
 						 * --> The user wants to add the file above all selected files to the selection.
 						 */
-						setIdsOfSelectedFiles([files[firstSelectedFileIndex - 1].id, ...idsOfSelectedFiles]);
+						setIdsOfSelectedFiles([
+							filesToShow[firstSelectedFileIndex - 1].id,
+							...idsOfSelectedFiles,
+						]);
 					}
 				} else if (e.key === KEYS.ARROW_DOWN) {
 					if (selectedFilesInfos.length > 1 && !selectionWasStartedDownwards) {
@@ -174,21 +177,24 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps> = ({
 						setIdsOfSelectedFiles(
 							idsOfSelectedFiles.filter((id) => id !== selectedFilesInfos[0].file.id),
 						);
-					} else if (files.length > lastSelectedFileIndex + 1) {
+					} else if (filesToShow.length > lastSelectedFileIndex + 1) {
 						/*
 						 * SHIFT+DOWN is pressed and the selection was started downwards. Or, there is only one file selected at the moment.
 						 * --> The user wants to add the file after all selected files to the selection.
 						 */
-						setIdsOfSelectedFiles([...idsOfSelectedFiles, files[lastSelectedFileIndex + 1].id]);
+						setIdsOfSelectedFiles([
+							...idsOfSelectedFiles,
+							filesToShow[lastSelectedFileIndex + 1].id,
+						]);
 					}
 				}
 			}
 		} else if (e.key === KEYS.PAGE_UP) {
-			setIdsOfSelectedFiles([files[0].id]);
+			setIdsOfSelectedFiles([filesToShow[0].id]);
 		} else if (e.key === KEYS.PAGE_DOWN) {
-			setIdsOfSelectedFiles([files[files.length - 1].id]);
+			setIdsOfSelectedFiles([filesToShow[filesToShow.length - 1].id]);
 		} else if (e.key === KEYS.A) {
-			setIdsOfSelectedFiles(files.map((file) => file.id));
+			setIdsOfSelectedFiles(filesToShow.map((file) => file.id));
 		} else {
 			throw new Error(`key not implemented. e.key=${e.key}`);
 		}
