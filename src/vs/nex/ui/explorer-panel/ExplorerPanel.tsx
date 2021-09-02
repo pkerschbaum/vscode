@@ -1,7 +1,9 @@
 import * as React from 'react';
-import { Box, Chip, Skeleton, TextField } from '@mui/material';
+import { Box, Breadcrumbs, Button, Chip, Skeleton, TextField } from '@mui/material';
 
 import { URI } from 'vs/base/common/uri';
+import { posix, win32 } from 'vs/base/common/path';
+import { isWindows } from 'vs/base/common/platform';
 
 import { styles } from 'vs/nex/ui/explorer-panel/ExplorerPanel.styles';
 import { commonStyles } from 'vs/nex/ui/Common.styles';
@@ -15,6 +17,7 @@ import { TableBody } from 'vs/nex/ui/elements/DataTable/TableBody';
 import { TableHead } from 'vs/nex/ui/elements/DataTable/TableHead';
 import {
 	FileForUI,
+	useFileProviderCwd,
 	useFileProviderFiles,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
 import {
@@ -40,12 +43,14 @@ import { KEYS } from 'vs/nex/ui/constants';
 import { strings } from 'vs/nex/base/utils/strings.util';
 import { formatter } from 'vs/nex/base/utils/formatter.util';
 import { usePrevious } from 'vs/nex/ui/utils/events.hooks';
+import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { ExplorerActions } from 'vs/nex/ui/explorer-actions/ExplorerActions';
 import { getNativeFileIconDataURL, onFileDragStart } from 'vs/nex/ipc/electron-sandbox/nex';
 
 const USE_NATIVE_ICON_FOR_REGEX = /(?:exe|ico|dll)/i;
 
 export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) => {
+	const cwd = useFileProviderCwd(explorerId);
 	const { dataAvailable } = useFileProviderFiles(explorerId);
 
 	const { changeDirectory } = useChangeDirectory(explorerId);
@@ -113,11 +118,45 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 		setFileToRenameId(undefined);
 	}
 
+	const cwdStringifiedParts = URI.from(cwd).fsPath.split(isWindows ? win32.sep : posix.sep);
+	const cwdRootPart = uriHelper.parseUri(cwd.scheme, cwdStringifiedParts[0]);
+
 	return (
 		<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
 			<ExplorerActions {...fileEditActions} />
 
-			<Box css={[commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical]}>
+			<Stack
+				direction="column"
+				alignItems="stretch"
+				css={[commonStyles.fullHeight, commonStyles.flex.shrinkAndFitVertical]}
+			>
+				<Breadcrumbs css={styles.cwdBreadcrumbs}>
+					{cwdStringifiedParts.map((pathPart, idx) => {
+						const isFirstPart = idx === 0;
+						const isLastPart = idx === cwdStringifiedParts.length - 1;
+						const pathPartFormatted = isFirstPart
+							? `${pathPart[0].toLocaleUpperCase()}${pathPart.slice(1)}`
+							: pathPart;
+
+						function handleClick() {
+							changeDirectory(
+								URI.joinPath(
+									cwdRootPart,
+									...(isFirstPart ? ['/'] : cwdStringifiedParts.slice(1, idx + 1)),
+								).path,
+							);
+						}
+
+						return !isLastPart ? (
+							<Button variant="text" color="inherit" onClick={handleClick}>
+								{pathPartFormatted}
+							</Button>
+						) : (
+							<TextBox fontSize="sm">{pathPartFormatted}</TextBox>
+						);
+					})}
+				</Breadcrumbs>
+
 				<DataTable>
 					<TableHead>
 						<HeadCell>
@@ -144,7 +183,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 						)}
 					</TableBody>
 				</DataTable>
-			</Box>
+			</Stack>
 		</Stack>
 	);
 };

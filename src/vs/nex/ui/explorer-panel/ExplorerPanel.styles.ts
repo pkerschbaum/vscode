@@ -1,4 +1,4 @@
-import { css } from '@emotion/react';
+import { css, Theme } from '@emotion/react';
 
 const iconStyles = css`
 	display: flex;
@@ -22,6 +22,15 @@ export const styles = {
 			background-size: 24px 1em;
 			background-repeat: no-repeat;
 			-webkit-font-smoothing: antialiased;
+		}
+	`,
+
+	cwdBreadcrumbs: (theme: Theme) => css`
+		padding-inline-start: ${theme.spacing()};
+
+		& .MuiBreadcrumbs-li > * {
+			min-width: 0;
+			padding-inline: ${theme.spacing(1.5)};
 		}
 	`,
 };

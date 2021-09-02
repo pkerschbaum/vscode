@@ -6,13 +6,14 @@ import { Constants } from 'vs/base/common/uint';
 import { isLinux } from 'vs/base/common/platform';
 import { URI, UriComponents } from 'vs/base/common/uri';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
+import { Schemas } from 'vs/base/common/network';
 import { IFileStat } from 'vs/platform/files/common/files';
 
 import { actions } from 'vs/nex/platform/store/file-provider/file-provider.slice';
 import { useNexFileSystem } from 'vs/nex/NexFileSystem.context';
 import { useClipboardResources } from 'vs/nex/NexClipboard.context';
 import { useDispatch } from 'vs/nex/platform/store/store';
-import { PASTE_PROCESS_STATUS, RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
+import { PASTE_PROCESS_STATUS } from 'vs/nex/platform/file-types';
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
 import {
@@ -42,7 +43,7 @@ export function useChangeDirectory(explorerId: string) {
 	const refreshFiles = useRefreshFiles();
 
 	async function changeDirectory(newDir: string) {
-		const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, newDir);
+		const parsedUri = uriHelper.parseUri(Schemas.file, newDir);
 
 		// check if the directory is a valid directory (i.e., is a URI-parsable string, and the directory is accessible)
 		if (!parsedUri) {

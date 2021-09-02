@@ -140,6 +140,7 @@ export const createTheme = (locale: Localization) => {
 
 		palette: {
 			mode: 'dark',
+			text: { secondary: '#FFFFFF' },
 			background: { default: BACKGROUND_COLOR, paper: PAPER_COLOR },
 			primary: { main: PRIMARY_COLOR },
 		},

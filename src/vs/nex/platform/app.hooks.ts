@@ -1,3 +1,5 @@
+import { Schemas } from 'vs/base/common/network';
+
 import { useNexFileSystem } from 'vs/nex/NexFileSystem.context';
 import { useDispatch } from 'vs/nex/platform/store/store';
 import {
@@ -5,7 +7,6 @@ import {
 	generateExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.slice';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
-import { RESOURCES_SCHEME } from 'vs/nex/platform/file-types';
 
 export function useAddExplorerPanel() {
 	const dispatch = useDispatch();
@@ -14,7 +15,7 @@ export function useAddExplorerPanel() {
 
 	async function addExplorerPanel() {
 		const explorerId = generateExplorerId();
-		const parsedUri = uriHelper.parseUri(RESOURCES_SCHEME.FILE_SYSTEM, 'C:/');
+		const parsedUri = uriHelper.parseUri(Schemas.file, 'C:/');
 		const stats = await fileSystem.resolve(parsedUri);
 		if (!stats.isDirectory) {
 			throw Error(
