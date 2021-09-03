@@ -20,7 +20,7 @@ import {
 } from 'vs/nex/platform/app.hooks';
 import { tabIndicatorSpanClassName } from 'vs/nex/theme';
 import { KEYS } from 'vs/nex/ui/constants';
-import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
+import { useWindowEvent } from 'vs/nex/ui/utils/react.util';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { objects } from 'vs/nex/base/utils/objects.util';

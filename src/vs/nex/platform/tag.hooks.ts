@@ -5,7 +5,7 @@ import { createLogger } from 'vs/nex/base/logger/logger';
 import { useNexStorage } from 'vs/nex/NexStorage.context';
 import { STORAGE_KEY } from 'vs/nex/platform/logic/storage';
 import { Tag } from 'vs/nex/platform/file-types';
-import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
+import { useRerenderOnEventFire } from 'vs/nex/ui/utils/react.util';
 
 const logger = createLogger('tag.hooks');
 

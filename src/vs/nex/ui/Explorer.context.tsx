@@ -9,7 +9,7 @@ import {
 	FileForUI,
 	useFileProviderFiles,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { usePrevious } from 'vs/nex/ui/utils/events.hooks';
+import { createObservableValueContext, usePrevious } from 'vs/nex/ui/utils/react.util';
 
 type ExplorerContextValue = {
 	values: {
@@ -32,7 +32,8 @@ type ExplorerContextValue = {
 	};
 };
 
-const ExplorerContext = React.createContext<ExplorerContextValue | undefined>(undefined);
+const [ObservableValueProvider, useSubscribeOnValue] =
+	createObservableValueContext<ExplorerContextValue>();
 
 type ExplorerContextProviderProps = {
 	explorerId: string;
@@ -53,7 +54,10 @@ export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (
 	const [idsOfSelectedFiles, setIdsOfSelectedFiles] = React.useState<string[]>([]);
 	const [fileToRenameId, setFileToRenameId] = React.useState<string | undefined>();
 
-	const selectedFiles = files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id));
+	const selectedFiles = React.useMemo(
+		() => files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id)),
+		[files, idsOfSelectedFiles],
+	);
 
 	const filesWithTags: FileForUI[] = React.useMemo(
 		() =>
@@ -113,114 +117,107 @@ export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (
 		if (lengthOfSelectedFiles === 1 && fileIdSelectionGotStartedWith !== idOfFirstSelectedFile) {
 			setFileIdSelectionGotStartedWith(idOfFirstSelectedFile);
 		}
-	}, [
-		lengthOfSelectedFiles,
-		idOfFirstSelectedFile,
-		fileIdSelectionGotStartedWith,
-		setFileIdSelectionGotStartedWith,
-	]);
+	}, [lengthOfSelectedFiles, idOfFirstSelectedFile, fileIdSelectionGotStartedWith]);
 
-	// on mount, and every time the filter input changes, reset selection (just select the first file)
+	// if no file is selected, and every time the filter input changes, reset selection (just select the first file)
 	const prevFilterInput = usePrevious(filterInput);
-	const isMounting = prevFilterInput === undefined;
 	const filterInputChanged = filterInput !== prevFilterInput;
 	React.useEffect(() => {
-		if ((isMounting || filterInputChanged) && filesToShow.length > 0) {
+		if ((idsOfSelectedFiles.length === 0 || filterInputChanged) && filesToShow.length > 0) {
 			setIdsOfSelectedFiles([filesToShow[0].id]);
 		}
-	}, [isMounting, filterInputChanged, filesToShow]);
+	}, [idsOfSelectedFiles, filterInputChanged, filesToShow]);
 
-	return (
-		<ExplorerContext.Provider
-			value={{
-				values: {
-					filterInput,
-					fileIdSelectionGotStartedWith,
-					idsOfSelectedFiles,
-					fileToRenameId,
+	const contextValue = React.useMemo(
+		() => ({
+			values: {
+				filterInput,
+				fileIdSelectionGotStartedWith,
+				idsOfSelectedFiles,
+				fileToRenameId,
 
-					explorerId,
-					files: filesWithTags,
-					filesToShow,
-					selectedFiles,
-				},
-				actions: {
-					setFilterInput,
-					setFileIdSelectionGotStartedWith,
-					setIdsOfSelectedFiles,
-					setFileToRenameId,
-				},
-			}}
-		>
-			{children}
-		</ExplorerContext.Provider>
+				explorerId,
+				files: filesWithTags,
+				filesToShow,
+				selectedFiles,
+			},
+			actions: {
+				setFilterInput,
+				setFileIdSelectionGotStartedWith,
+				setIdsOfSelectedFiles,
+				setFileToRenameId,
+			},
+		}),
+		[
+			filterInput,
+			fileIdSelectionGotStartedWith,
+			idsOfSelectedFiles,
+			fileToRenameId,
+
+			explorerId,
+			filesWithTags,
+			filesToShow,
+			selectedFiles,
+
+			setFilterInput,
+			setFileIdSelectionGotStartedWith,
+			setIdsOfSelectedFiles,
+			setFileToRenameId,
+		],
 	);
+
+	return <ObservableValueProvider currentValue={contextValue}>{children}</ObservableValueProvider>;
 };
 
-function useExplorerContext() {
-	const valueOfContext = React.useContext(ExplorerContext);
-	if (valueOfContext === undefined) {
-		throw new Error(`ExplorerContext not available`);
-	}
-	return valueOfContext;
-}
-
 export function useFilterInput() {
-	const contextValue = useExplorerContext();
-	return contextValue.values.filterInput;
+	return useSubscribeOnValue((contextValue) => contextValue.values.filterInput);
 }
 
 export function useFileIdSelectionGotStartedWith() {
-	const contextValue = useExplorerContext();
-	return contextValue.values.fileIdSelectionGotStartedWith;
+	return useSubscribeOnValue((contextValue) => contextValue.values.fileIdSelectionGotStartedWith);
 }
 
 export function useIdsOfSelectedFiles() {
-	const contextValue = useExplorerContext();
-	return contextValue.values.idsOfSelectedFiles;
+	return useSubscribeOnValue((contextValue) => contextValue.values.idsOfSelectedFiles);
 }
 
 // computed/pass-through values
 export function useExplorerId() {
-	const contextValue = useExplorerContext();
-	return contextValue.values.explorerId;
+	return useSubscribeOnValue((contextValue) => contextValue.values.explorerId);
 }
 
 export function useFilesToShow() {
-	const contextValue = useExplorerContext();
-	return contextValue.values.filesToShow;
+	return useSubscribeOnValue((contextValue) => contextValue.values.filesToShow);
 }
 
 export function useSelectedFiles() {
-	const contextValue = useExplorerContext();
-	return contextValue.values.selectedFiles;
+	return useSubscribeOnValue((contextValue) => contextValue.values.selectedFiles);
+}
+
+export function useFileToRenameId() {
+	return useSubscribeOnValue((contextValue) => contextValue.values.fileToRenameId);
 }
 
 export function useFileToRename() {
-	const contextValue = useExplorerContext();
-
-	return React.useMemo(() => {
+	return useSubscribeOnValue((contextValue) => {
 		let fileToRename: FileForUI | undefined;
 		if (contextValue.values.fileToRenameId) {
-			fileToRename = contextValue.values.files.find(
+			fileToRename = contextValue.values.filesToShow.find(
 				(file) => file.id === contextValue.values.fileToRenameId,
 			);
 		}
 		return fileToRename;
-	}, [contextValue.values.fileToRenameId, contextValue.values.files]);
+	});
 }
 
 export function useSetFilterInput() {
-	const contextValue = useExplorerContext();
-	return contextValue.actions.setFilterInput;
+	return useSubscribeOnValue((contextValue) => contextValue.actions.setFilterInput);
 }
 
 export function useSetIdsOfSelectedFiles() {
-	const contextValue = useExplorerContext();
-	return contextValue.actions.setIdsOfSelectedFiles;
+	return useSubscribeOnValue((contextValue) => contextValue.actions.setIdsOfSelectedFiles);
 }
 
 export function useSetFileToRenameId() {
-	const contextValue = useExplorerContext();
-	return contextValue.actions.setFileToRenameId;
+	return useSubscribeOnValue((contextValue) => contextValue.actions.setFileToRenameId);
 }

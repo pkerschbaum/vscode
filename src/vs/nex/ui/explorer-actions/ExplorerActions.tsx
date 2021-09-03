@@ -44,7 +44,7 @@ import {
 import { useClipboardResources } from 'vs/nex/NexClipboard.context';
 import { FILE_TYPE } from 'vs/nex/platform/file-types';
 import { KEYS, MOUSE_BUTTONS } from 'vs/nex/ui/constants';
-import { useWindowEvent } from 'vs/nex/ui/utils/events.hooks';
+import { useWindowEvent } from 'vs/nex/ui/utils/react.util';
 import { functions } from 'vs/nex/base/utils/functions.util';
 
 const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';

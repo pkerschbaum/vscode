@@ -28,7 +28,7 @@ import { getDistinctParents, NexFileSystem } from 'vs/nex/platform/logic/file-sy
 import { createLogger } from 'vs/nex/base/logger/logger';
 import { CustomError } from 'vs/nex/base/custom-error';
 import * as tagHooks from 'vs/nex/platform/tag.hooks';
-import { useRerenderOnEventFire } from 'vs/nex/platform/store/util/hooks.util';
+import { useRerenderOnEventFire } from 'vs/nex/ui/utils/react.util';
 import { strings } from 'vs/nex/base/utils/strings.util';
 import { objects } from 'vs/nex/base/utils/objects.util';
 

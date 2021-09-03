@@ -16,7 +16,7 @@ import { Shell } from 'vs/nex/ui/Shell';
 import { createTheme } from 'vs/nex/theme';
 import { ThemeProvider } from 'vs/nex/theme.provider';
 import { store } from 'vs/nex/platform/store/store';
-import { useDebounce } from 'vs/nex/platform/store/util/hooks.util';
+import { useDebounce } from 'vs/nex/ui/utils/react.util';
 import { ModeServiceProvider } from 'vs/nex/ModeService.context';
 import { ModelServiceProvider } from 'vs/nex/ModelService.context';
 import { NexFileSystemProvider } from 'vs/nex/NexFileSystem.context';
