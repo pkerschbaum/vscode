@@ -23,7 +23,12 @@ import {
 	useFileProviderDraftPasteState,
 	useFileProviderFocusedExplorerId,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { useAddTags } from 'vs/nex/platform/file.hooks';
+import {
+	useAddTags,
+	useCutOrCopyFiles,
+	useOpenFile,
+	useScheduleMoveFilesToTrash,
+} from 'vs/nex/platform/file.hooks';
 import {
 	useChangeDirectory,
 	useCreateFolder,
@@ -38,6 +43,7 @@ import {
 	useFilterInput,
 	useIdsOfSelectedFiles,
 	useSelectedFiles,
+	useSetFileToRenameId,
 	useSetFilterInput,
 	useSetIdsOfSelectedFiles,
 } from 'vs/nex/ui/Explorer.context';
@@ -49,31 +55,17 @@ import { functions } from 'vs/nex/base/utils/functions.util';
 
 const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
 
-type ExplorerActionsProps = {
-	openSelectedFiles: () => void;
-	scheduleDeleteSelectedFiles: () => void;
-	copySelectedFiles: () => void;
-	cutSelectedFiles: () => void;
-	triggerRenameForSelectedFiles: () => void;
-};
-
-export const ExplorerActions: React.FC<ExplorerActionsProps> = (props) => {
+export const ExplorerActions: React.FC = () => {
 	const focusedExplorerId = useFileProviderFocusedExplorerId();
 
 	if (focusedExplorerId === undefined) {
 		return null;
 	}
 
-	return <ExplorerActionsImpl {...props} />;
+	return <ExplorerActionsImpl />;
 };
 
-const ExplorerActionsImpl: React.FC<ExplorerActionsProps> = ({
-	openSelectedFiles,
-	scheduleDeleteSelectedFiles,
-	copySelectedFiles,
-	cutSelectedFiles,
-	triggerRenameForSelectedFiles,
-}) => {
+const ExplorerActionsImpl: React.FC = () => {
 	const explorerId = useExplorerId();
 	const cwd = useFileProviderCwd(explorerId);
 	const filesToShow = useFilesToShow();
@@ -82,10 +74,14 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps> = ({
 	const setIdsOfSelectedFiles = useSetIdsOfSelectedFiles();
 	const selectedFiles = useSelectedFiles();
 	const fileIdSelectionGotStartedWith = useFileIdSelectionGotStartedWith();
+	const setFileToRenameId = useSetFileToRenameId();
 
 	const { changeDirectory } = useChangeDirectory(explorerId);
-	const { revealCwdInOSExplorer } = useRevealCwdInOSExplorer(explorerId);
+	const { openFile } = useOpenFile();
+	const { cutOrCopyFiles } = useCutOrCopyFiles();
 	const { pasteFiles } = usePasteFiles(explorerId);
+	const { scheduleMoveFilesToTrash } = useScheduleMoveFilesToTrash();
+	const { revealCwdInOSExplorer } = useRevealCwdInOSExplorer(explorerId);
 	const { createFolder } = useCreateFolder(explorerId);
 	const { getTags } = useGetTags();
 	const { addTag } = useAddTag();
@@ -93,6 +89,36 @@ const ExplorerActionsImpl: React.FC<ExplorerActionsProps> = ({
 	const { removeTags } = useRemoveTags();
 
 	const filterInputRef = React.useRef<HTMLDivElement>(null);
+
+	const scheduleDeleteSelectedFiles = () => {
+		scheduleMoveFilesToTrash(selectedFiles.map((file) => file.uri));
+	};
+
+	const openSelectedFiles = () => {
+		if (selectedFiles.length === 1 && selectedFiles[0].fileType === FILE_TYPE.DIRECTORY) {
+			changeDirectory(selectedFiles[0].uri.path);
+		} else {
+			selectedFiles
+				.filter((selectedFile) => selectedFile.fileType === FILE_TYPE.FILE)
+				.forEach((selectedFile) => openFile(selectedFile.uri));
+		}
+	};
+
+	const cutOrCopySelectedFiles = (cut: boolean) => () => {
+		return cutOrCopyFiles(
+			selectedFiles.map((file) => file.uri),
+			cut,
+		);
+	};
+	const copySelectedFiles = cutOrCopySelectedFiles(false);
+	const cutSelectedFiles = cutOrCopySelectedFiles(true);
+
+	const triggerRenameForSelectedFiles = () => {
+		if (selectedFiles.length !== 1) {
+			return;
+		}
+		setFileToRenameId(selectedFiles[0].id);
+	};
 
 	function navigateUp() {
 		changeDirectory(URI.joinPath(URI.from(cwd), '..').path);

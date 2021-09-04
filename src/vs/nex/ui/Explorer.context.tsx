@@ -21,6 +21,7 @@ type ExplorerContextValue = {
 		// computed/pass-through values
 		explorerId: string;
 		files: FileForUI[];
+		dataAvailable: boolean;
 		filesToShow: FileForUI[];
 		selectedFiles: FileForUI[];
 	};
@@ -43,7 +44,7 @@ export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (
 	explorerId,
 	children,
 }) => {
-	const { files } = useFileProviderFiles(explorerId);
+	const { files, dataAvailable } = useFileProviderFiles(explorerId);
 	const { getTagsOfFile } = useGetTagsOfFile();
 
 	const [filterInput, setFilterInput] = React.useState('');
@@ -128,8 +129,8 @@ export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (
 		}
 	}, [idsOfSelectedFiles, filterInputChanged, filesToShow]);
 
-	const contextValue = React.useMemo(
-		() => ({
+	const contextValue = React.useMemo(() => {
+		const val: ExplorerContextValue = {
 			values: {
 				filterInput,
 				fileIdSelectionGotStartedWith,
@@ -138,6 +139,7 @@ export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (
 
 				explorerId,
 				files: filesWithTags,
+				dataAvailable,
 				filesToShow,
 				selectedFiles,
 			},
@@ -146,23 +148,24 @@ export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (
 				setIdsOfSelectedFiles,
 				setFileToRenameId,
 			},
-		}),
-		[
-			filterInput,
-			fileIdSelectionGotStartedWith,
-			idsOfSelectedFiles,
-			fileToRenameId,
+		};
+		return val;
+	}, [
+		filterInput,
+		fileIdSelectionGotStartedWith,
+		idsOfSelectedFiles,
+		fileToRenameId,
 
-			explorerId,
-			filesWithTags,
-			filesToShow,
-			selectedFiles,
+		explorerId,
+		filesWithTags,
+		dataAvailable,
+		filesToShow,
+		selectedFiles,
 
-			setFilterInput,
-			setIdsOfSelectedFiles,
-			setFileToRenameId,
-		],
-	);
+		setFilterInput,
+		setIdsOfSelectedFiles,
+		setFileToRenameId,
+	]);
 
 	return <ObservableValueProvider currentValue={contextValue}>{children}</ObservableValueProvider>;
 };
@@ -186,6 +189,10 @@ export function useExplorerId() {
 
 export function useFilesToShow() {
 	return useSubscribeOnValue((contextValue) => contextValue.values.filesToShow);
+}
+
+export function useDataAvailable() {
+	return useSubscribeOnValue((contextValue) => contextValue.values.dataAvailable);
 }
 
 export function useSelectedFiles() {

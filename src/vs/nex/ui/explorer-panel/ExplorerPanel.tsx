@@ -18,17 +18,12 @@ import { TableHead } from 'vs/nex/ui/elements/DataTable/TableHead';
 import {
 	FileForUI,
 	useFileProviderCwd,
-	useFileProviderFiles,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import {
-	useCutOrCopyFiles,
-	useOpenFile,
-	useRemoveTags,
-	useRenameFile,
-	useScheduleMoveFilesToTrash,
-} from 'vs/nex/platform/file.hooks';
+import { useOpenFile, useRemoveTags, useRenameFile } from 'vs/nex/platform/file.hooks';
 import { useChangeDirectory } from 'vs/nex/platform/explorer.hooks';
 import {
+	useDataAvailable,
+	useExplorerId,
 	useFileIdSelectionGotStartedWith,
 	useFilesToShow,
 	useFileToRename,
@@ -48,72 +43,8 @@ const USE_NATIVE_ICON_FOR_REGEX = /(?:exe|ico|dll)/i;
 
 export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) => {
 	const cwd = useFileProviderCwd(explorerId);
-	const { dataAvailable } = useFileProviderFiles(explorerId);
-
+	const dataAvailable = useDataAvailable();
 	const { changeDirectory } = useChangeDirectory(explorerId);
-	const { openFile } = useOpenFile();
-	const { scheduleMoveFilesToTrash } = useScheduleMoveFilesToTrash();
-	const { cutOrCopyFiles } = useCutOrCopyFiles();
-	const { renameFile } = useRenameFile();
-
-	const setFileToRenameId = useSetFileToRenameId();
-
-	const selectedFiles = useSelectedFiles();
-
-	const openSelectedFiles = () => {
-		if (selectedFiles.length === 1 && selectedFiles[0].fileType === FILE_TYPE.DIRECTORY) {
-			changeDirectory(selectedFiles[0].uri.path);
-		} else {
-			selectedFiles
-				.filter((selectedFile) => selectedFile.fileType === FILE_TYPE.FILE)
-				.forEach((selectedFile) => openFile(selectedFile.uri));
-		}
-	};
-
-	const scheduleDeleteSelectedFiles = () => {
-		scheduleMoveFilesToTrash(selectedFiles.map((file) => file.uri));
-	};
-
-	const cutOrCopySelectedFiles = (cut: boolean) => () => {
-		return cutOrCopyFiles(
-			selectedFiles.map((file) => file.uri),
-			cut,
-		);
-	};
-	const copySelectedFiles = cutOrCopySelectedFiles(false);
-	const cutSelectedFiles = cutOrCopySelectedFiles(true);
-
-	const triggerRenameForSelectedFiles = () => {
-		if (selectedFiles.length !== 1) {
-			return;
-		}
-		setFileToRenameId(selectedFiles[0].id);
-	};
-
-	const fileEditActions = {
-		openSelectedFiles,
-		scheduleDeleteSelectedFiles,
-		copySelectedFiles,
-		cutSelectedFiles,
-		triggerRenameForSelectedFiles,
-	};
-
-	function openFileOrDirectory(file: FileForUI) {
-		if (file.fileType === FILE_TYPE.DIRECTORY) {
-			changeDirectory(file.uri.path);
-		} else {
-			openFile(file.uri);
-		}
-	}
-
-	async function renameFileHandler(fileToRename: FileForUI, newName: string) {
-		await renameFile(fileToRename.uri, newName);
-		setFileToRenameId(undefined);
-	}
-
-	function abortRename() {
-		setFileToRenameId(undefined);
-	}
 
 	const cwdStringifiedParts = URI.from(cwd)
 		.fsPath.split(isWindows ? win32.sep : posix.sep)
@@ -122,7 +53,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 
 	return (
 		<Stack css={commonStyles.fullHeight} direction="column" alignItems="stretch" stretchContainer>
-			<ExplorerActions {...fileEditActions} />
+			<ExplorerActions />
 
 			<Stack
 				direction="column"
@@ -170,11 +101,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 
 					<TableBody>
 						{dataAvailable ? (
-							<FilesTableBody
-								openFileOrDirectory={openFileOrDirectory}
-								renameFile={renameFileHandler}
-								abortRename={abortRename}
-							/>
+							<FilesTableBody />
 						) : (
 							<>
 								<SkeletonRow />
@@ -189,17 +116,7 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 	);
 };
 
-type FilesTableBodyProps = {
-	openFileOrDirectory: (file: FileForUI) => void;
-	renameFile: (fileToRename: FileForUI, newName: string) => void;
-	abortRename: () => void;
-};
-
-const FilesTableBody: React.FC<FilesTableBodyProps> = ({
-	openFileOrDirectory,
-	renameFile,
-	abortRename,
-}) => {
+const FilesTableBody: React.FC = () => {
 	const filesToShow = useFilesToShow();
 
 	return (
@@ -208,9 +125,6 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 				<FilesTableRow
 					key={fileForRow.id}
 					filesToShow={filesToShow}
-					openFileOrDirectory={openFileOrDirectory}
-					renameFile={renameFile}
-					abortRename={abortRename}
 					fileForRow={fileForRow}
 					idxOfFileForRow={idxOfFileForRow}
 				/>
@@ -221,31 +135,25 @@ const FilesTableBody: React.FC<FilesTableBodyProps> = ({
 
 type FilesTableRowProps = {
 	filesToShow: FileForUI[];
-	openFileOrDirectory: (file: FileForUI) => void;
-	renameFile: (fileToRename: FileForUI, newName: string) => void;
-	abortRename: () => void;
-
 	fileForRow: FileForUI;
 	idxOfFileForRow: number;
 };
 
 const FilesTableRow: React.FC<FilesTableRowProps> = ({
 	filesToShow,
-	openFileOrDirectory,
-	renameFile,
-	abortRename,
 	fileForRow,
 	idxOfFileForRow,
 }) => {
+	const explorerId = useExplorerId();
 	const selectedFiles = useSelectedFiles();
 	const fileToRename = useFileToRename();
 	const fileIdSelectionGotStartedWith = useFileIdSelectionGotStartedWith();
 	const setIdsOfSelectedFiles = useSetIdsOfSelectedFiles();
+	const setFileToRenameId = useSetFileToRenameId();
+	const { changeDirectory } = useChangeDirectory(explorerId);
+	const { openFile } = useOpenFile();
+	const { renameFile } = useRenameFile();
 	const { removeTags } = useRemoveTags();
-
-	function selectFiles(files: FileForUI[]) {
-		setIdsOfSelectedFiles(files.map((file) => file.id));
-	}
 
 	const [nativeIconDataURL, setNativeIconDataURL] = React.useState<string | undefined>();
 
@@ -269,6 +177,27 @@ const FilesTableRow: React.FC<FilesTableRowProps> = ({
 		},
 		[fsPath, extension],
 	);
+
+	function openFileOrDirectory(file: FileForUI) {
+		if (file.fileType === FILE_TYPE.DIRECTORY) {
+			changeDirectory(file.uri.path);
+		} else {
+			openFile(file.uri);
+		}
+	}
+
+	async function renameFileHandler(fileToRename: FileForUI, newName: string) {
+		await renameFile(fileToRename.uri, newName);
+		setFileToRenameId(undefined);
+	}
+
+	function abortRename() {
+		setFileToRenameId(undefined);
+	}
+
+	function selectFiles(files: FileForUI[]) {
+		setIdsOfSelectedFiles(files.map((file) => file.id));
+	}
 
 	const fileIsSelected = !!selectedFiles.find((file) => file.id === fileForRow.id);
 
@@ -333,7 +262,7 @@ const FilesTableRow: React.FC<FilesTableRowProps> = ({
 						{fileToRename && fileToRename.id === fileForRow.id ? (
 							<RenameInput
 								file={fileForRow}
-								onSubmit={(newName) => renameFile(fileForRow, newName)}
+								onSubmit={(newName) => renameFileHandler(fileForRow, newName)}
 								abortRename={abortRename}
 							/>
 						) : (
