@@ -78,11 +78,11 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 						}
 
 						return !isLastPart ? (
-							<Button variant="outlined" color="inherit" onClick={handleClick}>
+							<Button key={pathPart} variant="outlined" color="inherit" onClick={handleClick}>
 								{pathPartFormatted}
 							</Button>
 						) : (
-							<TextBox fontSize="sm" boxProps={{ component: 'div' }}>
+							<TextBox key={pathPart} fontSize="sm" boxProps={{ component: 'div' }}>
 								{pathPartFormatted}
 							</TextBox>
 						);

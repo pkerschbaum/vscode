@@ -5,6 +5,7 @@ import { URI, UriComponents } from 'vs/base/common/uri';
 import { FileKind } from 'vs/platform/files/common/files';
 import { getIconClasses } from 'vs/editor/common/services/getIconClasses';
 
+import { createLogger } from 'vs/nex/base/logger/logger';
 import { useModelService } from 'vs/nex/ModelService.context';
 import { useModeService } from 'vs/nex/ModeService.context';
 import { useNexFileSystem } from 'vs/nex/NexFileSystem.context';
@@ -16,9 +17,11 @@ import {
 	PROCESS_TYPE,
 	Tag,
 } from 'vs/nex/platform/file-types';
-import { mapFileStatToFile } from 'vs/nex/platform/logic/file-system';
+import { mapFileStatToFile, NexFileSystem } from 'vs/nex/platform/logic/file-system';
 import { uriHelper } from 'vs/nex/base/utils/uri-helper';
 import { objects } from 'vs/nex/base/utils/objects.util';
+
+const logger = createLogger('file-provider.hooks');
 
 export const useFileProviderExplorers = () =>
 	Object.entries(useSelector((state) => state.fileProvider.explorers)).map(
@@ -52,29 +55,47 @@ export const useFileProviderProcesses = () =>
 		return process;
 	});
 
-function useFiles({
-	directory,
-	resolveMetadata,
-}: {
-	directory: UriComponents;
-	resolveMetadata: boolean;
-}) {
+export const QUERY_KEYS = {
+	FILES: (directory: string, options: { resolveMetadata?: boolean }) => [
+		'files',
+		directory,
+		options,
+	],
+};
+
+async function fetchFiles(
+	fileSystem: NexFileSystem,
+	directory: UriComponents,
+	resolveMetadata: boolean,
+) {
+	const statsWithMetadata = await fileSystem.resolve(URI.from(directory), { resolveMetadata });
+
+	if (!statsWithMetadata.children) {
+		return [];
+	}
+	return statsWithMetadata.children.map(mapFileStatToFile);
+}
+
+function useFiles(
+	{
+		directory,
+		resolveMetadata,
+	}: {
+		directory: UriComponents;
+		resolveMetadata: boolean;
+	},
+	queryOptions?: { disabled?: boolean },
+) {
 	const fileSystem = useNexFileSystem();
 
 	const filesQuery = useQuery(
-		['files', URI.from(directory).toString(), { resolveMetadata }],
-		async () => {
-			const statsWithMetadata = await fileSystem.resolve(URI.from(directory), { resolveMetadata });
-
-			if (!statsWithMetadata.children) {
-				return [];
-			}
-			return statsWithMetadata.children.map(mapFileStatToFile);
-		},
+		QUERY_KEYS.FILES(URI.from(directory).toString(), { resolveMetadata }),
+		() => fetchFiles(fileSystem, directory, resolveMetadata),
 		{
 			refetchOnWindowFocus: false,
 			refetchOnReconnect: false,
 			retry: false,
+			...queryOptions,
 		},
 	);
 
@@ -109,18 +130,95 @@ type FilesLoadingResult =
 export const useFileProviderFiles = (explorerId: string): FilesLoadingResult => {
 	const modelService = useModelService();
 	const modeService = useModeService();
+	const fileSystem = useNexFileSystem();
+	const queryClient = useQueryClient();
 
 	const cwd = useSelector((state) => state.fileProvider.explorers[explorerId].cwd);
-	const filesQueryWithoutMetadata = useFiles({ directory: cwd, resolveMetadata: false });
-	const filesQueryWithMetadata = useFiles({ directory: cwd, resolveMetadata: true });
+	const { data: filesQueryWithMetadataData, isFetching: filesQueryWithMetadataIsFetching } =
+		useFiles({ directory: cwd, resolveMetadata: true });
+	const { data: filesQueryWithoutMetadataData } = useFiles(
+		{ directory: cwd, resolveMetadata: false },
+		{ disabled: filesQueryWithMetadataData !== undefined },
+	);
+
+	React.useEffect(
+		function preloadContentOfAllSubDirectories() {
+			if (filesQueryWithMetadataData === undefined || filesQueryWithMetadataIsFetching) {
+				return;
+			}
+
+			async function doPreloadContents() {
+				await Promise.all(
+					filesQueryWithMetadataData!
+						.filter((file) => file.fileType === FILE_TYPE.DIRECTORY)
+						.filter((file) => {
+							let cachedQueryData = queryClient.getQueryData(
+								QUERY_KEYS.FILES(URI.from(file.uri).toString(), {}),
+								{ exact: false },
+							);
+							if (cachedQueryData) {
+								logger.debug(
+									`some data is already cached --> skip preloading of directory content`,
+									{
+										fileUri: URI.from(file.uri).toString(),
+									},
+								);
+								return false;
+							}
+							return true;
+						})
+						.map(async (file) => {
+							logger.debug(`start preloading of directory content`, {
+								fileUri: URI.from(file.uri).toString(),
+							});
+
+							const contents = await fetchFiles(fileSystem, file.uri, false);
+
+							const cachedQueryData = queryClient.getQueryData(
+								QUERY_KEYS.FILES(URI.from(file.uri).toString(), {}),
+								{ exact: false },
+							);
+							if (cachedQueryData) {
+								// in the meantime, some data for this query got loaded --> don't alter that data
+								return;
+							}
+
+							queryClient.setQueryData(
+								QUERY_KEYS.FILES(URI.from(file.uri).toString(), { resolveMetadata: false }),
+								contents,
+							);
+						}),
+				);
+			}
+
+			let preloadingIsNotNeccessaryAnymore = false;
+			requestIdleCallback(() => {
+				if (preloadingIsNotNeccessaryAnymore) {
+					logger.debug(`skipped preloading contents of sub directories`, {
+						uriContentsGetPreloadedFor: URI.from(cwd).toString(),
+					});
+				}
+
+				logger.debug(`preloading contents of sub directories`, {
+					uriContentsGetPreloadedFor: URI.from(cwd).toString(),
+				});
+				void doPreloadContents();
+			});
+
+			return () => {
+				preloadingIsNotNeccessaryAnymore = true;
+			};
+		},
+		[filesQueryWithMetadataData, filesQueryWithMetadataIsFetching, cwd, fileSystem, queryClient],
+	);
 
 	let filesToUse;
-	if (filesQueryWithMetadata.data !== undefined) {
-		filesToUse = filesQueryWithMetadata.data;
+	if (filesQueryWithMetadataData !== undefined) {
+		filesToUse = filesQueryWithMetadataData;
 	}
 
-	if (filesToUse === undefined && filesQueryWithoutMetadata.data !== undefined) {
-		filesToUse = filesQueryWithoutMetadata.data;
+	if (filesToUse === undefined && filesQueryWithoutMetadataData !== undefined) {
+		filesToUse = filesQueryWithoutMetadataData;
 	}
 
 	if (filesToUse === undefined) {

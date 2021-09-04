@@ -56,9 +56,10 @@ import { functions } from 'vs/nex/base/utils/functions.util';
 const EXPLORER_FILTER_INPUT_ID = 'explorer-filter-input';
 
 export const ExplorerActions: React.FC = () => {
+	const explorerId = useExplorerId();
 	const focusedExplorerId = useFileProviderFocusedExplorerId();
 
-	if (focusedExplorerId === undefined) {
+	if (explorerId !== focusedExplorerId) {
 		return null;
 	}
 
