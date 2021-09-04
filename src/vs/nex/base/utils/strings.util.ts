@@ -1,6 +1,7 @@
 export const strings = {
 	isEmpty,
 	isNullishOrEmpty,
+	isNotNullishOrEmpty,
 	capitalizeFirstLetter,
 };
 
@@ -10,6 +11,10 @@ function isEmpty(str: string): boolean {
 
 function isNullishOrEmpty(str: string | undefined | null): str is undefined | null | '' {
 	return str === undefined || str === null || isEmpty(str);
+}
+
+function isNotNullishOrEmpty(str: string | undefined | null): str is string {
+	return !isNullishOrEmpty(str);
 }
 
 function capitalizeFirstLetter(str: string): string {

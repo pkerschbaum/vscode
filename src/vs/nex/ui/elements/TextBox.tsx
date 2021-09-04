@@ -6,18 +6,20 @@ import { commonStyles } from 'vs/nex/ui/Common.styles';
 import { assertUnreachable } from 'vs/nex/base/utils/types.util';
 
 // adapted from https://github.com/mui-org/material-ui/blob/next/packages/material-ui/src/Typography/Typography.js
-export const TextBox = React.forwardRef<
-	HTMLElement,
-	{
-		fontBold?: boolean;
-		fontItalic?: boolean;
-		fontSize?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'xxxl';
-		disablePreserveNewlines?: boolean;
-		sx?: BoxProps['sx'];
-		className?: string;
-		children?: React.ReactNode;
-	}
->(function TextBox(props, ref) {
+
+type TextBoxProps = {
+	fontBold?: boolean;
+	fontItalic?: boolean;
+	fontSize?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'xxxl';
+	disablePreserveNewlines?: boolean;
+	sx?: BoxProps['sx'];
+	className?: string;
+	children?: React.ReactNode;
+
+	boxProps?: BoxProps;
+};
+
+export const TextBox = React.forwardRef<HTMLElement, TextBoxProps>(function TextBox(props, ref) {
 	const {
 		fontBold = false,
 		fontItalic = false,
@@ -27,6 +29,8 @@ export const TextBox = React.forwardRef<
 		sx,
 		className,
 		children,
+
+		boxProps,
 	} = props;
 
 	let fontSizeStyle;
@@ -73,6 +77,7 @@ export const TextBox = React.forwardRef<
 			component="span"
 			/* add ref, see https://github.com/mui-org/material-ui/issues/17010#issuecomment-615577360 */
 			{...({ ref } as any)}
+			{...boxProps}
 		>
 			{children}
 		</Box>

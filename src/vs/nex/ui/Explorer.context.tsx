@@ -26,7 +26,6 @@ type ExplorerContextValue = {
 	};
 	actions: {
 		setFilterInput: (newFilterInput: string) => void;
-		setFileIdSelectionGotStartedWith: (newFileIdSelectionGotStartedWith: string) => void;
 		setIdsOfSelectedFiles: (newIdsOfSelectedFiles: string[]) => void;
 		setFileToRenameId: (newFileToRenameId?: string) => void;
 	};
@@ -48,11 +47,20 @@ export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (
 	const { getTagsOfFile } = useGetTagsOfFile();
 
 	const [filterInput, setFilterInput] = React.useState('');
-	const [fileIdSelectionGotStartedWith, setFileIdSelectionGotStartedWith] = React.useState<
-		string | undefined
-	>();
-	const [idsOfSelectedFiles, setIdsOfSelectedFiles] = React.useState<string[]>([]);
+	const [selection, setSelection] = React.useState({
+		idsOfSelectedFiles: [] as string[],
+		fileIdSelectionGotStartedWith: undefined as string | undefined,
+	});
 	const [fileToRenameId, setFileToRenameId] = React.useState<string | undefined>();
+
+	function setIdsOfSelectedFiles(newIds: string[]) {
+		setSelection((oldState) => ({
+			idsOfSelectedFiles: newIds,
+			fileIdSelectionGotStartedWith:
+				newIds.length === 1 ? newIds[0] : oldState.fileIdSelectionGotStartedWith,
+		}));
+	}
+	const { idsOfSelectedFiles, fileIdSelectionGotStartedWith } = selection;
 
 	const selectedFiles = React.useMemo(
 		() => files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id)),
@@ -111,14 +119,6 @@ export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (
 		return result;
 	}, [filterInput, filesWithTags]);
 
-	const lengthOfSelectedFiles = selectedFiles.length;
-	const idOfFirstSelectedFile = selectedFiles[0]?.id;
-	React.useEffect(() => {
-		if (lengthOfSelectedFiles === 1 && fileIdSelectionGotStartedWith !== idOfFirstSelectedFile) {
-			setFileIdSelectionGotStartedWith(idOfFirstSelectedFile);
-		}
-	}, [lengthOfSelectedFiles, idOfFirstSelectedFile, fileIdSelectionGotStartedWith]);
-
 	// if no file is selected, and every time the filter input changes, reset selection (just select the first file)
 	const prevFilterInput = usePrevious(filterInput);
 	const filterInputChanged = filterInput !== prevFilterInput;
@@ -143,7 +143,6 @@ export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (
 			},
 			actions: {
 				setFilterInput,
-				setFileIdSelectionGotStartedWith,
 				setIdsOfSelectedFiles,
 				setFileToRenameId,
 			},
@@ -160,7 +159,6 @@ export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (
 			selectedFiles,
 
 			setFilterInput,
-			setFileIdSelectionGotStartedWith,
 			setIdsOfSelectedFiles,
 			setFileToRenameId,
 		],

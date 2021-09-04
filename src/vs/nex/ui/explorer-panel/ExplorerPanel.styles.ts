@@ -32,5 +32,15 @@ export const styles = {
 			min-width: 0;
 			padding-inline: ${theme.spacing(1.5)};
 		}
+
+		& .MuiBreadcrumbs-li > *:not(button) {
+			/* MUI outlined button height */
+			height: 30.8px;
+			/* compensate for inline border of MUI outlined button */
+			padding-inline: calc(${theme.spacing(1.5)} + 1px);
+
+			display: flex;
+			align-items: center;
+		}
 	`,
 };

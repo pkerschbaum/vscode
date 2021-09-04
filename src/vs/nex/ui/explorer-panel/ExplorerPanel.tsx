@@ -115,7 +115,9 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 		setFileToRenameId(undefined);
 	}
 
-	const cwdStringifiedParts = URI.from(cwd).fsPath.split(isWindows ? win32.sep : posix.sep);
+	const cwdStringifiedParts = URI.from(cwd)
+		.fsPath.split(isWindows ? win32.sep : posix.sep)
+		.filter(strings.isNotNullishOrEmpty);
 	const cwdRootPart = uriHelper.parseUri(cwd.scheme, cwdStringifiedParts[0]);
 
 	return (
@@ -145,11 +147,13 @@ export const ExplorerPanel: React.FC<{ explorerId: string }> = ({ explorerId }) 
 						}
 
 						return !isLastPart ? (
-							<Button variant="text" color="inherit" onClick={handleClick}>
+							<Button variant="outlined" color="inherit" onClick={handleClick}>
 								{pathPartFormatted}
 							</Button>
 						) : (
-							<TextBox fontSize="sm">{pathPartFormatted}</TextBox>
+							<TextBox fontSize="sm" boxProps={{ component: 'div' }}>
+								{pathPartFormatted}
+							</TextBox>
 						);
 					})}
 				</Breadcrumbs>
