@@ -1,4 +1,4 @@
-import { createContext } from 'vs/nex/ui/utils/create-context';
+import { createContext } from 'vs/nex/ui/utils/react.util';
 import { IModeService } from 'vs/editor/common/services/modeService';
 
 const context = createContext<IModeService>('IModeService');

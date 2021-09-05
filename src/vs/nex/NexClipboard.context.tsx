@@ -3,7 +3,7 @@ import * as React from 'react';
 import { URI } from 'vs/base/common/uri';
 
 import { NexClipboard } from 'vs/nex/platform/logic/clipboard';
-import { createContext } from 'vs/nex/ui/utils/create-context';
+import { createContext } from 'vs/nex/ui/utils/react.util';
 
 const context = createContext<NexClipboard>('NexClipboard');
 export const useNexClipboard = context.useContextValue;

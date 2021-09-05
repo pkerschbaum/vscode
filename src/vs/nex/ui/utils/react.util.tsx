@@ -1,7 +1,9 @@
 import * as React from 'react';
 import { useDispatch } from 'react-redux';
+import { atom, useAtom } from 'jotai';
+import { PrimitiveAtom, Scope, SetAtom, WritableAtom } from 'jotai/core/atom';
 
-import { Emitter, Event } from 'vs/base/common/event';
+import { Event } from 'vs/base/common/event';
 
 type EventHandlers<E extends keyof WindowEventMap> = Array<{
 	condition: (e: WindowEventMap[E]) => boolean;
@@ -100,65 +102,41 @@ export function useRerenderOnEventFire<T>(event: Event<T>, shouldRerender: (valu
 	);
 }
 
-export function createObservableValueContext<ContextValue>() {
-	const ValueChangedEventContext = React.createContext<Event<void> | undefined>(undefined);
-	const ValueRefContext = React.createContext<React.MutableRefObject<ContextValue> | undefined>(
-		undefined,
-	);
+export function createContext<T>(name: string) {
+	const Context = React.createContext<T | undefined>(undefined);
 
-	type ObservableValueProviderProps = {
-		currentValue: ContextValue;
-		children: React.ReactElement;
-	};
-
-	const ObservableValueProvider: React.FC<ObservableValueProviderProps> = ({
-		currentValue,
-		children,
-	}) => {
-		const [valueChangedEmitter] = React.useState(() => new Emitter<void>());
-		const valueRef = React.useRef(currentValue);
-		valueRef.current = currentValue;
-
-		React.useLayoutEffect(
-			function notifyEventListenersOfChangedValue() {
-				valueChangedEmitter.fire();
-			},
-			[currentValue],
-		);
-
-		return (
-			<ValueChangedEventContext.Provider value={valueChangedEmitter.event}>
-				<ValueRefContext.Provider value={valueRef}>{children}</ValueRefContext.Provider>
-			</ValueChangedEventContext.Provider>
-		);
-	};
-
-	function useSubscribeOnValue<Result>(selector: (contextValue: ContextValue) => Result) {
-		const valueChangedEvent = React.useContext(ValueChangedEventContext);
-		const valueRef = React.useContext(ValueRefContext);
-
-		if (valueChangedEvent === undefined || valueRef === undefined) {
-			throw new Error(`hook was not called inside the corresponding ObservableValueProvider`);
+	const useContextValue = () => {
+		const valueOfContext = React.useContext(Context);
+		if (valueOfContext === undefined) {
+			throw new Error(`${name} context not available`);
 		}
+		return valueOfContext;
+	};
 
-		const [, forceRender] = React.useReducer((s) => s + 1, 0);
-		const currentSelectorRef = React.useRef(selector);
-		currentSelectorRef.current = selector;
-		const memoizedSelectorResult = React.useRef(currentSelectorRef.current(valueRef.current));
+	const Provider: React.FC<{
+		children: React.ReactElement;
+		value: T;
+	}> = ({ children, value }) => {
+		return <Context.Provider value={value}>{children}</Context.Provider>;
+	};
 
-		React.useEffect(() => {
-			const disposable = valueChangedEvent(() => {
-				const newValue = currentSelectorRef.current(valueRef.current);
-				if (!Object.is(memoizedSelectorResult.current, newValue)) {
-					memoizedSelectorResult.current = newValue;
-					forceRender();
-				}
-			});
-			return () => disposable.dispose();
-		}, [valueChangedEvent, valueRef]);
+	return { useContextValue, Provider };
+}
 
-		return memoizedSelectorResult.current;
+/* Jotai "scoped atoms" */
+const SYMBOL_NO_VALUE_PRESENT = Symbol('NO_VALUE_PRESENT');
+
+export function scopedAtom<Value extends unknown>(): PrimitiveAtom<Value> {
+	return atom(SYMBOL_NO_VALUE_PRESENT) as PrimitiveAtom<any>;
+}
+
+export function useScopedAtom<Value, Update>(
+	atom: WritableAtom<Value, Update>,
+	scope: Scope,
+): [Value, SetAtom<Update>] {
+	const [value, setValue] = useAtom(atom, scope);
+	if ((value as unknown) === SYMBOL_NO_VALUE_PRESENT) {
+		throw new Error('useScopedAtom was not used inside a jotai provider');
 	}
-
-	return [ObservableValueProvider, useSubscribeOnValue] as const;
+	return [value, setValue];
 }

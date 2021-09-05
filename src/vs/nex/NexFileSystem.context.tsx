@@ -1,4 +1,4 @@
-import { createContext } from 'vs/nex/ui/utils/create-context';
+import { createContext } from 'vs/nex/ui/utils/react.util';
 import { NexFileSystem } from 'vs/nex/platform/logic/file-system';
 
 const context = createContext<NexFileSystem>('NexFileSystem');

@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { matchSorter } from 'match-sorter';
+import { Provider } from 'jotai';
+import { useUpdateAtom } from 'jotai/utils';
 
 import { arrays } from 'vs/nex/base/utils/arrays.util';
 import { strings } from 'vs/nex/base/utils/strings.util';
@@ -9,60 +11,71 @@ import {
 	FileForUI,
 	useFileProviderFiles,
 } from 'vs/nex/platform/store/file-provider/file-provider.hooks';
-import { createObservableValueContext, usePrevious } from 'vs/nex/ui/utils/react.util';
+import { scopedAtom, usePrevious, useScopedAtom } from 'vs/nex/ui/utils/react.util';
 
-type ExplorerContextValue = {
-	values: {
-		filterInput: string;
-		fileIdSelectionGotStartedWith?: string;
-		idsOfSelectedFiles: string[];
-		fileToRenameId?: string;
+const filterInputAtom = scopedAtom<string>();
+const selectionAtom = scopedAtom<{
+	idsOfSelectedFiles: string[];
+	fileIdSelectionGotStartedWith: string | undefined;
+}>();
+const fileToRenameIdAtom = scopedAtom<string | undefined>();
 
-		// computed/pass-through values
-		explorerId: string;
-		files: FileForUI[];
-		dataAvailable: boolean;
-		filesToShow: FileForUI[];
-		selectedFiles: FileForUI[];
-	};
-	actions: {
-		setFilterInput: (newFilterInput: string) => void;
-		setIdsOfSelectedFiles: (newIdsOfSelectedFiles: string[]) => void;
-		setFileToRenameId: (newFileToRenameId?: string) => void;
-	};
-};
-
-const [ObservableValueProvider, useSubscribeOnValue] =
-	createObservableValueContext<ExplorerContextValue>();
+const explorerIdAtom = scopedAtom<string>();
+const dataAvailableAtom = scopedAtom<boolean>();
+const filesAtom = scopedAtom<FileForUI[]>();
+const filesToShowAtom = scopedAtom<FileForUI[]>();
+const selectedFilesAtom = scopedAtom<FileForUI[]>();
 
 type ExplorerContextProviderProps = {
 	explorerId: string;
 	children: React.ReactElement;
 };
 
-export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = ({
-	explorerId,
-	children,
-}) => {
+const SYMBOL_STATE_ATOMS_SCOPE = Symbol('EXPLORER_CONTEXT_STATE_ATOMS_SCOPE_SYMBOL');
+const SYMBOL_DERIVED_VALUES_ATOMS_SCOPE = Symbol('EXPLORER_CONTEXT_DERIVED_VALUES_ATOMS_SCOPE');
+
+export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (props) => {
+	return (
+		<Provider
+			scope={SYMBOL_STATE_ATOMS_SCOPE}
+			initialValues={[
+				[filterInputAtom, ''],
+				[
+					selectionAtom,
+					{
+						idsOfSelectedFiles: [] as string[],
+						fileIdSelectionGotStartedWith: undefined as string | undefined,
+					},
+				],
+				[fileToRenameIdAtom, undefined],
+			]}
+		>
+			<StateAtomsContainer {...props} />
+		</Provider>
+	);
+};
+
+const StateAtomsContainer: React.FC<ExplorerContextProviderProps> = (props) => {
+	const { explorerId } = props;
+
+	const [filterInput] = useScopedAtom(filterInputAtom, SYMBOL_STATE_ATOMS_SCOPE);
+	const [selection, setSelection] = useScopedAtom(selectionAtom, SYMBOL_STATE_ATOMS_SCOPE);
+
 	const { files, dataAvailable } = useFileProviderFiles(explorerId);
 	const { getTagsOfFile } = useGetTagsOfFile();
 
-	const [filterInput, setFilterInput] = React.useState('');
-	const [selection, setSelection] = React.useState({
-		idsOfSelectedFiles: [] as string[],
-		fileIdSelectionGotStartedWith: undefined as string | undefined,
-	});
-	const [fileToRenameId, setFileToRenameId] = React.useState<string | undefined>();
+	const setIdsOfSelectedFiles = React.useCallback(
+		(newIds: string[]) => {
+			setSelection((oldState) => ({
+				idsOfSelectedFiles: newIds,
+				fileIdSelectionGotStartedWith:
+					newIds.length === 1 ? newIds[0] : oldState.fileIdSelectionGotStartedWith,
+			}));
+		},
+		[setSelection],
+	);
 
-	function setIdsOfSelectedFiles(newIds: string[]) {
-		setSelection((oldState) => ({
-			idsOfSelectedFiles: newIds,
-			fileIdSelectionGotStartedWith:
-				newIds.length === 1 ? newIds[0] : oldState.fileIdSelectionGotStartedWith,
-		}));
-	}
-	const { idsOfSelectedFiles, fileIdSelectionGotStartedWith } = selection;
-
+	const { idsOfSelectedFiles } = selection;
 	const selectedFiles = React.useMemo(
 		() => files.filter((file) => !!idsOfSelectedFiles.find((id) => id === file.id)),
 		[files, idsOfSelectedFiles],
@@ -127,102 +140,142 @@ export const ExplorerContextProvider: React.FC<ExplorerContextProviderProps> = (
 		if ((idsOfSelectedFiles.length === 0 || filterInputChanged) && filesToShow.length > 0) {
 			setIdsOfSelectedFiles([filesToShow[0].id]);
 		}
-	}, [idsOfSelectedFiles, filterInputChanged, filesToShow]);
+	}, [idsOfSelectedFiles, filterInputChanged, filesToShow, setIdsOfSelectedFiles]);
 
-	const contextValue = React.useMemo(() => {
-		const val: ExplorerContextValue = {
-			values: {
-				filterInput,
-				fileIdSelectionGotStartedWith,
-				idsOfSelectedFiles,
-				fileToRenameId,
+	return (
+		<Provider
+			scope={SYMBOL_DERIVED_VALUES_ATOMS_SCOPE}
+			initialValues={[
+				[explorerIdAtom, explorerId],
+				[dataAvailableAtom, dataAvailable],
+				[filesAtom, filesWithTags],
+				[filesToShowAtom, filesToShow],
+				[selectedFilesAtom, selectedFiles],
+			]}
+		>
+			<DerivedValuesAtomsContainer
+				{...props}
+				dataAvailable={dataAvailable}
+				filesWithTags={filesWithTags}
+				filesToShow={filesToShow}
+				selectedFiles={selectedFiles}
+			/>
+		</Provider>
+	);
+};
 
-				explorerId,
-				files: filesWithTags,
-				dataAvailable,
-				filesToShow,
-				selectedFiles,
-			},
-			actions: {
-				setFilterInput,
-				setIdsOfSelectedFiles,
-				setFileToRenameId,
-			},
-		};
-		return val;
-	}, [
-		filterInput,
-		fileIdSelectionGotStartedWith,
-		idsOfSelectedFiles,
-		fileToRenameId,
+type DerivedValuesAtomsContainerProps = ExplorerContextProviderProps & {
+	dataAvailable: boolean;
+	filesWithTags: FileForUI[];
+	filesToShow: FileForUI[];
+	selectedFiles: FileForUI[];
+};
 
-		explorerId,
-		filesWithTags,
-		dataAvailable,
-		filesToShow,
-		selectedFiles,
+const DerivedValuesAtomsContainer: React.FC<DerivedValuesAtomsContainerProps> = ({
+	explorerId,
+	dataAvailable,
+	filesWithTags,
+	filesToShow,
+	selectedFiles,
+	children,
+}) => {
+	// propagate computed/pass-through values
+	const setExplorerId = useUpdateAtom(explorerIdAtom, SYMBOL_DERIVED_VALUES_ATOMS_SCOPE);
+	const setDataAvailable = useUpdateAtom(dataAvailableAtom, SYMBOL_DERIVED_VALUES_ATOMS_SCOPE);
+	const setFiles = useUpdateAtom(filesAtom, SYMBOL_DERIVED_VALUES_ATOMS_SCOPE);
+	const setFilesToShow = useUpdateAtom(filesToShowAtom, SYMBOL_DERIVED_VALUES_ATOMS_SCOPE);
+	const setSelectedFiles = useUpdateAtom(selectedFilesAtom, SYMBOL_DERIVED_VALUES_ATOMS_SCOPE);
 
-		setFilterInput,
-		setIdsOfSelectedFiles,
-		setFileToRenameId,
-	]);
+	React.useEffect(() => {
+		setExplorerId(explorerId);
+	}, [explorerId, setExplorerId]);
+	React.useEffect(() => {
+		setDataAvailable(dataAvailable);
+	}, [dataAvailable, setDataAvailable]);
+	React.useEffect(() => {
+		setFiles(filesWithTags);
+	}, [filesWithTags, setFiles]);
+	React.useEffect(() => {
+		setFilesToShow(filesToShow);
+	}, [filesToShow, setFilesToShow]);
+	React.useEffect(() => {
+		setSelectedFiles(selectedFiles);
+	}, [selectedFiles, setSelectedFiles]);
 
-	return <ObservableValueProvider currentValue={contextValue}>{children}</ObservableValueProvider>;
+	return children;
 };
 
 export function useFilterInput() {
-	return useSubscribeOnValue((contextValue) => contextValue.values.filterInput);
+	const [filterInput] = useScopedAtom(filterInputAtom, SYMBOL_STATE_ATOMS_SCOPE);
+	return filterInput;
 }
 
 export function useFileIdSelectionGotStartedWith() {
-	return useSubscribeOnValue((contextValue) => contextValue.values.fileIdSelectionGotStartedWith);
+	const [selection] = useScopedAtom(selectionAtom, SYMBOL_STATE_ATOMS_SCOPE);
+	return selection.fileIdSelectionGotStartedWith;
 }
 
 export function useIdsOfSelectedFiles() {
-	return useSubscribeOnValue((contextValue) => contextValue.values.idsOfSelectedFiles);
+	const [selection] = useScopedAtom(selectionAtom, SYMBOL_STATE_ATOMS_SCOPE);
+	return selection.idsOfSelectedFiles;
+}
+
+export function useFileToRenameId() {
+	const [fileToRenameId] = useScopedAtom(fileToRenameIdAtom, SYMBOL_STATE_ATOMS_SCOPE);
+	return fileToRenameId;
 }
 
 // computed/pass-through values
 export function useExplorerId() {
-	return useSubscribeOnValue((contextValue) => contextValue.values.explorerId);
+	const [explorerId] = useScopedAtom(explorerIdAtom, SYMBOL_DERIVED_VALUES_ATOMS_SCOPE);
+	return explorerId;
 }
 
 export function useFilesToShow() {
-	return useSubscribeOnValue((contextValue) => contextValue.values.filesToShow);
+	const [filesToShow] = useScopedAtom(filesToShowAtom, SYMBOL_DERIVED_VALUES_ATOMS_SCOPE);
+	return filesToShow;
 }
 
 export function useDataAvailable() {
-	return useSubscribeOnValue((contextValue) => contextValue.values.dataAvailable);
+	const [dataAvailable] = useScopedAtom(dataAvailableAtom, SYMBOL_DERIVED_VALUES_ATOMS_SCOPE);
+	return dataAvailable;
 }
 
 export function useSelectedFiles() {
-	return useSubscribeOnValue((contextValue) => contextValue.values.selectedFiles);
-}
-
-export function useFileToRenameId() {
-	return useSubscribeOnValue((contextValue) => contextValue.values.fileToRenameId);
+	const [selectedFiles] = useScopedAtom(selectedFilesAtom, SYMBOL_DERIVED_VALUES_ATOMS_SCOPE);
+	return selectedFiles;
 }
 
 export function useFileToRename() {
-	return useSubscribeOnValue((contextValue) => {
-		let fileToRename: FileForUI | undefined;
-		if (contextValue.values.fileToRenameId) {
-			fileToRename = contextValue.values.filesToShow.find(
-				(file) => file.id === contextValue.values.fileToRenameId,
-			);
-		}
-		return fileToRename;
-	});
+	const [fileToRenameId] = useScopedAtom(fileToRenameIdAtom, SYMBOL_STATE_ATOMS_SCOPE);
+	const [filesToShow] = useScopedAtom(filesToShowAtom, SYMBOL_DERIVED_VALUES_ATOMS_SCOPE);
+
+	let fileToRename: FileForUI | undefined;
+	if (fileToRenameId) {
+		fileToRename = filesToShow.find((file) => file.id === fileToRenameId);
+	}
+	return fileToRename;
 }
 
 export function useSetFilterInput() {
-	return useSubscribeOnValue((contextValue) => contextValue.actions.setFilterInput);
+	return useUpdateAtom(filterInputAtom, SYMBOL_STATE_ATOMS_SCOPE);
 }
 
 export function useSetIdsOfSelectedFiles() {
-	return useSubscribeOnValue((contextValue) => contextValue.actions.setIdsOfSelectedFiles);
+	const setSelection = useUpdateAtom(selectionAtom, SYMBOL_STATE_ATOMS_SCOPE);
+	const setIdsOfSelectedFiles = React.useCallback(
+		(newIds: string[]) => {
+			setSelection((oldState) => ({
+				idsOfSelectedFiles: newIds,
+				fileIdSelectionGotStartedWith:
+					newIds.length === 1 ? newIds[0] : oldState.fileIdSelectionGotStartedWith,
+			}));
+		},
+		[setSelection],
+	);
+	return setIdsOfSelectedFiles;
 }
 
 export function useSetFileToRenameId() {
-	return useSubscribeOnValue((contextValue) => contextValue.actions.setFileToRenameId);
+	return useUpdateAtom(fileToRenameIdAtom, SYMBOL_STATE_ATOMS_SCOPE);
 }

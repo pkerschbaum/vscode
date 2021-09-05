@@ -155,7 +155,7 @@ type ExplorerPanelTabProps = {
 
 const ExplorerPanelTab = React.memo<ExplorerPanelTabProps>(function ExplorerPanelTab(props) {
 	return (
-		<Button css={commonStyles.fullWidth}>
+		<Button css={commonStyles.fullWidth} component="div">
 			<Stack css={commonStyles.fullWidth} justifyContent="space-between">
 				<Box component="span">{props.label}</Box>
 				<Tooltip title={props.removeExplorerActionDisabled ? '' : 'Close tab'}>
