@@ -148,7 +148,7 @@ export class MainThreadTerminalService implements MainThreadTerminalServiceShape
 			r(terminal);
 		});
 		this._extHostTerminals.set(extHostTerminalId, terminal);
-		return terminal;
+		await terminal;
 	}
 
 	private async _deserializeParentTerminal(location?: TerminalLocation | TerminalEditorLocationOptions | { parentTerminal: ExtHostTerminalIdentifier } | { splitActiveTerminal: boolean, location?: TerminalLocation }): Promise<TerminalLocation | TerminalEditorLocationOptions | { parentTerminal: ITerminalInstance } | { splitActiveTerminal: boolean } | undefined> {
