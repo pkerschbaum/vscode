@@ -146,7 +146,7 @@ export class MainThreadTerminalService implements MainThreadTerminalServiceShape
 				location: await this._deserializeParentTerminal(launchConfig.location)
 			});
 			r(terminal);
-		})
+		});
 		this._extHostTerminals.set(extHostTerminalId, terminal);
 		return terminal;
 	}
