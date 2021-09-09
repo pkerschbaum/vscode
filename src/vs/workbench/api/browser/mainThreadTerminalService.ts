@@ -140,7 +140,7 @@ export class MainThreadTerminalService implements MainThreadTerminalServiceShape
 			isExtensionOwnedTerminal: launchConfig.isExtensionOwnedTerminal,
 			useShellEnvironment: launchConfig.useShellEnvironment,
 		};
-		const terminal = new Promise(async r => {
+		const terminal = new Promise<ITerminalInstance>(async r => {
 			const terminal = await this._terminalService.createTerminal({
 				config: shellLaunchConfig,
 				location: await this._deserializeParentTerminal(launchConfig.location)
