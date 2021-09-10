@@ -163,13 +163,14 @@ export class TerminalEditorService extends Disposable implements ITerminalEditor
 		if (resource) {
 			await this._editorService.openEditor({
 				resource,
+				description: instance.shellLaunchConfig.description,
 				options:
 				{
 					pinned: true,
 					forceReload: true,
 					preserveFocus: editorOptions?.preserveFocus
 				}
-			}, editorOptions?.viewColumn);
+			}, editorOptions?.viewColumn || ACTIVE_GROUP);
 		}
 	}
 

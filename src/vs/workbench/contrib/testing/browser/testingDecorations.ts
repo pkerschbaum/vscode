@@ -28,7 +28,7 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { IThemeService, registerThemingParticipant, themeColorFromId, ThemeIcon } from 'vs/platform/theme/common/themeService';
+import { registerThemingParticipant, themeColorFromId, ThemeIcon } from 'vs/platform/theme/common/themeService';
 import { BREAKPOINT_EDITOR_CONTRIBUTION_ID, IBreakpointEditorContribution } from 'vs/workbench/contrib/debug/common/debug';
 import { getTestItemContextOverlay } from 'vs/workbench/contrib/testing/browser/explorerProjections/testItemContextOverlay';
 import { testingRunAllIcon, testingRunIcon, testingStatesToIcons } from 'vs/workbench/contrib/testing/browser/icons';
@@ -435,7 +435,7 @@ class ExpectedLensContentWidget extends TitleLensContentWidget {
 	}
 
 	protected override getText() {
-		return localize('expected.title', 'Expected:');
+		return localize('expected.title', 'Expected');
 	}
 }
 
@@ -446,7 +446,7 @@ class ActualLensContentWidget extends TitleLensContentWidget {
 	}
 
 	protected override getText() {
-		return localize('actual.title', 'Actual:');
+		return localize('actual.title', 'Actual');
 	}
 }
 
@@ -739,16 +739,7 @@ class TestMessageDecoration implements ITestDecoration {
 	) {
 		const severity = testMessage.type;
 		const message = typeof testMessage.message === 'string' ? removeAnsiEscapeCodes(testMessage.message) : testMessage.message;
-		const colorTheme = themeService.getColorTheme();
-		editorService.registerDecorationType('test-message-decoration', this.decorationId, {
-			after: {
-				contentText: renderStringAsPlaintext(message),
-				color: `${colorTheme.getColor(testMessageSeverityColors[severity].decorationForeground)}`,
-				fontSize: `${editor.getOption(EditorOption.fontSize)}px`,
-				fontFamily: `var(${FONT_FAMILY_VAR})`,
-				padding: `0px 12px 0px 24px`,
-			},
-		}, undefined, editor);
+		editorService.registerDecorationType('test-message-decoration', this.decorationId, {}, undefined, editor);
 
 		const options = editorService.resolveDecorationOptions(this.decorationId, true);
 		options.hoverMessage = typeof message === 'string' ? new MarkdownString().appendText(message) : message;
@@ -792,7 +783,7 @@ class TestMessageDecoration implements ITestDecoration {
 			return false;
 		}
 
-		if (e.target.element?.className.includes(this.decorationId)) {
+		if (e.target.element?.className.includes(this.contentIdClass)) {
 			TestingOutputPeekController.get(this.editor).toggle(this.messageUri);
 		}
 
@@ -808,5 +799,9 @@ registerThemingParticipant((theme, collector) => {
 	const codeLensForeground = theme.getColor(editorCodeLensForeground);
 	if (codeLensForeground) {
 		collector.addRule(`.testing-diff-lens-widget { color: ${codeLensForeground}; }`);
+	}
+
+	for (const [severity, { decorationForeground }] of Object.entries(testMessageSeverityColors)) {
+		collector.addRule(`.test-message-inline-content-s${severity} { color: ${theme.getColor(decorationForeground)} !important }`);
 	}
 });

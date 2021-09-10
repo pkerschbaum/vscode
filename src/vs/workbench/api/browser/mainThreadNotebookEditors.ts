@@ -131,8 +131,7 @@ export class MainThreadNotebookEditors implements MainThreadNotebookEditorsShape
 			override: viewType
 		};
 
-		const input = NotebookEditorInput.create(this._instantiationService, URI.revive(resource), viewType);
-		const editorPane = await this._editorService.openEditor(input, editorOptions, columnToEditorGroup(this._editorGroupService, options.position));
+		const editorPane = await this._editorService.openEditor({ resource: URI.revive(resource), options: editorOptions }, columnToEditorGroup(this._editorGroupService, options.position));
 		const notebookEditor = getNotebookEditorFromEditorPane(editorPane);
 
 		if (notebookEditor) {

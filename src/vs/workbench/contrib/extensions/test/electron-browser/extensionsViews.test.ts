@@ -100,7 +100,7 @@ suite('ExtensionsListView Tests', () => {
 		instantiationService.stub(IContextKeyService, new MockContextKeyService());
 		instantiationService.stub(IMenuService, new TestMenuService());
 
-		const localExtensionManagementServer = { extensionManagementService: instantiationService.get(IExtensionManagementService), label: 'local', id: 'vscode-local', getTargetPlatform() { return Promise.resolve(CURRENT_TARGET_PLATFORM); } };
+		const localExtensionManagementServer = { extensionManagementService: instantiationService.get(IExtensionManagementService), label: 'local', id: 'vscode-local', targetPlatform: CURRENT_TARGET_PLATFORM, };
 		instantiationService.stub(IExtensionManagementServerService, <Partial<IExtensionManagementServerService>>{
 			get localExtensionManagementServer(): IExtensionManagementServer {
 				return localExtensionManagementServer;

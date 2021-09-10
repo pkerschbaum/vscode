@@ -7,7 +7,6 @@ import * as sinon from 'sinon';
 import * as sinonTest from 'sinon-test';
 import * as Errors from 'vs/base/common/errors';
 import { Emitter } from 'vs/base/common/event';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { TestConfigurationService } from 'vs/platform/configuration/test/common/testConfigurationService';
 import ErrorTelemetry from 'vs/platform/telemetry/browser/errorTelemetry';
 import { ITelemetryData } from 'vs/platform/telemetry/common/telemetry';

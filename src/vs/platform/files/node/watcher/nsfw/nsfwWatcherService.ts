@@ -5,6 +5,7 @@
 
 import * as nsfw from 'nsfw';
 import { ThrottledDelayer } from 'vs/base/common/async';
+import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { Emitter } from 'vs/base/common/event';
 import { isEqualOrParent } from 'vs/base/common/extpath';
 import { parse, ParsedPattern } from 'vs/base/common/glob';

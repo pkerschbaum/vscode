@@ -479,14 +479,7 @@ export class ExtensionEditor extends EditorPane {
 					}
 				}));
 				append(append(template.status, $('.status-text')),
-					renderMarkdown(new MarkdownString(status.message.value, { isTrusted: true, supportThemeIcons: true }), {
-						actionHandler: {
-							callback: (content) => {
-								this.openerService.open(content, { allowCommands: true }).catch(onUnexpectedError);
-							},
-							disposables: disposables
-						}
-					}));
+					rendered.element);
 			}
 		};
 		updateStatus();

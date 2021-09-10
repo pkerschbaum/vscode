@@ -87,6 +87,5 @@
 	},
 	"typescript.tsc.autoDetect": "off",
   "editor.rulers": [100],
-	"notebook.experimental.useMarkdownRenderer": true,
 	"testing.autoRun.mode": "rerun",
 }

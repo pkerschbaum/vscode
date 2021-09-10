@@ -168,6 +168,10 @@ async function webviewPreloads(ctx: PreloadContext) {
 		readonly workspace: { readonly isTrusted: boolean };
 	}
 
+	interface RendererModule {
+		activate(ctx: RendererContext): Promise<RendererApi | undefined | any> | RendererApi | undefined | any;
+	}
+
 	interface KernelPreloadContext {
 		readonly onDidReceiveKernelMessage: Event<unknown>;
 		postKernelMessage(data: unknown): void;

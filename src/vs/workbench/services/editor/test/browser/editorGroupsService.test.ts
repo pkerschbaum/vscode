@@ -14,6 +14,7 @@ import { MockScopableContextKeyService } from 'vs/platform/keybinding/test/commo
 import { ConfirmResult } from 'vs/platform/dialogs/common/dialogs';
 import { TestConfigurationService } from 'vs/platform/configuration/test/common/testConfigurationService';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { SideBySideEditorInput } from 'vs/workbench/common/editor/sideBySideEditorInput';
 
 suite('EditorGroupsService', () => {
 

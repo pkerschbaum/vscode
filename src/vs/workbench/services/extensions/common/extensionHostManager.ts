@@ -26,6 +26,7 @@ import { CATEGORIES } from 'vs/workbench/common/actions';
 import { Barrier, timeout } from 'vs/base/common/async';
 import { URI } from 'vs/base/common/uri';
 import { ILogService } from 'vs/platform/log/common/log';
+import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 // Enable to see detailed message communication between window and extension host
 const LOG_EXTENSION_HOST_COMMUNICATION = false;
@@ -55,6 +56,24 @@ export function createExtensionHostManager(instantiationService: IInstantiationS
 	}
 	return instantiationService.createInstance(ExtensionHostManager, extensionHost, initialActivationEvents);
 }
+
+export type ExtensionHostStartupClassification = {
+	time: { classification: 'SystemMetaData', purpose: 'PerformanceAndHealth' };
+	action: { classification: 'SystemMetaData', purpose: 'PerformanceAndHealth' };
+	kind: { classification: 'SystemMetaData', purpose: 'PerformanceAndHealth' };
+	errorName?: { classification: 'SystemMetaData', purpose: 'PerformanceAndHealth' };
+	errorMessage?: { classification: 'SystemMetaData', purpose: 'PerformanceAndHealth' };
+	errorStack?: { classification: 'SystemMetaData', purpose: 'PerformanceAndHealth' };
+};
+
+export type ExtensionHostStartupEvent = {
+	time: number;
+	action: 'starting' | 'success' | 'error';
+	kind: string;
+	errorName?: string;
+	errorMessage?: string;
+	errorStack?: string;
+};
 
 class ExtensionHostManager extends Disposable implements IExtensionHostManager {
 

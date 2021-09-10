@@ -130,16 +130,6 @@ class DisposedModelInfo {
 	) { }
 }
 
-function schemaShouldMaintainUndoRedoElements(resource: URI) {
-	return (
-		resource.scheme === Schemas.file
-		|| resource.scheme === Schemas.vscodeRemote
-		|| resource.scheme === Schemas.userData
-		|| resource.scheme === Schemas.vscodeNotebookCell
-		|| resource.scheme === 'fake-fs' // for tests
-	);
-}
-
 export class ModelServiceImpl extends Disposable implements IModelService {
 
 	public static MAX_MEMORY_FOR_CLOSED_FILES_UNDO_STACK = 20 * 1024 * 1024;

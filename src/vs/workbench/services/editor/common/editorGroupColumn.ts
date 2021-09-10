@@ -14,7 +14,7 @@ import { ACTIVE_GROUP, ACTIVE_GROUP_TYPE, SIDE_GROUP, SIDE_GROUP_TYPE } from 'vs
  */
 export type EditorGroupColumn = number;
 
-export function columnToEditorGroup(editorGroupService: IEditorGroupsService, column?: EditorGroupColumn): GroupIdentifier {
+export function columnToEditorGroup(editorGroupService: IEditorGroupsService, column?: EditorGroupColumn): GroupIdentifier | ACTIVE_GROUP_TYPE | SIDE_GROUP_TYPE {
 	if (
 		typeof column !== 'number' ||
 		column === ACTIVE_GROUP ||

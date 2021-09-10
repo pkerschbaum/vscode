@@ -41,7 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
 		exportNotebook: (notebook: vscode.NotebookData): string => {
 			return exportNotebook(notebook, serializer);
 		},
-		setKernelSpec: async (resource: vscode.Uri, kernelspec: unknown): Promise<boolean> => {
+		setNotebookMetadata: async (resource: vscode.Uri, metadata: Partial<NotebookMetadata>): Promise<boolean> => {
 			const document = vscode.workspace.notebookDocuments.find(doc => doc.uri.toString() === resource.toString());
 			if (!document) {
 				return false;
@@ -52,9 +52,9 @@ export function activate(context: vscode.ExtensionContext) {
 				...document.metadata,
 				custom: {
 					...(document.metadata.custom ?? {}),
-					metadata: {
+					metadata: <NotebookMetadata>{
 						...(document.metadata.custom?.metadata ?? {}),
-						kernelspec: kernelspec
+						...metadata
 					},
 				}
 			});

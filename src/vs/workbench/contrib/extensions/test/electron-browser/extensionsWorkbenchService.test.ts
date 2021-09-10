@@ -105,7 +105,7 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 			id: 'local',
 			label: 'local',
 			extensionManagementService: instantiationService.get(IExtensionManagementService),
-			getTargetPlatform() { return Promise.resolve(CURRENT_TARGET_PLATFORM); }
+			targetPlatform: CURRENT_TARGET_PLATFORM,
 		}, null, null));
 
 		instantiationService.stub(IWorkbenchExtensionEnablementService, new TestExtensionEnablementService(instantiationService));
@@ -1473,13 +1473,13 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 			id: 'vscode-local',
 			label: 'local',
 			extensionManagementService: localExtensionManagementService || createExtensionManagementService(),
-			getTargetPlatform() { return Promise.resolve(CURRENT_TARGET_PLATFORM); }
+			targetPlatform: CURRENT_TARGET_PLATFORM,
 		};
 		const remoteExtensionManagementServer: IExtensionManagementServer = {
 			id: 'vscode-remote',
 			label: 'remote',
 			extensionManagementService: remoteExtensionManagementService || createExtensionManagementService(),
-			getTargetPlatform() { return Promise.resolve(CURRENT_TARGET_PLATFORM); }
+			targetPlatform: CURRENT_TARGET_PLATFORM,
 		};
 		return {
 			_serviceBrand: undefined,

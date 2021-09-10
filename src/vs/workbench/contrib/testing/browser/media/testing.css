@@ -208,14 +208,3 @@
 	font-size: var(--testMessageDecorationFontSize);
 	cursor: pointer;
 }
-
-.testing-diff-title-widget {
-	line-height: 19px;
-	font-size: 12px;
-	padding-right: 6px;
-
-	overflow: hidden;
-	display: inline-block;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}

@@ -12,8 +12,8 @@ import { IConfigurationChangeEvent, IConfigurationService } from 'vs/platform/co
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ISerializableView } from 'vs/base/browser/ui/grid/grid';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { isObject, withNullAsUndefined } from 'vs/base/common/types';
-import { IEditorOptions, ITextEditorOptions } from 'vs/platform/editor/common/editor';
+import { isObject } from 'vs/base/common/types';
+import { IEditorOptions } from 'vs/platform/editor/common/editor';
 
 export interface IEditorPartCreationOptions {
 	restorePreviousState: boolean;
@@ -175,13 +175,40 @@ export interface EditorServiceImpl extends IEditorService {
 	readonly onDidMostRecentlyActiveEditorsChange: Event<void>;
 }
 
-export interface IInternalEditorOpenOptions {
+export interface IInternalEditorTitleControlOptions {
 
 	/**
-	 * Optimization: when we know that many editors open at once,
-	 * setting `skipTitleUpdate` for the `openEditor` call will
-	 * not bother to update the title area control. The caller has
-	 * to manually ensure the title area control is updated.
+	 * A hint to defer updating the title control for perf reasons.
+	 * The caller must ensure to update the title control then.
 	 */
 	skipTitleUpdate?: boolean;
+}
+
+export interface IInternalEditorOpenOptions extends IInternalEditorTitleControlOptions {
+
+	/**
+	 * Whether to consider a side by side editor as matching
+	 * when figuring out if the editor to open is already
+	 * opened or not. By default, side by side editors will
+	 * not be considered as matching, even if the editor is
+	 * opened in one of the sides.
+	 */
+	supportSideBySide?: SideBySideEditor.ANY | SideBySideEditor.BOTH;
+}
+
+export interface IInternalEditorCloseOptions extends IInternalEditorTitleControlOptions {
+
+	/**
+	 * A hint that the editor is closed due to an error opening. This can be
+	 * used to optimize how error toasts are appearing if any.
+	 */
+	fromError?: boolean;
+}
+
+export interface IInternalMoveCopyOptions extends IInternalEditorTitleControlOptions {
+
+	/**
+	 * Whether to close the editor at the source or keep it.
+	 */
+	keepCopy?: boolean;
 }

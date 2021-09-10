@@ -1239,11 +1239,11 @@
 			"fontColor": "#cc3e44"
 		},
 		"_shell_light": {
-			"fontCharacter": "\\E087",
+			"fontCharacter": "\\E089",
 			"fontColor": "#7fae42"
 		},
 		"_shell": {
-			"fontCharacter": "\\E087",
+			"fontCharacter": "\\E089",
 			"fontColor": "#8dc149"
 		},
 		"_slim_light": {
@@ -2274,5 +2274,5 @@
 			"npm-debug.log": "_npm_ignored_light"
 		}
 	},
-	"version": "https://github.com/jesseweed/seti-ui/commit/b484fa778f564e71c81f22ee4c006c4664d66a47"
+	"version": "https://github.com/jesseweed/seti-ui/commit/7ba419486f51f8a334f8b56a4642d239b127a3a3"
 }

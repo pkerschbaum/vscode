@@ -7,7 +7,7 @@ import { localize } from 'vs/nls';
 import { isObject, isString, isUndefined, isNumber, withNullAsUndefined } from 'vs/base/common/types';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { KeybindingsRegistry, KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { TextCompareEditorVisibleContext, IEditorIdentifier, IEditorCommandsContext, ActiveEditorGroupEmptyContext, MultipleEditorGroupsContext, CloseDirection, IEditorInput, IVisibleEditorPane, ActiveEditorStickyContext, EditorsOrder, EditorInputCapabilities, isEditorIdentifier, ActiveEditorGroupLockedContext } from 'vs/workbench/common/editor';
+import { TextCompareEditorVisibleContext, IEditorIdentifier, IEditorCommandsContext, ActiveEditorGroupEmptyContext, MultipleEditorGroupsContext, CloseDirection, IEditorInput, IVisibleEditorPane, ActiveEditorStickyContext, EditorsOrder, EditorInputCapabilities, isEditorIdentifier, ActiveEditorGroupLockedContext, ActiveEditorCanSplitInGroupContext, GroupIdentifier, TextCompareEditorActiveContext, SideBySideEditorActiveContext } from 'vs/workbench/common/editor';
 import { EditorGroupColumn, columnToEditorGroup } from 'vs/workbench/services/editor/common/editorGroupColumn';
 import { ACTIVE_GROUP_TYPE, IEditorService, SIDE_GROUP, SIDE_GROUP_TYPE } from 'vs/workbench/services/editor/common/editorService';
 import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
@@ -1195,7 +1195,7 @@ function registerOtherEditorCommands(): void {
 				id: TOGGLE_LOCK_GROUP_COMMAND_ID,
 				title: localize('toggleEditorGroupLock', "Toggle Editor Group Lock"),
 				category: CATEGORIES.View,
-				precondition: ContextKeyExpr.has('multipleEditorGroups'),
+				precondition: MultipleEditorGroupsContext,
 				f1: true
 			});
 		}
@@ -1210,7 +1210,7 @@ function registerOtherEditorCommands(): void {
 				id: LOCK_GROUP_COMMAND_ID,
 				title: localize('lockEditorGroup', "Lock Editor Group"),
 				category: CATEGORIES.View,
-				precondition: ContextKeyExpr.and(ContextKeyExpr.has('multipleEditorGroups'), ActiveEditorGroupLockedContext.toNegated()),
+				precondition: ContextKeyExpr.and(MultipleEditorGroupsContext, ActiveEditorGroupLockedContext.toNegated()),
 				f1: true
 			});
 		}
@@ -1224,7 +1224,7 @@ function registerOtherEditorCommands(): void {
 			super({
 				id: UNLOCK_GROUP_COMMAND_ID,
 				title: localize('unlockEditorGroup', "Unlock Editor Group"),
-				precondition: ContextKeyExpr.and(ContextKeyExpr.has('multipleEditorGroups'), ActiveEditorGroupLockedContext),
+				precondition: ContextKeyExpr.and(MultipleEditorGroupsContext, ActiveEditorGroupLockedContext),
 				category: CATEGORIES.View,
 				f1: true
 			});

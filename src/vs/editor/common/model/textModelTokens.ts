@@ -288,7 +288,7 @@ export class TextModelTokenization extends Disposable {
 		}
 
 		this._beginBackgroundTokenization();
-		this._textModel.setTokens(builder.tokens, tokenizedLineNumber >= textModelLastLineNumber);
+		this._textModel.setTokens(builder.tokens, !this._hasLinesToTokenize());
 	}
 
 	public tokenizeViewport(startLineNumber: number, endLineNumber: number): void {

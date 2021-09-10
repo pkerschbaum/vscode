@@ -15,7 +15,7 @@ export function useAddExplorerPanel() {
 
 	async function addExplorerPanel() {
 		const explorerId = generateExplorerId();
-		const parsedUri = uriHelper.parseUri(Schemas.file, 'C:/');
+		const parsedUri = uriHelper.parseUri(Schemas.file, '/home/pkerschbaum');
 		const stats = await fileSystem.resolve(parsedUri);
 		if (!stats.isDirectory) {
 			throw Error(

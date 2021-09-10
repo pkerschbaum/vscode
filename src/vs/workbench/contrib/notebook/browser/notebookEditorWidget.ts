@@ -2375,11 +2375,6 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 	}
 
 	//#region --- webview IPC ----
-
-	private readonly _onDidReceiveMessage = this._register(new Emitter<INotebookWebviewMessage>());
-
-	readonly onDidReceiveMessage: Event<INotebookWebviewMessage> = this._onDidReceiveMessage.event;
-
 	postMessage(message: any) {
 		if (this._webview?.isResolved()) {
 			this._webview.postKernelMessage(message);
