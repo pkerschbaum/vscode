@@ -12,7 +12,6 @@ import { Iterable } from 'vs/base/common/iterator';
 import { Disposable, DisposableStore, dispose, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { TernarySearchTree } from 'vs/base/common/map';
 import { Schemas } from 'vs/base/common/network';
-import { mark } from 'vs/base/common/performance';
 import { extUri, extUriIgnorePathCase, IExtUri, isAbsolutePath } from 'vs/base/common/resources';
 import { consumeStream, isReadableBufferedStream, isReadableStream, listenStream, newWriteableStream, peekReadable, peekStream, transform } from 'vs/base/common/stream';
 import { URI } from 'vs/base/common/uri';
@@ -28,7 +27,7 @@ export class FileService extends Disposable implements IFileService {
 
 	private readonly BUFFER_SIZE = 64 * 1024;
 
-	constructor(@ILogService private readonly logService: ILogService) {
+	constructor(private readonly logService: ILogService) {
 		super();
 	}
 
@@ -49,8 +48,6 @@ export class FileService extends Disposable implements IFileService {
 		if (this.provider.has(scheme)) {
 			throw new Error(`A filesystem provider for the scheme '${scheme}' is already registered.`);
 		}
-
-		mark(`code/registerFilesystem/${scheme}`);
 
 		// Add provider with event
 		this.provider.set(scheme, provider);

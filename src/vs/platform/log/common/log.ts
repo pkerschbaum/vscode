@@ -8,11 +8,6 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { isWindows } from 'vs/base/common/platform';
 import { URI } from 'vs/base/common/uri';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { createDecorator as createServiceDecorator } from 'vs/platform/instantiation/common/instantiation';
-
-export const ILogService = createServiceDecorator<ILogService>('logService');
-export const ILoggerService = createServiceDecorator<ILoggerService>('loggerService');
 
 function now(): string {
 	return new Date().toISOString();
@@ -549,19 +544,6 @@ export class NullLogService implements ILogService {
 	critical(message: string | Error, ...args: any[]): void { }
 	dispose(): void { }
 	flush(): void { }
-}
-
-export function getLogLevel(environmentService: IEnvironmentService): LogLevel {
-	if (environmentService.verbose) {
-		return LogLevel.Trace;
-	}
-	if (typeof environmentService.logLevel === 'string') {
-		const logLevel = parseLogLevel(environmentService.logLevel.toLowerCase());
-		if (logLevel !== undefined) {
-			return logLevel;
-		}
-	}
-	return DEFAULT_LOG_LEVEL;
 }
 
 export function parseLogLevel(logLevel: string): LogLevel | undefined {

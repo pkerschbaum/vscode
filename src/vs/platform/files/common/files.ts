@@ -15,12 +15,9 @@ import { startsWithIgnoreCase } from 'vs/base/common/strings';
 import { isNumber } from 'vs/base/common/types';
 import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
-import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import type { ProgressCbArgs } from 'vs/base/common/resources';
 
 //#region file service & providers
-
-export const IFileService = createDecorator<IFileService>('fileService');
 
 export interface IFileService {
 
