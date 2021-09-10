@@ -179,8 +179,7 @@ declare module 'vscode' {
 		 * @param options The {@link AuthenticationGetSessionOptions} to use
 		 * @returns A thenable that resolves to an authentication session
 		 */
-		export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { forceNewSession: true }): Thenable<AuthenticationSession>;
-		export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { forceNewSession: { detail: string } }): Thenable<AuthenticationSession>;
+		export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { forceNewSession: true | { detail: string } }): Thenable<AuthenticationSession>;
 	}
 
 	export namespace workspace {
@@ -228,6 +227,21 @@ declare module 'vscode' {
 	export namespace workspace {
 		export function registerRemoteAuthorityResolver(authorityPrefix: string, resolver: RemoteAuthorityResolver): Disposable;
 		export function registerResourceLabelFormatter(formatter: ResourceLabelFormatter): Disposable;
+	}
+
+	export namespace env {
+
+		/**
+		 * The authority part of the current opened `vscode-remote://` URI.
+		 * Defined by extensions, e.g. `ssh-remote+${host}` for remotes using a secure shell.
+		 *
+		 * *Note* that the value is `undefined` when there is no remote extension host but that the
+		 * value is defined in all extension hosts (local and remote) in case a remote extension host
+		 * exists. Use {@link Extension.extensionKind} to know if
+		 * a specific extension runs remote or not.
+		 */
+		export const remoteAuthority: string | undefined;
+
 	}
 
 	//#endregion
@@ -730,6 +744,11 @@ declare module 'vscode' {
 			 */
 			simple?: boolean;
 		}
+
+		/**
+		 * When true, a save will not be triggered for open editors when starting a debug session, regardless of the value of the `debug.saveBeforeStart` setting.
+		 */
+		suppressSaveBeforeStart?: boolean;
 	}
 
 	//#endregion
@@ -1035,7 +1054,7 @@ declare module 'vscode' {
 		 * The type for tree elements is text/treeitem.
 		 * For example, you can reconstruct the your tree elements:
 		 * ```ts
-		 * JSON.parse(await (items.get('text/treeitems')!.asString()))
+		 * JSON.parse(await (items.get('text/treeitem')!.asString()))
 		 * ```
 		 */
 		items: { get: (mimeType: string) => TreeDataTransferItem | undefined };
@@ -1043,6 +1062,21 @@ declare module 'vscode' {
 
 	export interface DragAndDropController<T> extends Disposable {
 		readonly supportedTypes: string[];
+
+		/**
+		 * todo@API maybe
+		 *
+		 * When the user drops an item from this DragAndDropController on **another tree item** in **the same tree**,
+		 * `onWillDrop` will be called with the dropped tree item. This is the DragAndDropController's opportunity to
+		 * package the data from the dropped tree item into whatever format they want the target tree item to receive.
+		 *
+		 * The returned `TreeDataTransfer` will be merged with the original`TreeDataTransfer` for the operation.
+		 *
+		 * Note for implementation later: This means that the `text/treeItem` mime type will go away.
+		 *
+		 * @param source
+		 */
+		// onWillDrop?(source: T): Thenable<TreeDataTransfer>;
 
 		/**
 		 * Extensions should fire `TreeDataProvider.onDidChangeTreeData` for any elements that need to be refreshed.
@@ -1094,6 +1128,18 @@ declare module 'vscode' {
 		 * An optional flag to sort the final results by index of first query match in label. Defaults to true.
 		 */
 		sortByLabel: boolean;
+	}
+
+	//#endregion
+
+	//#region https://github.com/microsoft/vscode/issues/132068
+
+	export interface QuickPick<T extends QuickPickItem> extends QuickInput {
+
+		/*
+		 * An optional flag that can be set to true to maintain the scroll position of the quick pick when the quick pick items are updated. Defaults to false.
+		 */
+		keepScrollPosition?: boolean;
 	}
 
 	//#endregion
@@ -1518,12 +1564,14 @@ declare module 'vscode' {
 		provides: string[];
 
 		/**
-		 * URI for the file to preload
+		 * URI of the JavaScript module to preload.
+		 *
+		 * This module must export an `activate` function that takes a context object that contains the notebook API.
 		 */
 		uri: Uri;
 
 		/**
-		 * @param uri URI for the file to preload
+		 * @param uri URI of the JavaScript module to preload
 		 * @param provides Value for the `provides` property
 		 */
 		constructor(uri: Uri, provides?: string | string[]);
@@ -2274,18 +2322,65 @@ declare module 'vscode' {
 
 	//#region https://github.com/Microsoft/vscode/issues/15178
 
-	// TODO@API must be a class
-	export interface OpenEditorInfo {
-		name: string;
-		resource: Uri;
-		isActive: boolean;
+	/**
+	 * Represents a tab within the window
+	 */
+	export interface Tab {
+		/**
+		 * The text displayed on the tab
+		 */
+		readonly label: string;
+
+		/**
+		 * The position of the tab
+		 */
+		readonly viewColumn: ViewColumn;
+
+		/**
+		 * The resource represented by the tab if availble.
+		 * Note: Not all tabs have a resource associated with them.
+		 */
+		readonly resource?: Uri;
+
+		/**
+		 * The identifier of the view contained in the tab
+		 * This is equivalent to `viewType` for custom editors and `notebookType` for notebooks.
+		 * The built-in text editor has an id of 'default' for all configurations.
+		 */
+		readonly viewId?: string;
+
+		/**
+		 * Whether or not the tab is currently active
+		 * Dictated by being the selected tab in the active group
+		 */
+		readonly isActive: boolean;
 	}
 
 	export namespace window {
-		export const openEditors: ReadonlyArray<OpenEditorInfo>;
+		/**
+		 * A list of all opened tabs
+		 * Ordered from left to right
+		 */
+		export const tabs: readonly Tab[];
 
-		// todo@API proper event type
-		export const onDidChangeOpenEditors: Event<void>;
+		/**
+		 * The currently active tab
+		 * Undefined if no tabs are currently opened
+		 */
+		export const activeTab: Tab | undefined;
+
+		/**
+		 * An {@link Event} which fires when the array of {@link window.tabs tabs}
+		 * has changed.
+		 */
+		export const onDidChangeTabs: Event<readonly Tab[]>;
+
+		/**
+		 * An {@link Event} which fires when the {@link window.activeTab activeTab}
+		 * has changed.
+		 */
+		export const onDidChangeActiveTab: Event<Tab | undefined>;
+
 	}
 
 	//#endregion
@@ -2499,35 +2594,6 @@ declare module 'vscode' {
 	 */
 	export interface InlineCompletionItemDidShowEvent<T extends InlineCompletionItem> {
 		completionItem: T;
-	}
-
-	//#endregion
-
-	//#region FileSystemProvider stat readonly - https://github.com/microsoft/vscode/issues/73122
-
-	export enum FilePermission {
-		/**
-		 * The file is readonly.
-		 *
-		 * *Note:* All `FileStat` from a `FileSystemProvider` that is registered  with
-		 * the option `isReadonly: true` will be implicitly handled as if `FilePermission.Readonly`
-		 * is set. As a consequence, it is not possible to have a readonly file system provider
-		 * registered where some `FileStat` are not readonly.
-		 */
-		Readonly = 1
-	}
-
-	/**
-	 * The `FileStat`-type represents metadata about a file
-	 */
-	export interface FileStat {
-
-		/**
-		 * The permissions of the file, e.g. whether the file is readonly.
-		 *
-		 * *Note:* This value might be a bitmask, e.g. `FilePermission.Readonly | FilePermission.Other`.
-		 */
-		permissions?: FilePermission;
 	}
 
 	//#endregion
@@ -2822,10 +2888,10 @@ declare module 'vscode' {
 		 * @param document The document in which the command was invoked.
 		 * @param position The position at which the command was invoked.
 		 * @param token A cancellation token.
-		 * @returns A type hierarchy item or a thenable that resolves to such. The lack of a result can be
-		 * signaled by returning `undefined` or `null`.
+		 * @returns One or multiple type hierarchy items or a thenable that resolves to such. The lack of a result can be
+		 * signaled by returning `undefined`, `null`, or an empty array.
 		 */
-		prepareTypeHierarchy(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<TypeHierarchyItem[]>;
+		prepareTypeHierarchy(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<TypeHierarchyItem | TypeHierarchyItem[]>;
 
 		/**
 		 * Provide all supertypes for an item, e.g all types from which a type is derived/inherited. In graph terms this describes directed
@@ -2858,7 +2924,7 @@ declare module 'vscode' {
 		 *
 		 * @param selector A selector that defines the documents this provider is applicable to.
 		 * @param provider A type hierarchy provider.
-		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+		 * @return {@link Disposable Disposable} that unregisters this provider when being disposed.
 		 */
 		export function registerTypeHierarchyProvider(selector: DocumentSelector, provider: TypeHierarchyProvider): Disposable;
 	}
@@ -2873,15 +2939,20 @@ declare module 'vscode' {
 	}
 
 	interface LanguageStatusItem {
+		readonly id: string;
 		selector: DocumentSelector;
-		text: string;
-		detail: string | MarkdownString
+		// todo@jrieken replace with boolean ala needsAttention
 		severity: LanguageStatusSeverity;
+		name: string | undefined;
+		text: string;
+		detail?: string;
+		command: Command | undefined;
+		accessibilityInformation?: AccessibilityInformation;
 		dispose(): void;
 	}
 
 	namespace languages {
-		export function createLanguageStatusItem(selector: DocumentSelector): LanguageStatusItem;
+		export function createLanguageStatusItem(id: string, selector: DocumentSelector): LanguageStatusItem;
 	}
 
 	//#endregion

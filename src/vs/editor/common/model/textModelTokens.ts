@@ -294,7 +294,7 @@ export class TextModelTokenization extends Disposable {
 	public tokenizeViewport(startLineNumber: number, endLineNumber: number): void {
 		const builder = new MultilineTokensBuilder();
 		this._tokenizeViewport(builder, startLineNumber, endLineNumber);
-		this._textModel.setTokens(builder.tokens);
+		this._textModel.setTokens(builder.tokens, !this._hasLinesToTokenize());
 	}
 
 	public reset(): void {
@@ -305,7 +305,7 @@ export class TextModelTokenization extends Disposable {
 	public forceTokenization(lineNumber: number): void {
 		const builder = new MultilineTokensBuilder();
 		this._updateTokensUntilLine(builder, lineNumber);
-		this._textModel.setTokens(builder.tokens);
+		this._textModel.setTokens(builder.tokens, !this._hasLinesToTokenize());
 	}
 
 	public isCheapToTokenize(lineNumber: number): boolean {

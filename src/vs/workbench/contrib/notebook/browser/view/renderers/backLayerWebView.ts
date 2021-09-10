@@ -79,7 +79,7 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Disposable {
 	private readonly nonce = UUID.generateUuid();
 
 	constructor(
-		public readonly notebookEditor: ICommonNotebookEditor,
+		public readonly notebookEditor: ICommonNotebookEditorDelegate,
 		public readonly id: string,
 		public readonly documentUri: URI,
 		private options: {

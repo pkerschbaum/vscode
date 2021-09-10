@@ -71,11 +71,6 @@ export abstract class EditorInput extends AbstractEditorInput implements IEditor
 		return this.getTitle(Verbosity.SHORT);
 	}
 
-	/**
-	* Returns a descriptor suitable for telemetry events.
-	*
-	* Subclasses should extend if they can contribute.
-	*/
 	getTelemetryDescriptor(): { [key: string]: unknown } {
 		/* __GDPR__FRAGMENT__
 			"EditorTelemetryDescriptor" : {
@@ -109,7 +104,7 @@ export abstract class EditorInput extends AbstractEditorInput implements IEditor
 
 	async revert(group: GroupIdentifier, options?: IRevertOptions): Promise<void> { }
 
-	rename(group: GroupIdentifier, target: URI): IMoveResult | undefined {
+	async rename(group: GroupIdentifier, target: URI): Promise<IMoveResult | undefined> {
 		return undefined;
 	}
 

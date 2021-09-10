@@ -37,6 +37,7 @@ import { IFileService } from 'vs/platform/files/common/files';
 import { withNullAsUndefined, withUndefinedAsNull, assertIsDefined } from 'vs/base/common/types';
 import { isFirefox } from 'vs/base/browser/browser';
 import { isPromiseCanceledError } from 'vs/base/common/errors';
+import { SideBySideEditorInput } from 'vs/workbench/common/editor/sideBySideEditorInput';
 
 export interface IToolbarActions {
 	primary: IAction[];
@@ -155,6 +156,7 @@ export abstract class TitleControl extends Themable {
 	protected createEditorActionsToolBar(container: HTMLElement): void {
 		const context: IEditorCommandsContext = { groupId: this.group.id };
 
+		// Toolbar Widget
 		this.editorActionsToolbar = this._register(new ToolBar(container, this.contextMenuService, {
 			actionViewItemProvider: action => this.actionViewItemProvider(action),
 			orientation: ActionsOrientation.HORIZONTAL,
@@ -388,8 +390,6 @@ export abstract class TitleControl extends Themable {
 	abstract updateEditorLabel(editor: IEditorInput): void;
 
 	abstract updateEditorCapabilities(editor: IEditorInput): void;
-
-	abstract updateEditorLabels(): void;
 
 	abstract updateEditorDirty(editor: IEditorInput): void;
 

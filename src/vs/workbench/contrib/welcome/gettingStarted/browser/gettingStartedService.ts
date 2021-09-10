@@ -159,7 +159,7 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 		@IHostService private readonly hostService: IHostService,
 		@IViewsService private readonly viewsService: IViewsService,
 		@ITelemetryService private readonly telemetryService: ITelemetryService,
-		@optional(ITASExperimentService) tasExperimentService: ITASExperimentService,
+		@ITASExperimentService tasExperimentService: ITASExperimentService,
 	) {
 		super();
 

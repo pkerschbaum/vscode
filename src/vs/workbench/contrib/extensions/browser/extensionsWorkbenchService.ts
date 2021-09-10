@@ -414,6 +414,10 @@ class Extensions extends Disposable {
 		return false;
 	}
 
+	canInstall(galleryExtension: IGalleryExtension): boolean {
+		return galleryExtension.allTargetPlatforms.some(targetPlatform => isTargetPlatformCompatible(targetPlatform, galleryExtension.allTargetPlatforms, this.server.targetPlatform));
+	}
+
 	private async syncInstalledExtensionWithGallery(extension: Extension): Promise<void> {
 		if (!this.galleryService.isEnabled()) {
 			return;
@@ -987,12 +991,15 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 			return false;
 		}
 
-		if (this.extensionManagementServerService.localExtensionManagementServer
-			|| this.extensionManagementServerService.remoteExtensionManagementServer) {
+		if (this.localExtensions && this.localExtensions.canInstall(extension.gallery)) {
 			return true;
 		}
 
-		if (this.extensionManagementServerService.webExtensionManagementServer) {
+		if (this.remoteExtensions && this.remoteExtensions.canInstall(extension.gallery)) {
+			return true;
+		}
+
+		if (this.webExtensions) {
 			const configuredExtensionKind = this.extensionManifestPropertiesService.getUserConfiguredExtensionKind(extension.gallery.identifier);
 			return configuredExtensionKind ? configuredExtensionKind.includes('web') : extension.gallery.allTargetPlatforms.includes(TargetPlatform.WEB);
 		}

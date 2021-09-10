@@ -255,6 +255,13 @@ export class TerminalService implements ITerminalService {
 				e.affectsConfiguration(TerminalSettingPrefix.Profiles + platformKey) ||
 				e.affectsConfiguration(TerminalSettingId.UseWslProfiles)) {
 				this._refreshAvailableProfiles();
+			} else if (
+				e.affectsConfiguration(TerminalSettingId.TerminalTitle) ||
+				e.affectsConfiguration(TerminalSettingId.TerminalTitleSeparator) ||
+				e.affectsConfiguration(TerminalSettingId.TerminalDescription)) {
+				for (const instance of this.instances) {
+					instance.setTitle(instance.title, TitleEventSource.Config);
+				}
 			}
 		});
 
@@ -494,7 +501,11 @@ export class TerminalService implements ITerminalService {
 	}
 
 	@throttle(2000)
-	private async _refreshAvailableProfiles(): Promise<void> {
+	private _refreshAvailableProfiles(): void {
+		this._refreshAvailableProfilesNow();
+	}
+
+	private async _refreshAvailableProfilesNow(): Promise<void> {
 		const result = await this._detectProfiles();
 		const profilesChanged = !equals(result, this._availableProfiles);
 		const contributedProfilesChanged = !equals(this._terminalContributionService.terminalProfiles, this._contributedProfiles);
@@ -506,6 +517,7 @@ export class TerminalService implements ITerminalService {
 			await this._refreshPlatformConfig(result);
 		}
 	}
+
 
 	private async _refreshPlatformConfig(profiles: ITerminalProfile[]) {
 		const env = await this._remoteAgentService.getEnvironment();

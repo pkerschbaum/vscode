@@ -43,7 +43,7 @@ export class TelemetryService implements ITelemetryService {
 
 	constructor(
 		config: ITelemetryServiceConfig,
-		@optional(IConfigurationService) private _configurationService: IConfigurationService
+		@IConfigurationService private _configurationService: IConfigurationService
 	) {
 		this._appender = config.appender;
 		this._commonProperties = config.commonProperties || Promise.resolve({});
@@ -59,26 +59,25 @@ export class TelemetryService implements ITelemetryService {
 			this._cleanupPatterns.push(new RegExp(escapeRegExpCharacters(piiPath), 'gi'));
 		}
 
-		if (this._configurationService) {
-			this._updateUserOptIn();
-			this._configurationService.onDidChangeConfiguration(this._updateUserOptIn, this, this._disposables);
-			type OptInClassification = {
-				optIn: { classification: 'SystemMetaData', purpose: 'BusinessInsight', isMeasurement: true };
-			};
-			type OptInEvent = {
-				optIn: boolean;
-			};
-			this.publicLog2<OptInEvent, OptInClassification>('optInStatus', { optIn: this._userOptIn });
 
-			this._commonProperties.then(values => {
-				const isHashedId = /^[a-f0-9]+$/i.test(values['common.machineId']);
+		this._updateUserOptIn();
+		this._configurationService.onDidChangeConfiguration(this._updateUserOptIn, this, this._disposables);
+		type OptInClassification = {
+			optIn: { classification: 'SystemMetaData', purpose: 'BusinessInsight', isMeasurement: true };
+		};
+		type OptInEvent = {
+			optIn: boolean;
+		};
+		this.publicLog2<OptInEvent, OptInClassification>('optInStatus', { optIn: this._userOptIn });
 
-				type MachineIdFallbackClassification = {
-					usingFallbackGuid: { classification: 'SystemMetaData', purpose: 'BusinessInsight', isMeasurement: true };
-				};
-				this.publicLog2<{ usingFallbackGuid: boolean }, MachineIdFallbackClassification>('machineIdFallback', { usingFallbackGuid: !isHashedId });
-			});
-		}
+		this._commonProperties.then(values => {
+			const isHashedId = /^[a-f0-9]+$/i.test(values['common.machineId']);
+
+			type MachineIdFallbackClassification = {
+				usingFallbackGuid: { classification: 'SystemMetaData', purpose: 'BusinessInsight', isMeasurement: true };
+			};
+			this.publicLog2<{ usingFallbackGuid: boolean }, MachineIdFallbackClassification>('machineIdFallback', { usingFallbackGuid: !isHashedId });
+		});
 	}
 
 	setExperimentProperty(name: string, value: string): void {

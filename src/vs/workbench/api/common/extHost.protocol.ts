@@ -423,7 +423,6 @@ export interface MainThreadLanguageFeaturesShape extends IDisposable {
 }
 
 export interface MainThreadLanguagesShape extends IDisposable {
-	$getLanguages(): Promise<string[]>;
 	$changeLanguage(resource: UriComponents, languageId: string): Promise<void>;
 	$tokensAtPosition(resource: UriComponents, position: IPosition): Promise<undefined | { type: modes.StandardTokenType, range: IRange }>;
 	$setLanguageStatus(handle: number, status: ILanguageStatus): void;
@@ -641,9 +640,10 @@ export interface MainThreadEditorTabsShape extends IDisposable {
 }
 
 export interface IEditorTabDto {
-	group: number;
-	name: string;
-	resource: UriComponents;
+	viewColumn: EditorGroupColumn;
+	label: string;
+	resource?: UriComponents;
+	editorId?: string;
 	isActive: boolean;
 }
 
@@ -682,6 +682,7 @@ export interface IWebviewPortMapping {
 
 export interface IWebviewOptions {
 	readonly enableScripts?: boolean;
+	readonly enableForms?: boolean;
 	readonly enableCommandUris?: boolean;
 	readonly localResourceRoots?: ReadonlyArray<UriComponents>;
 	readonly portMapping?: ReadonlyArray<IWebviewPortMapping>;
@@ -1115,6 +1116,7 @@ export interface IStartDebuggingOptions {
 	debugUI?: {
 		simple?: boolean;
 	};
+	suppressSaveBeforeStart?: boolean;
 }
 
 export interface MainThreadDebugServiceShape extends IDisposable {
@@ -1372,6 +1374,10 @@ export interface ExtHostFileSystemEventServiceShape {
 	$onFileEvent(events: FileSystemEvents): void;
 	$onWillRunFileOperation(operation: files.FileOperation, files: readonly SourceTargetPair[], timeout: number, token: CancellationToken): Promise<IWillRunFileOperationParticipation | undefined>;
 	$onDidRunFileOperation(operation: files.FileOperation, files: readonly SourceTargetPair[]): void;
+}
+
+export interface ExtHostLanguagesShape {
+	$acceptLanguageIds(ids: string[]): void;
 }
 
 export interface ObjectIdentifier {
@@ -2161,7 +2167,7 @@ export interface MainThreadTestingShape {
 	/** Updates the state of a test run in the given run. */
 	$updateTestStateInRun(runId: string, taskId: string, testId: string, state: TestResultState, duration?: number): void;
 	/** Appends a message to a test in the run. */
-	$appendTestMessagesInRun(runId: string, taskId: string, testId: string, messages: ITestMessage[]): void;
+	$appendTestMessagesInRun(runId: string, taskId: string, testId: string, messages: SerializedTestMessage[]): void;
 	/** Appends raw output to the test run.. */
 	$appendOutputToRun(runId: string, taskId: string, output: VSBuffer, location?: ILocationDto, testId?: string): void;
 	/** Triggered when coverage is added to test results. */
@@ -2252,6 +2258,7 @@ export const ExtHostContext = {
 	ExtHostFileSystem: createExtId<ExtHostFileSystemShape>('ExtHostFileSystem'),
 	ExtHostFileSystemInfo: createExtId<ExtHostFileSystemInfoShape>('ExtHostFileSystemInfo'),
 	ExtHostFileSystemEventService: createExtId<ExtHostFileSystemEventServiceShape>('ExtHostFileSystemEventService'),
+	ExtHostLanguages: createExtId<ExtHostLanguagesShape>('ExtHostLanguages'),
 	ExtHostLanguageFeatures: createExtId<ExtHostLanguageFeaturesShape>('ExtHostLanguageFeatures'),
 	ExtHostQuickOpen: createExtId<ExtHostQuickOpenShape>('ExtHostQuickOpen'),
 	ExtHostExtensionService: createExtId<ExtHostExtensionServiceShape>('ExtHostExtensionService'),

@@ -156,7 +156,8 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 	const extHostEditors = rpcProtocol.set(ExtHostContext.ExtHostEditors, new ExtHostEditors(rpcProtocol, extHostDocumentsAndEditors));
 	const extHostTreeViews = rpcProtocol.set(ExtHostContext.ExtHostTreeViews, new ExtHostTreeViews(rpcProtocol.getProxy(MainContext.MainThreadTreeViews), extHostCommands, extHostLogService));
 	const extHostEditorInsets = rpcProtocol.set(ExtHostContext.ExtHostEditorInsets, new ExtHostEditorInsets(rpcProtocol.getProxy(MainContext.MainThreadEditorInsets), extHostEditors, initData));
-	const extHostDiagnostics = rpcProtocol.set(ExtHostContext.ExtHostDiagnostics, new ExtHostDiagnostics(rpcProtocol, extHostLogService));
+	const extHostDiagnostics = rpcProtocol.set(ExtHostContext.ExtHostDiagnostics, new ExtHostDiagnostics(rpcProtocol, extHostLogService, extHostFileSystemInfo));
+	const extHostLanguages = rpcProtocol.set(ExtHostContext.ExtHostLanguages, new ExtHostLanguages(rpcProtocol, extHostDocuments, extHostCommands.converter));
 	const extHostLanguageFeatures = rpcProtocol.set(ExtHostContext.ExtHostLanguageFeatures, new ExtHostLanguageFeatures(rpcProtocol, uriTransformer, extHostDocuments, extHostCommands, extHostDiagnostics, extHostLogService, extHostApiDeprecation));
 	const extHostFileSystem = rpcProtocol.set(ExtHostContext.ExtHostFileSystem, new ExtHostFileSystem(rpcProtocol, extHostLanguageFeatures));
 	const extHostFileSystemEvent = rpcProtocol.set(ExtHostContext.ExtHostFileSystemEventService, new ExtHostFileSystemEventService(rpcProtocol, extHostLogService, extHostDocumentsAndEditors));
@@ -186,7 +187,6 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 	const extHostMessageService = new ExtHostMessageService(rpcProtocol, extHostLogService);
 	const extHostDialogs = new ExtHostDialogs(rpcProtocol);
 	const extHostStatusBar = new ExtHostStatusBar(rpcProtocol, extHostCommands.converter);
-	const extHostLanguages = new ExtHostLanguages(rpcProtocol, extHostDocuments);
 
 	// Register API-ish commands
 	ExtHostApiCommands.register(extHostCommands);
@@ -331,6 +331,9 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			},
 			get remoteName() {
 				return getRemoteName(initData.remote.authority);
+			},
+			get remoteAuthority() {
+				return initData.remote.authority;
 			},
 			get uiKind() {
 				return initData.uiKind;
@@ -507,9 +510,9 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 				checkProposedApiEnabled(extension);
 				return extHostLanguageFeatures.registerTypeHierarchyProvider(extension, selector, provider);
 			},
-			createLanguageStatusItem(selector: vscode.DocumentSelector): vscode.LanguageStatusItem {
+			createLanguageStatusItem(id: string, selector: vscode.DocumentSelector): vscode.LanguageStatusItem {
 				checkProposedApiEnabled(extension);
-				return extHostLanguages.createLanguageStatusItem(selector);
+				return extHostLanguages.createLanguageStatusItem(extension, id, selector);
 			}
 		};
 
@@ -731,13 +734,21 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 				checkProposedApiEnabled(extension);
 				return extHostUriOpeners.registerExternalUriOpener(extension.identifier, id, opener, metadata);
 			},
-			get openEditors() {
+			get tabs() {
 				checkProposedApiEnabled(extension);
 				return extHostEditorTabs.tabs;
 			},
-			get onDidChangeOpenEditors() {
+			get activeTab() {
+				checkProposedApiEnabled(extension);
+				return extHostEditorTabs.activeTab;
+			},
+			get onDidChangeTabs() {
 				checkProposedApiEnabled(extension);
 				return extHostEditorTabs.onDidChangeTabs;
+			},
+			get onDidChangeActiveTab() {
+				checkProposedApiEnabled(extension);
+				return extHostEditorTabs.onDidChangeActiveTab;
 			},
 			getInlineCompletionItemController<T extends vscode.InlineCompletionItem>(provider: vscode.InlineCompletionItemProvider<T>): vscode.InlineCompletionController<T> {
 				checkProposedApiEnabled(extension);
@@ -898,7 +909,7 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 				return extHostTask.registerTaskProvider(extension, type, provider);
 			},
 			registerFileSystemProvider(scheme, provider, options) {
-				return extHostFileSystem.registerFileSystemProvider(extension.identifier, scheme, provider, options, extension.enableProposedApi);
+				return extHostFileSystem.registerFileSystemProvider(extension.identifier, scheme, provider, options);
 			},
 			get fs() {
 				return extHostConsumerFileSystem.value;

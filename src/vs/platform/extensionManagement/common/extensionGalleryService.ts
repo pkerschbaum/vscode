@@ -444,7 +444,7 @@ interface IRawExtensionsReport {
 	slow: string[];
 }
 
-export class ExtensionGalleryService implements IExtensionGalleryService {
+abstract class AbstractExtensionGalleryService implements IExtensionGalleryService {
 
 	declare readonly _serviceBrand: undefined;
 
@@ -454,18 +454,19 @@ export class ExtensionGalleryService implements IExtensionGalleryService {
 	private readonly commonHeadersPromise: Promise<{ [key: string]: string; }>;
 
 	constructor(
+		storageService: IStorageService | undefined,
 		@IRequestService private readonly requestService: IRequestService,
 		@ILogService private readonly logService: ILogService,
 		@IEnvironmentService private readonly environmentService: IEnvironmentService,
 		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IFileService private readonly fileService: IFileService,
 		@IProductService private readonly productService: IProductService,
-		@optional(IStorageService) storageService: IStorageService,
+		@IConfigurationService private readonly configurationService: IConfigurationService,
 	) {
 		const config = productService.extensionsGallery;
 		this.extensionsGalleryUrl = config && config.serviceUrl;
 		this.extensionsControlUrl = config && config.controlUrl;
-		this.commonHeadersPromise = resolveMarketplaceHeaders(productService.version, this.environmentService, this.fileService, storageService);
+		this.commonHeadersPromise = resolveMarketplaceHeaders(productService.version, productService, this.environmentService, this.configurationService, this.fileService, storageService);
 	}
 
 	private api(path = ''): string {
@@ -927,7 +928,38 @@ export class ExtensionGalleryService implements IExtensionGalleryService {
 	}
 }
 
-export async function resolveMarketplaceHeaders(version: string, environmentService: IEnvironmentService, fileService: IFileService, storageService: {
+export class ExtensionGalleryService extends AbstractExtensionGalleryService {
+
+	constructor(
+		@IStorageService storageService: IStorageService,
+		@IRequestService requestService: IRequestService,
+		@ILogService logService: ILogService,
+		@IEnvironmentService environmentService: IEnvironmentService,
+		@ITelemetryService telemetryService: ITelemetryService,
+		@IFileService fileService: IFileService,
+		@IProductService productService: IProductService,
+		@IConfigurationService configurationService: IConfigurationService,
+	) {
+		super(storageService, requestService, logService, environmentService, telemetryService, fileService, productService, configurationService);
+	}
+}
+
+export class ExtensionGalleryServiceWithNoStorageService extends AbstractExtensionGalleryService {
+
+	constructor(
+		@IRequestService requestService: IRequestService,
+		@ILogService logService: ILogService,
+		@IEnvironmentService environmentService: IEnvironmentService,
+		@ITelemetryService telemetryService: ITelemetryService,
+		@IFileService fileService: IFileService,
+		@IProductService productService: IProductService,
+		@IConfigurationService configurationService: IConfigurationService,
+	) {
+		super(undefined, requestService, logService, environmentService, telemetryService, fileService, productService, configurationService);
+	}
+}
+
+export async function resolveMarketplaceHeaders(version: string, productService: IProductService, environmentService: IEnvironmentService, configurationService: IConfigurationService, fileService: IFileService, storageService: {
 	get: (key: string, scope: StorageScope) => string | undefined,
 	store: (key: string, value: string, scope: StorageScope, target: StorageTarget) => void
 } | undefined): Promise<{ [key: string]: string; }> {
@@ -936,6 +968,8 @@ export async function resolveMarketplaceHeaders(version: string, environmentServ
 		'User-Agent': `VSCode ${version}`
 	};
 	const uuid = await getServiceMachineId(environmentService, fileService, storageService);
-	headers['X-Market-User-Id'] = uuid;
+	if (getTelemetryLevel(productService, environmentService) >= TelemetryLevel.USER && configurationService.getValue('telemetry.enableTelemetry') === true) {
+		headers['X-Market-User-Id'] = uuid;
+	}
 	return headers;
 }

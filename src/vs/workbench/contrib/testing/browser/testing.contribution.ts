@@ -21,7 +21,6 @@ import { Extensions as ViewContainerExtensions, IViewContainersRegistry, IViewsR
 import { REVEAL_IN_EXPLORER_COMMAND_ID } from 'vs/workbench/contrib/files/browser/fileCommands';
 import { testingViewIcon } from 'vs/workbench/contrib/testing/browser/icons';
 import { TestingDecorations } from 'vs/workbench/contrib/testing/browser/testingDecorations';
-import { ITestExplorerFilterState, TestExplorerFilterState } from 'vs/workbench/contrib/testing/browser/testingExplorerFilter';
 import { TestingExplorerView } from 'vs/workbench/contrib/testing/browser/testingExplorerView';
 import { CloseTestPeek, GoToNextMessageAction, GoToPreviousMessageAction, OpenMessageInEditorAction, TestingOutputPeekController, TestingPeekOpener } from 'vs/workbench/contrib/testing/browser/testingOutputPeek';
 import { ITestingOutputTerminalService, TestingOutputTerminalService } from 'vs/workbench/contrib/testing/browser/testingOutputTerminalService';

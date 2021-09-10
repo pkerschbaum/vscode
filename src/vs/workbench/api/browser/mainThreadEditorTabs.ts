@@ -11,10 +11,6 @@ import { EditorResourceAccessor, Verbosity } from 'vs/workbench/common/editor';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 
-export interface ITabInfo {
-	name: string;
-	resource: URI;
-}
 
 @extHostNamedCustomer(MainContext.MainThreadEditorTabs)
 export class MainThreadEditorTabs {
@@ -42,13 +38,14 @@ export class MainThreadEditorTabs {
 		const tabs: IEditorTabDto[] = [];
 		for (const group of this._editorGroupsService.groups) {
 			for (const editor of group.editors) {
-				if (editor.isDisposed() || !editor.resource) {
+				if (editor.isDisposed()) {
 					continue;
 				}
 				tabs.push({
-					group: group.id,
-					name: editor.getTitle(Verbosity.SHORT) ?? '',
-					resource: EditorResourceAccessor.getOriginalUri(editor) ?? editor.resource,
+					viewColumn: editorGroupToColumn(this._editorGroupsService, group),
+					label: editor.getName(),
+					resource: editor instanceof SideBySideEditorInput ? EditorResourceAccessor.getCanonicalUri(editor, { supportSideBySide: SideBySideEditor.PRIMARY }) : EditorResourceAccessor.getCanonicalUri(editor),
+					editorId: editor.editorId,
 					isActive: (this._editorGroupsService.activeGroup === group) && group.isActive(editor)
 				});
 			}

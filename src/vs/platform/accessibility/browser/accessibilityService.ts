@@ -58,4 +58,8 @@ export class AccessibilityService extends Disposable implements IAccessibilitySe
 		this._accessibilitySupport = accessibilitySupport;
 		this._onDidChangeScreenReaderOptimized.fire();
 	}
+
+	alert(message: string): void {
+		alert(message);
+	}
 }

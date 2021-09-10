@@ -176,7 +176,7 @@ export class MainThreadTesting extends Disposable implements MainThreadTestingSh
 	/**
 	 * @inheritdoc
 	 */
-	public $appendTestMessagesInRun(runId: string, taskId: string, testId: string, messages: ITestMessage[]): void {
+	public $appendTestMessagesInRun(runId: string, taskId: string, testId: string, messages: SerializedTestMessage[]): void {
 		const r = this.resultService.getResult(runId);
 		if (r && r instanceof LiveTestResult) {
 			for (const message of messages) {
@@ -185,7 +185,7 @@ export class MainThreadTesting extends Disposable implements MainThreadTestingSh
 					message.location.range = Range.lift(message.location.range);
 				}
 
-				r.appendMessage(testId, taskId, message);
+				r.appendMessage(testId, taskId, message as ITestMessage);
 			}
 		}
 	}

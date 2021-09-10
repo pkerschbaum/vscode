@@ -31,6 +31,7 @@ export class ExtensionManagementServerService implements IExtensionManagementSer
 		@IRemoteAgentService remoteAgentService: IRemoteAgentService,
 		@ILabelService labelService: ILabelService,
 		@IInstantiationService instantiationService: IInstantiationService,
+		@ILogService logService: ILogService,
 	) {
 		const localExtensionManagementService = new ExtensionManagementChannelClient(sharedProcessService.getChannel('extensions'));
 

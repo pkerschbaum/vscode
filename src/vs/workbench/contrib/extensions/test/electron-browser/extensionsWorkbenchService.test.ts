@@ -1428,8 +1428,8 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 	};
 
 	function aGalleryExtension(name: string, properties: any = {}, galleryExtensionProperties: any = {}, assets: IGalleryExtensionAssets = noAssets): IGalleryExtension {
-		const galleryExtension = <IGalleryExtension>Object.create({ name, publisher: 'pub', version: '1.0.0', properties: {}, assets: {}, ...properties });
-		galleryExtension.properties = { ...galleryExtension.properties, dependencies: [], ...galleryExtensionProperties };
+		const galleryExtension = <IGalleryExtension>Object.create({ name, publisher: 'pub', version: '1.0.0', allTargetPlatforms: [CURRENT_TARGET_PLATFORM], properties: {}, assets: {}, ...properties });
+		galleryExtension.properties = { ...galleryExtension.properties, dependencies: [], targetPlatform: CURRENT_TARGET_PLATFORM, ...galleryExtensionProperties };
 		galleryExtension.assets = { ...galleryExtension.assets, ...assets };
 		galleryExtension.identifier = { id: getGalleryExtensionId(galleryExtension.publisher, galleryExtension.name), uuid: generateUuid() };
 		return <IGalleryExtension>galleryExtension;

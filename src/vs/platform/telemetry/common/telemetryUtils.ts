@@ -102,6 +102,34 @@ export function configurationTelemetry(telemetryService: ITelemetryService, conf
 	});
 }
 
+export const enum TelemetryLevel {
+	NONE = 0,
+	LOG = 1,
+	USER = 2
+}
+
+/**
+ * Determines how telemetry is handled based on the current running configuration.
+ * To log telemetry locally, the client must not disable telemetry via the CLI
+ * If client is a built product and telemetry is enabled via the product.json, defer to user setting
+ * Note that when running from sources, we log telemetry locally but do not send it
+ *
+ * @param productService
+ * @param environmentService
+ * @returns NONE - telemetry is completely disabled, LOG - telemetry is logged locally but not sent, USER - verify with user setting
+ */
+export function getTelemetryLevel(productService: IProductService, environmentService: IEnvironmentService): TelemetryLevel {
+	if (environmentService.disableTelemetry || !productService.enableTelemetry) {
+		return TelemetryLevel.NONE;
+	}
+
+	if (!environmentService.isBuilt) {
+		return TelemetryLevel.LOG;
+	}
+
+	return TelemetryLevel.USER;
+}
+
 export interface Properties {
 	[key: string]: string;
 }

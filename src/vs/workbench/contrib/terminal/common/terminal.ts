@@ -201,6 +201,9 @@ export interface ITerminalConfiguration {
 		showActiveTerminal: 'always' | 'singleTerminal' | 'singleTerminalOrNarrow' | 'singleGroup' | 'never';
 		location: 'left' | 'right';
 		focusMode: 'singleClick' | 'doubleClick';
+		title: string;
+		description: string;
+		separator: string;
 	},
 	bellDuration: number;
 	defaultLocation: TerminalLocationString;
@@ -288,6 +291,7 @@ export interface ITerminalProcessManager extends IDisposable {
 	readonly onBeforeProcessData: Event<IBeforeProcessDataEvent>;
 	readonly onProcessData: Event<IProcessDataEvent>;
 	readonly onProcessTitle: Event<string>;
+	readonly onDidChangeProperty: Event<TerminalProperty>;
 	readonly onProcessShellTypeChanged: Event<TerminalShellType>;
 	readonly onProcessExit: Event<number | undefined>;
 	readonly onProcessOverrideDimensions: Event<ITerminalDimensionsOverride | undefined>;

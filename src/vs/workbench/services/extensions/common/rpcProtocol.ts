@@ -542,6 +542,8 @@ class MessageBuffer {
 		return 1;
 	}
 
+	public static readonly sizeUInt32 = 4;
+
 	public writeUInt8(n: number): void {
 		this._buff.writeUInt8(n, this._offset); this._offset += 1;
 	}

@@ -114,6 +114,8 @@ export class TerminalProcess extends Disposable implements ITerminalChildProcess
 	readonly onProcessShellTypeChanged = this._onProcessShellTypeChanged.event;
 	private readonly _onDidChangeHasChildProcesses = this._register(new Emitter<boolean>());
 	readonly onDidChangeHasChildProcesses = this._onDidChangeHasChildProcesses.event;
+	private readonly _onDidChangeProperty = this._register(new Emitter<TerminalProperty>());
+	readonly onDidChangeProperty = this._onDidChangeProperty.event;
 
 	onProcessOverrideDimensions?: Event<ITerminalDimensionsOverride | undefined> | undefined;
 	onProcessResolvedShellLaunchConfig?: Event<IShellLaunchConfig> | undefined;

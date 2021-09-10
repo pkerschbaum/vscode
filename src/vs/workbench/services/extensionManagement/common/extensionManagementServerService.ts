@@ -19,6 +19,8 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { getTargetPlatformFromOS, IExtensionGalleryService, TargetPlatform } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IExtensionManifestPropertiesService } from 'vs/workbench/services/extensions/common/extensionManifestPropertiesService';
+import { ILogService } from 'vs/platform/log/common/log';
+import { getErrorMessage } from 'vs/base/common/errors';
 
 export class ExtensionManagementServerService implements IExtensionManagementServerService {
 
@@ -36,6 +38,7 @@ export class ExtensionManagementServerService implements IExtensionManagementSer
 		@IConfigurationService configurationService: IConfigurationService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IExtensionManifestPropertiesService extensionManifestPropertiesService: IExtensionManifestPropertiesService,
+		@ILogService logService: ILogService,
 	) {
 		const remoteAgentConnection = remoteAgentService.getConnection();
 		if (remoteAgentConnection) {

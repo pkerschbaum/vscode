@@ -6,6 +6,25 @@
 import * as vscode from 'vscode';
 import { NotebookSerializer } from './notebookSerializer';
 
+// From {nbformat.INotebookMetadata} in @jupyterlab/coreutils
+type NotebookMetadata = {
+	kernelspec?: {
+		name: string;
+		display_name: string;
+		[propName: string]: unknown;
+	};
+	language_info?: {
+		name: string;
+		codemirror_mode?: string | {};
+		file_extension?: string;
+		mimetype?: string;
+		pygments_lexer?: string;
+		[propName: string]: unknown;
+	};
+	orig_nbformat: number;
+	[propName: string]: unknown;
+};
+
 export function activate(context: vscode.ExtensionContext) {
 	const serializer = new NotebookSerializer(context);
 	context.subscriptions.push(vscode.workspace.registerNotebookSerializer('jupyter-notebook', serializer, {

@@ -20,7 +20,7 @@ import { registerAction2, Action2 } from 'vs/platform/actions/common/actions';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { StopWatch } from 'vs/base/common/stopwatch';
 import { VSBuffer } from 'vs/base/common/buffer';
-import { IExtensionHost, ExtensionHostKind, ActivationKind } from 'vs/workbench/services/extensions/common/extensions';
+import { IExtensionHost, ExtensionHostKind, ActivationKind, extensionHostKindToString } from 'vs/workbench/services/extensions/common/extensions';
 import { ExtensionActivationReason } from 'vs/workbench/api/common/extHostExtensionActivator';
 import { CATEGORIES } from 'vs/workbench/common/actions';
 import { Barrier, timeout } from 'vs/base/common/async';
@@ -83,6 +83,7 @@ class ExtensionHostManager extends Disposable implements IExtensionHostManager {
 		initialActivationEvents: string[],
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IWorkbenchEnvironmentService private readonly _environmentService: IWorkbenchEnvironmentService,
+		@ITelemetryService private readonly _telemetryService: ITelemetryService
 	) {
 		super();
 		this._cachedActivationEvents = new Map<string, Promise<void>>();
@@ -92,14 +93,50 @@ class ExtensionHostManager extends Disposable implements IExtensionHostManager {
 		this._extensionHost = extensionHost;
 		this.kind = this._extensionHost.kind;
 		this.onDidExit = this._extensionHost.onExit;
+
+		const startingTelemetryEvent: ExtensionHostStartupEvent = {
+			time: Date.now(),
+			action: 'starting',
+			kind: extensionHostKindToString(this.kind)
+		};
+		this._telemetryService.publicLog2<ExtensionHostStartupEvent, ExtensionHostStartupClassification>('extensionHostStartup', startingTelemetryEvent);
+
 		this._proxy = this._extensionHost.start()!.then(
 			(protocol) => {
 				this._hasStarted = true;
+
+				// Track healthy extension host startup
+				const successTelemetryEvent: ExtensionHostStartupEvent = {
+					time: Date.now(),
+					action: 'success',
+					kind: extensionHostKindToString(this.kind)
+				};
+				this._telemetryService.publicLog2<ExtensionHostStartupEvent, ExtensionHostStartupClassification>('extensionHostStartup', successTelemetryEvent);
+
 				return { value: this._createExtensionHostCustomers(protocol) };
 			},
 			(err) => {
 				console.error(`Error received from starting extension host (kind: ${this.kind})`);
 				console.error(err);
+
+				// Track errors during extension host startup
+				const failureTelemetryEvent: ExtensionHostStartupEvent = {
+					time: Date.now(),
+					action: 'error',
+					kind: extensionHostKindToString(this.kind)
+				};
+
+				if (err && err.name) {
+					failureTelemetryEvent.errorName = err.name;
+				}
+				if (err && err.message) {
+					failureTelemetryEvent.errorMessage = err.message;
+				}
+				if (err && err.stack) {
+					failureTelemetryEvent.errorStack = err.stack;
+				}
+				this._telemetryService.publicLog2<ExtensionHostStartupEvent, ExtensionHostStartupClassification>('extensionHostStartup', failureTelemetryEvent, true);
+
 				return null;
 			}
 		);

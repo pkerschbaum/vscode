@@ -21,12 +21,11 @@ import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiati
 import { Registry } from 'vs/platform/registry/common/platform';
 import { EditorPaneDescriptor, IEditorPaneRegistry } from 'vs/workbench/browser/editor';
 import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
-import { EditorInput } from 'vs/workbench/common/editor/editorInput';
-import { EditorExtensions, EditorsOrder, IEditorSerializer } from 'vs/workbench/common/editor';
+import { EditorExtensions, EditorsOrder, IEditorInput, IEditorSerializer } from 'vs/workbench/common/editor';
 import { columnToEditorGroup } from 'vs/workbench/services/editor/common/editorGroupColumn';
 import { InteractiveEditor } from 'vs/workbench/contrib/interactive/browser/interactiveEditor';
 import { InteractiveEditorInput } from 'vs/workbench/contrib/interactive/browser/interactiveEditorInput';
-import { NOTEBOOK_EDITOR_WIDGET_ACTION_WEIGHT } from 'vs/workbench/contrib/notebook/browser/contrib/coreActions';
+import { NOTEBOOK_EDITOR_WIDGET_ACTION_WEIGHT } from 'vs/workbench/contrib/notebook/browser/controller/coreActions';
 import { NotebookEditorWidget } from 'vs/workbench/contrib/notebook/browser/notebookEditorWidget';
 import { CellEditType, CellKind, ICellOutput } from 'vs/workbench/contrib/notebook/common/notebookCommon';
 import { INotebookContentProvider, INotebookService } from 'vs/workbench/contrib/notebook/common/notebookService';
@@ -226,7 +225,7 @@ export class InteractiveEditorSerializer implements IEditorSerializer {
 		return true;
 	}
 
-	serialize(input: EditorInput): string {
+	serialize(input: IEditorInput): string {
 		assertType(input instanceof InteractiveEditorInput);
 		return JSON.stringify({
 			resource: input.primary.resource,
@@ -436,7 +435,33 @@ registerAction2(class extends Action2 {
 
 				// reveal the cell into view first
 				editorControl.notebookEditor.revealCellRangeInView({ start: index, end: index + 1 });
-				await editorControl.notebookEditor.executeNotebookCells(editorControl.notebookEditor.viewModel!.getCells({ start: index, end: index + 1 }));
+				await editorControl.notebookEditor.executeNotebookCells(editorControl.notebookEditor.getCellsInRange({ start: index, end: index + 1 }));
+			}
+		}
+	}
+});
+
+registerAction2(class extends Action2 {
+	constructor() {
+		super({
+			id: 'interactive.input.clear',
+			title: { value: localize('interactive.input.clear', "Clear the interactive window input editor contents"), original: 'Clear the interactive window input editor contents' },
+			category: 'Interactive',
+			f1: false
+		});
+	}
+
+	async run(accessor: ServicesAccessor): Promise<void> {
+		const editorService = accessor.get(IEditorService);
+		const editorControl = editorService.activeEditorPane?.getControl() as { notebookEditor: NotebookEditorWidget | undefined, codeEditor: CodeEditorWidget; } | undefined;
+
+		if (editorControl && editorControl.notebookEditor && editorControl.codeEditor) {
+			const notebookDocument = editorControl.notebookEditor.textModel;
+			const textModel = editorControl.codeEditor.getModel();
+			const range = editorControl.codeEditor.getModel()?.getFullModelRange();
+
+			if (notebookDocument && textModel && range) {
+				editorControl.codeEditor.executeEdits('', [EditOperation.replace(range, null)]);
 			}
 		}
 	}

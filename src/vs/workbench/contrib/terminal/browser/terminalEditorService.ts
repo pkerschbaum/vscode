@@ -18,7 +18,7 @@ import { DeserializedTerminalEditorInput } from 'vs/workbench/contrib/terminal/b
 import { getInstanceFromResource, parseTerminalUri } from 'vs/workbench/contrib/terminal/browser/terminalUri';
 import { ILocalTerminalService, IOffProcessTerminalService } from 'vs/workbench/contrib/terminal/common/terminal';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
-import { IEditorService, SIDE_GROUP } from 'vs/workbench/services/editor/common/editorService';
+import { IEditorService, ACTIVE_GROUP, SIDE_GROUP } from 'vs/workbench/services/editor/common/editorService';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { ILifecycleService } from 'vs/workbench/services/lifecycle/common/lifecycle';
 
@@ -230,7 +230,7 @@ export class TerminalEditorService extends Disposable implements ITerminalEditor
 		this._onDidChangeInstances.fire();
 	}
 
-	getInstanceFromResource(resource: URI | undefined): ITerminalInstance | undefined {
+	getInstanceFromResource(resource?: URI): ITerminalInstance | undefined {
 		return getInstanceFromResource(this.instances, resource);
 	}
 
@@ -247,6 +247,7 @@ export class TerminalEditorService extends Disposable implements ITerminalEditor
 		if (resource) {
 			this._editorService.openEditor({
 				resource: URI.revive(resource),
+				description: instance.description,
 				options:
 				{
 					pinned: true,

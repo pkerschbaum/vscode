@@ -9,11 +9,14 @@ import { onUnexpectedError, onUnexpectedExternalError } from 'vs/base/common/err
 import { Emitter } from 'vs/base/common/event';
 import { Disposable, IDisposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IActiveCodeEditor } from 'vs/editor/browser/editorBrowser';
+import { RedoCommand, UndoCommand } from 'vs/editor/browser/editorExtensions';
+import { EditorOption } from 'vs/editor/common/config/editorOptions';
+import { EditOperation } from 'vs/editor/common/core/editOperation';
 import { Position } from 'vs/editor/common/core/position';
 import { Range } from 'vs/editor/common/core/range';
 import { ITextModel } from 'vs/editor/common/model';
 import { InlineCompletion, InlineCompletionContext, InlineCompletions, InlineCompletionsProvider, InlineCompletionsProviderRegistry, InlineCompletionTriggerKind } from 'vs/editor/common/modes';
-import { EditOperation } from 'vs/editor/common/core/editOperation';
+import { BaseGhostTextWidgetModel, GhostText, GhostTextWidgetModel } from 'vs/editor/contrib/inlineCompletions/ghostText';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { EditorOption } from 'vs/editor/common/config/editorOptions';
 import { RedoCommand, UndoCommand } from 'vs/editor/browser/editorExtensions';
@@ -202,6 +205,10 @@ export class InlineCompletionsSession extends BaseGhostTextWidgetModel {
 					provider.handleItemDidShow(currentCompletion.sourceInlineCompletions, lastCompletionItem);
 				}
 			}
+		}));
+
+		this._register(toDisposable(() => {
+			this.cache.clear();
 		}));
 
 		this._register(this.editor.onDidChangeCursorPosition((e) => {
