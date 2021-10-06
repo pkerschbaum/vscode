@@ -567,60 +567,8 @@ async function webviewPreloads(ctx: PreloadContext) {
 
 			case 'html': {
 				const data = event.data;
-				const outputId = data.outputId;
-
-				outputRunner.enqueue(event.data.outputId, async (state) => {
-					const preloadsAndErrors = await Promise.all<unknown>([
-						data.rendererId ? renderers.load(data.rendererId) : undefined,
-						...data.requiredPreloads.map(p => kernelPreloads.waitFor(p.uri)),
-					].map(p => p?.catch(err => err)));
-
-					if (state.cancelled) {
-						return;
-					}
-
-					const cellOutput = viewModel.ensureOutputCell(data.cellId, data.cellTop);
-					const outputNode = cellOutput.createOutputNode(outputId, data.outputOffset, data.left);
-
-					const content = data.content;
-					if (content.type === RenderOutputType.Html) {
-						const trustedHtml = ttPolicy?.createHTML(content.htmlContent) ?? content.htmlContent;
-						outputNode.innerHTML = trustedHtml as string;
-						domEval(outputNode);
-					} else if (preloadsAndErrors.some(e => e instanceof Error)) {
-						const errors = preloadsAndErrors.filter((e): e is Error => e instanceof Error);
-						showPreloadErrors(outputNode, ...errors);
-					} else {
-						const rendererApi = preloadsAndErrors[0] as RendererApi;
-						try {
-							rendererApi.renderOutputItem(new OutputItem(outputId, outputNode, content.mimeType, content.metadata, content.valueBytes), outputNode);
-						} catch (e) {
-							showPreloadErrors(outputNode, e);
-						}
-					}
-
-					resizeObserver.observe(outputNode, outputId, true);
-
-					const offsetHeight = outputNode.offsetHeight;
-					const cps = document.defaultView!.getComputedStyle(outputNode);
-					if (offsetHeight !== 0 && cps.padding === '0px') {
-						// we set padding to zero if the output height is zero (then we can have a zero-height output DOM node)
-						// thus we need to ensure the padding is accounted when updating the init height of the output
-						dimensionUpdater.updateHeight(outputId, offsetHeight + ctx.style.outputNodePadding * 2, {
-							isOutput: true,
-							init: true,
-						});
-
-						outputNode.style.padding = `${ctx.style.outputNodePadding}px 0 ${ctx.style.outputNodePadding}px 0`;
-					} else {
-						dimensionUpdater.updateHeight(outputId, outputNode.offsetHeight, {
-							isOutput: true,
-							init: true,
-						});
-					}
-
-					// don't hide until after this step so that the height is right
-					cellOutput.element.style.visibility = data.initiallyHidden ? 'hidden' : 'visible';
+				outputRunner.enqueue(data.outputId, (state) => {
+					return viewModel.renderOutputCell(data, state);
 				});
 				break;
 			}
@@ -716,7 +664,7 @@ async function webviewPreloads(ctx: PreloadContext) {
 				break;
 			case 'updateWorkspaceTrust': {
 				isWorkspaceTrusted = event.data.isTrusted;
-				viewModel.rerenderMarkupCells();
+				viewModel.rerender();
 				break;
 			}
 		}
@@ -878,7 +826,6 @@ async function webviewPreloads(ctx: PreloadContext) {
 					if (!ext) {
 						throw new Error(`Could not find extending renderer: ${extensionId}`);
 					}
-
 					await ext.load();
 				}));
 			}
@@ -896,7 +843,6 @@ async function webviewPreloads(ctx: PreloadContext) {
 
 			return renderer.load();
 		}
-
 
 		public clearAll() {
 			outputRunner.cancelAll();
@@ -934,9 +880,10 @@ async function webviewPreloads(ctx: PreloadContext) {
 				return;
 			}
 
-			await Promise.all(renderers.map(x => x.load()));
+			// De-prioritize built-in renderers
+			renderers.sort((a, b) => +a.data.isBuiltin - +b.data.isBuiltin);
 
-			renderers[0].api?.renderOutputItem(info, element);
+			(await renderers[0].load())?.renderOutputItem(info, element);
 		}
 	}();
 
@@ -947,6 +894,16 @@ async function webviewPreloads(ctx: PreloadContext) {
 
 		private readonly _markupCells = new Map<string, MarkupCell>();
 		private readonly _outputCells = new Map<string, OutputCell>();
+
+		public clearAll() {
+			this._markupCells.clear();
+			this._outputCells.clear();
+		}
+
+		public rerender() {
+			this.rerenderMarkupCells();
+			this.renderOutputCells();
+		}
 
 		private async createMarkupCell(init: webviewMessages.IMarkupCellInitialization, top: number, visible: boolean): Promise<MarkupCell> {
 			const existing = this._markupCells.get(init.cellId);
@@ -1001,7 +958,7 @@ async function webviewPreloads(ctx: PreloadContext) {
 			cell?.unhide();
 		}
 
-		public rerenderMarkupCells() {
+		private rerenderMarkupCells() {
 			for (const cell of this._markupCells.values()) {
 				cell.rerender();
 			}
@@ -1038,12 +995,31 @@ async function webviewPreloads(ctx: PreloadContext) {
 			}
 		}
 
-		public clearAll() {
-			this._markupCells.clear();
-			this._outputCells.clear();
+		private renderOutputCells() {
+			for (const outputCell of this._outputCells.values()) {
+				outputCell.rerender();
+			}
 		}
 
-		public ensureOutputCell(cellId: string, cellTop: number): OutputCell {
+		public async renderOutputCell(data: webviewMessages.ICreationRequestMessage, state: { cancelled: boolean }): Promise<void> {
+			const preloadsAndErrors = await Promise.all<unknown>([
+				data.rendererId ? renderers.load(data.rendererId) : undefined,
+				...data.requiredPreloads.map(p => kernelPreloads.waitFor(p.uri)),
+			].map(p => p?.catch(err => err)));
+
+			if (state.cancelled) {
+				return;
+			}
+
+			const cellOutput = this.ensureOutputCell(data.cellId, data.cellTop);
+			const outputNode = cellOutput.createOutputElement(data.outputId, data.outputOffset, data.left);
+			outputNode.render(data.content, preloadsAndErrors);
+
+			// don't hide until after this step so that the height is right
+			cellOutput.element.style.visibility = data.initiallyHidden ? 'hidden' : 'visible';
+		}
+
+		private ensureOutputCell(cellId: string, cellTop: number): OutputCell {
 			let cell = this._outputCells.get(cellId);
 			if (!cell) {
 				cell = new OutputCell(cellId);
@@ -1178,7 +1154,7 @@ async function webviewPreloads(ctx: PreloadContext) {
 
 			await renderers.render(this, this.element);
 
-			if (this.mime === 'text/markdown') {
+			if (this.mime === 'text/markdown' || this.mime === 'text/latex') {
 				const root = this.element.shadowRoot;
 				if (root) {
 					if (!hasPostedRenderedMathTelemetry) {
@@ -1277,7 +1253,7 @@ async function webviewPreloads(ctx: PreloadContext) {
 
 		public readonly element: HTMLElement;
 
-		public readonly outputElements = new Map</*outputId*/ string, HTMLElement>();
+		private readonly outputElements = new Map</*outputId*/ string, OutputContainer>();
 
 		constructor(cellId: string) {
 			const container = document.getElementById('container')!;
@@ -1298,45 +1274,19 @@ async function webviewPreloads(ctx: PreloadContext) {
 			container.appendChild(lowerWrapperElement);
 		}
 
-		public createOutputNode(outputId: string, outputOffset: number, left: number): HTMLElement {
+		public createOutputElement(outputId: string, outputOffset: number, left: number): OutputElement {
 			let outputContainer = this.outputElements.get(outputId);
 			if (!outputContainer) {
-				outputContainer = document.createElement('div');
-				outputContainer.classList.add('output_container');
-				outputContainer.style.position = 'absolute';
-				outputContainer.style.overflow = 'hidden';
-				this.element.appendChild(outputContainer);
+				outputContainer = new OutputContainer(outputId);
+				this.element.appendChild(outputContainer.element);
 				this.outputElements.set(outputId, outputContainer);
 			}
-			outputContainer.innerText = '';
-			outputContainer.style.maxHeight = '0px';
-			outputContainer.style.top = `${outputOffset}px`;
 
-			const outputNode = document.createElement('div');
-			outputNode.id = outputId;
-			outputNode.classList.add('output');
-			outputNode.style.position = 'absolute';
-			outputNode.style.top = `0px`;
-			outputNode.style.left = left + 'px';
-			outputNode.style.padding = '0px';
-			outputContainer.appendChild(outputNode);
-
-			addMouseoverListeners(outputNode, outputId);
-			addOutputFocusTracker(outputNode, outputId);
-
-			return outputNode;
+			return outputContainer.createOutputElement(outputId, outputOffset, left);
 		}
 
 		public clearOutput(outputId: string, rendererId: string | undefined) {
-			const outputContainer = this.outputElements.get(outputId);
-			if (!outputContainer) {
-				return;
-			}
-
-			if (rendererId) {
-				renderers.clearOutput(rendererId, outputId);
-			}
-			outputContainer.remove();
+			this.outputElements.get(outputId)?.clear(rendererId);
 			this.outputElements.delete(outputId);
 		}
 
@@ -1349,7 +1299,7 @@ async function webviewPreloads(ctx: PreloadContext) {
 			this.element.style.visibility = 'visible';
 			this.element.style.top = `${top}px`;
 
-			dimensionUpdater.updateHeight(outputId, outputContainer.offsetHeight, {
+			dimensionUpdater.updateHeight(outputId, outputContainer.element.offsetHeight, {
 				isOutput: true,
 			});
 		}
@@ -1358,27 +1308,70 @@ async function webviewPreloads(ctx: PreloadContext) {
 			this.element.style.visibility = 'hidden';
 		}
 
-		public updateOutputHeight(outputId: string, height: number) {
-			const outputContainer = this.outputElements.get(outputId);
-			if (!outputContainer) {
-				return;
+		public rerender() {
+			for (const outputElement of this.outputElements.values()) {
+				outputElement.rerender();
 			}
+		}
 
-			outputContainer.style.maxHeight = `${height}px`;
-			outputContainer.style.height = `${height}px`;
+		public updateOutputHeight(outputId: string, height: number) {
+			this.outputElements.get(outputId)?.updateHeight(height);
 		}
 
 		public updateScroll(request: webviewMessages.IContentWidgetTopRequest) {
 			this.element.style.top = `${request.cellTop}px`;
 
-			const outputContainer = this.outputElements.get(request.outputId);
-			if (outputContainer) {
-				outputContainer.style.top = `${request.outputOffset}px`;
-			}
+			this.outputElements.get(request.outputId)?.updateScroll(request.outputOffset);
 
 			if (request.forceDisplay) {
 				this.element.style.visibility = 'visible';
 			}
+		}
+	}
+
+	class OutputContainer {
+
+		public readonly element: HTMLElement;
+
+		private _outputNode?: OutputElement;
+
+		constructor(
+			private readonly outputId: string,
+		) {
+			this.element = document.createElement('div');
+			this.element.classList.add('output_container');
+			this.element.style.position = 'absolute';
+			this.element.style.overflow = 'hidden';
+		}
+
+		public clear(rendererId: string | undefined) {
+			if (rendererId) {
+				renderers.clearOutput(rendererId, this.outputId);
+			}
+			this.element.remove();
+		}
+
+		public updateHeight(height: number) {
+			this.element.style.maxHeight = `${height}px`;
+			this.element.style.height = `${height}px`;
+		}
+
+		public updateScroll(outputOffset: number) {
+			this.element.style.top = `${outputOffset}px`;
+		}
+
+		public createOutputElement(outputId: string, outputOffset: number, left: number): OutputElement {
+			this.element.innerText = '';
+			this.element.style.maxHeight = '0px';
+			this.element.style.top = `${outputOffset}px`;
+
+			this._outputNode = new OutputElement(outputId, left);
+			this.element.appendChild(this._outputNode.element);
+			return this._outputNode;
+		}
+
+		public rerender() {
+			this._outputNode?.rerender();
 		}
 	}
 
@@ -1396,6 +1389,79 @@ async function webviewPreloads(ctx: PreloadContext) {
 			type,
 			...properties
 		});
+	}
+
+	class OutputElement {
+
+		public readonly element: HTMLElement;
+
+		private _content?: { content: webviewMessages.ICreationContent, preloadsAndErrors: unknown[] };
+		private hasResizeObserver = false;
+
+		constructor(
+			private readonly outputId: string,
+			left: number,
+		) {
+			this.element = document.createElement('div');
+			this.element.id = outputId;
+			this.element.classList.add('output');
+			this.element.style.position = 'absolute';
+			this.element.style.top = `0px`;
+			this.element.style.left = left + 'px';
+			this.element.style.padding = '0px';
+
+			addMouseoverListeners(this.element, outputId);
+			addOutputFocusTracker(this.element, outputId);
+		}
+
+
+		public render(content: webviewMessages.ICreationContent, preloadsAndErrors: unknown[]) {
+			this._content = { content, preloadsAndErrors };
+			if (content.type === RenderOutputType.Html) {
+				const trustedHtml = ttPolicy?.createHTML(content.htmlContent) ?? content.htmlContent;
+				this.element.innerHTML = trustedHtml as string;
+				domEval(this.element);
+			} else if (preloadsAndErrors.some(e => e instanceof Error)) {
+				const errors = preloadsAndErrors.filter((e): e is Error => e instanceof Error);
+				showPreloadErrors(this.element, ...errors);
+			} else {
+				const rendererApi = preloadsAndErrors[0] as RendererApi;
+				try {
+					rendererApi.renderOutputItem(new OutputItem(this.outputId, this.element, content.mimeType, content.metadata, content.valueBytes), this.element);
+				} catch (e) {
+					showPreloadErrors(this.element, e);
+				}
+			}
+
+			if (!this.hasResizeObserver) {
+				this.hasResizeObserver = true;
+				resizeObserver.observe(this.element, this.outputId, true);
+			}
+
+			const offsetHeight = this.element.offsetHeight;
+			const cps = document.defaultView!.getComputedStyle(this.element);
+			if (offsetHeight !== 0 && cps.padding === '0px') {
+				// we set padding to zero if the output height is zero (then we can have a zero-height output DOM node)
+				// thus we need to ensure the padding is accounted when updating the init height of the output
+				dimensionUpdater.updateHeight(this.outputId, offsetHeight + ctx.style.outputNodePadding * 2, {
+					isOutput: true,
+					init: true,
+				});
+
+				this.element.style.padding = `${ctx.style.outputNodePadding}px 0 ${ctx.style.outputNodePadding}px 0`;
+			} else {
+				dimensionUpdater.updateHeight(this.outputId, this.element.offsetHeight, {
+					isOutput: true,
+					init: true,
+				});
+			}
+		}
+
+		public rerender() {
+			if (this._content) {
+				this.render(this._content.content, this._content.preloadsAndErrors);
+			}
+		}
 	}
 
 	const markupCellDragManager = new class MarkupCellDragManager {
@@ -1485,6 +1551,7 @@ export interface RendererMetadata {
 	readonly mimeTypes: readonly string[];
 	readonly extends: string | undefined;
 	readonly messaging: boolean;
+	readonly isBuiltin: boolean;
 }
 
 export function preloadsScriptStr(styleValues: PreloadStyles, options: PreloadOptions, renderers: readonly RendererMetadata[], isWorkspaceTrusted: boolean, nonce: string) {
@@ -1495,7 +1562,7 @@ export function preloadsScriptStr(styleValues: PreloadStyles, options: PreloadOp
 		isWorkspaceTrusted,
 		nonce,
 	};
-	// TS will try compiling `import()` in webviewPreloads, so use an helper function instead
+	// TS will try compiling `import()` in webviewPreloads, so use a helper function instead
 	// of using `import(...)` directly
 	return `
 		const __import = (x) => import(x);

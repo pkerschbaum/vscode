@@ -84,7 +84,6 @@ export const enum TerminalSettingId {
 	SplitCwd = 'terminal.integrated.splitCwd',
 	WindowsEnableConpty = 'terminal.integrated.windowsEnableConpty',
 	WordSeparators = 'terminal.integrated.wordSeparators',
-	TitleMode = 'terminal.integrated.titleMode',
 	EnableFileLinks = 'terminal.integrated.enableFileLinks',
 	UnicodeVersion = 'terminal.integrated.unicodeVersion',
 	ExperimentalLinkProvider = 'terminal.integrated.experimentalLinkProvider',
@@ -92,9 +91,9 @@ export const enum TerminalSettingId {
 	LocalEchoExcludePrograms = 'terminal.integrated.localEchoExcludePrograms',
 	LocalEchoStyle = 'terminal.integrated.localEchoStyle',
 	EnablePersistentSessions = 'terminal.integrated.enablePersistentSessions',
+	PersistentSessionReviveProcess = 'terminal.integrated.persistentSessionReviveProcess',
 	CustomGlyphs = 'terminal.integrated.customGlyphs',
 	PersistentSessionScrollback = 'terminal.integrated.persistentSessionScrollback',
-	PersistentSessionExperimentalSerializer = 'terminal.integrated.persistentSessionExperimentalSerializer',
 	InheritEnv = 'terminal.integrated.inheritEnv',
 	ShowLinkHover = 'terminal.integrated.showLinkHover',
 }
@@ -135,6 +134,7 @@ export interface IPtyHostAttachTarget {
 	workspaceName: string;
 	isOrphan: boolean;
 	icon: TerminalIcon | undefined;
+	fixedDimensions: IFixedTerminalDimensions | undefined;
 }
 
 export enum TitleEventSource {
@@ -177,15 +177,35 @@ export enum TerminalIpcChannels {
 
 export const IPtyService = createDecorator<IPtyService>('ptyService');
 
-export const enum TerminalPropertyType {
-	cwd,
-	initialCwd
+export const enum ProcessPropertyType {
+	Cwd = 'cwd',
+	InitialCwd = 'initialCwd',
+	FixedDimensions = 'fixedDimensions'
 }
 
-export interface TerminalProperty {
-	type: TerminalPropertyType,
-	value: any
+export interface IProcessProperty<T extends ProcessPropertyType> {
+	type: T,
+	value: IProcessPropertyMap[T]
 }
+
+export interface IProcessPropertyMap {
+	[ProcessPropertyType.Cwd]: string,
+	[ProcessPropertyType.InitialCwd]: string,
+	[ProcessPropertyType.FixedDimensions]: IFixedTerminalDimensions
+}
+
+export interface IFixedTerminalDimensions {
+	/**
+	 * The fixed columns of the terminal.
+	 */
+	cols?: number;
+
+	/**
+	 * The fixed rows of the terminal.
+	 */
+	rows?: number;
+}
+
 
 export interface IPtyService {
 	readonly _serviceBrand: undefined;
@@ -198,7 +218,7 @@ export interface IPtyService {
 
 	readonly onProcessData: Event<{ id: number, event: IProcessDataEvent | string }>;
 	readonly onProcessExit: Event<{ id: number, event: number | undefined }>;
-	readonly onProcessReady: Event<{ id: number, event: { pid: number, cwd: string } }>;
+	readonly onProcessReady: Event<{ id: number, event: { pid: number, cwd: string, capabilities: ProcessCapability[] } }>;
 	readonly onProcessTitleChanged: Event<{ id: number, event: string }>;
 	readonly onProcessShellTypeChanged: Event<{ id: number, event: TerminalShellType }>;
 	readonly onProcessOverrideDimensions: Event<{ id: number, event: ITerminalDimensionsOverride | undefined }>;
@@ -207,7 +227,7 @@ export interface IPtyService {
 	readonly onProcessOrphanQuestion: Event<{ id: number }>;
 	readonly onDidRequestDetach: Event<{ requestId: number, workspaceId: string, instanceId: number }>;
 	readonly onProcessDidChangeHasChildProcesses: Event<{ id: number, event: boolean }>;
-	readonly onDidChangeProperty: Event<{ id: number, event: TerminalProperty }>
+	readonly onDidChangeProperty: Event<{ id: number, property: IProcessProperty<any> }>
 
 	restartPtyHost?(): Promise<void>;
 	shutdownAll?(): Promise<void>;
@@ -257,6 +277,18 @@ export interface IPtyService {
 	reduceConnectionGraceTime(): Promise<void>;
 	requestDetachInstance(workspaceId: string, instanceId: number): Promise<IProcessDetails | undefined>;
 	acceptDetachInstanceReply(requestId: number, persistentProcessId?: number): Promise<void>;
+	/**
+	 * Serializes and returns terminal state.
+	 * @param ids The persistent terminal IDs to serialize.
+	 */
+	serializeTerminalState(ids: number[]): Promise<string>;
+	/**
+	 * Revives a workspaces terminal processes, these can then be reconnected to using the normal
+	 * flow for restoring terminals after reloading.
+	 */
+	reviveTerminalProcesses(state: string): Promise<void>;
+	refreshProperty(id: number, property: ProcessPropertyType): Promise<any>;
+	updateProperty(id: number, property: ProcessPropertyType, value: any): Promise<void>;
 }
 
 export interface IRequestResolveVariablesEvent {
@@ -358,7 +390,7 @@ export interface IShellLaunchConfig {
 	/**
 	 * This is a terminal that attaches to an already running terminal.
 	 */
-	attachPersistentProcess?: { id: number; pid: number; title: string; titleSource: TitleEventSource; cwd: string; icon?: TerminalIcon; color?: string, hasChildProcesses?: boolean };
+	attachPersistentProcess?: { id: number; pid: number; title: string; titleSource: TitleEventSource; cwd: string; icon?: TerminalIcon; color?: string, hasChildProcesses?: boolean, fixedDimensions?: IFixedTerminalDimensions };
 
 	/**
 	 * Whether the terminal process environment should be exactly as provided in
@@ -413,6 +445,12 @@ export interface IShellLaunchConfig {
 	 * directly to the right of its parent.
 	 */
 	parentTerminalId?: number;
+
+	/**
+	 * The dimensions for the instance as set by the user
+	 * or via Size to Content Width
+	 */
+	fixedDimensions?: IFixedTerminalDimensions;
 }
 
 export interface ICreateContributedTerminalProfileOptions {
@@ -455,7 +493,12 @@ export interface ITerminalLaunchError {
 export interface IProcessReadyEvent {
 	pid: number,
 	cwd: string,
+	capabilities: ProcessCapability[],
 	requiresWindowsMode?: boolean
+}
+
+export const enum ProcessCapability {
+	CwdDetection = 'cwdDetection'
 }
 
 /**
@@ -475,6 +518,11 @@ export interface ITerminalChildProcess {
 	 */
 	shouldPersist: boolean;
 
+	/**
+	 * Capabilities of the process, designated when it starts
+	 */
+	capabilities: ProcessCapability[];
+
 	onProcessData: Event<IProcessDataEvent | string>;
 	onProcessExit: Event<number | undefined>;
 	onProcessReady: Event<IProcessReadyEvent>;
@@ -483,7 +531,7 @@ export interface ITerminalChildProcess {
 	onProcessOverrideDimensions?: Event<ITerminalDimensionsOverride | undefined>;
 	onProcessResolvedShellLaunchConfig?: Event<IShellLaunchConfig>;
 	onDidChangeHasChildProcesses?: Event<boolean>;
-	onDidChangeProperty: Event<TerminalProperty>;
+	onDidChangeProperty: Event<IProcessProperty<any>>;
 
 	/**
 	 * Starts the process.
@@ -526,13 +574,14 @@ export interface ITerminalChildProcess {
 	getInitialCwd(): Promise<string>;
 	getCwd(): Promise<string>;
 	getLatency(): Promise<number>;
+	refreshProperty<T extends ProcessPropertyType>(property: ProcessPropertyType): Promise<IProcessPropertyMap[T]>;
+	updateProperty<T extends ProcessPropertyType>(property: ProcessPropertyType, value: IProcessPropertyMap[T]): Promise<void>;
 }
 
 export interface IReconnectConstants {
 	graceTime: number;
 	shortGraceTime: number;
 	scrollback: number;
-	useExperimentalSerialization: boolean;
 }
 
 export const enum LocalReconnectConstants {

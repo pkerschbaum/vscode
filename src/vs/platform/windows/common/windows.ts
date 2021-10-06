@@ -298,6 +298,8 @@ export interface INativeWindowConfiguration extends IWindowConfiguration, Native
 	maximized?: boolean;
 	accessibilitySupport?: boolean;
 
+	enableLegacyRecursiveWatcher?: boolean; // TODO@bpasero remove me once watcher is settled
+
 	perfMarks: PerformanceMark[];
 
 	filesToWait?: IPathsToWaitFor;
