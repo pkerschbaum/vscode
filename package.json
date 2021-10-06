@@ -10,8 +10,8 @@
   "dependencies": {
     "chokidar": "3.5.1",
     "graceful-fs": "4.2.6",
-    "nsfw": "2.1.2",
-    "vscode-nls": "^5.0.0"
+    "vscode-nls": "^5.0.0",
+    "vscode-nsfw": "2.1.8"
   },
   "devDependencies": {
     "@types/chokidar": "2.1.3",
