@@ -342,10 +342,10 @@ duplexer3@^0.1.4:
   resolved "https://registry.yarnpkg.com/duplexer3/-/duplexer3-0.1.4.tgz#ee01dd1cac0ed3cbc7fdbea37dc0a8f1ce002ce2"
   integrity sha1-7gHdHKwO08vH/b6jfcCo8c4ALOI=
 
-electron@13.1.8:
-  version "13.1.8"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-13.1.8.tgz#a6def6eca7cafc7b068a8f71a069e521ba803182"
-  integrity sha512-ei2ZyyG81zUOlvm5Zxri668TdH5GNLY0wF+XrC2FRCqa8AABAPjJIWTRkhFEr/H6PDVPNZjMPvSs3XhHyVVk2g==
+electron@13.5.1:
+  version "13.5.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-13.5.1.tgz#76c02c39be228532f886a170b472cbd3d93f0d0f"
+  integrity sha512-ZyxhIhmdaeE3xiIGObf0zqEyCyuIDqZQBv9NKX8w5FNzGm87j4qR0H1+GQg6vz+cA1Nnv1x175Zvimzc0/UwEQ==
   dependencies:
     "@electron/get" "^1.0.1"
     "@types/node" "^14.6.2"
@@ -1123,10 +1123,10 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-typescript@4.5.0-dev.20210902:
-  version "4.5.0-dev.20210902"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.5.0-dev.20210902.tgz#a2f9152f5ecb251e1d69c8135778c79ebac744bb"
-  integrity sha512-fZg63y2Q89H/yuR9eJ7IDZDaQwEgRZwLxK4xtVtYi/g6ONVgLmaC0wy/uxQ9GVTN/7P8r7PHqpsb6icYlKVuzg==
+typescript@^4.5.0-dev.20211004:
+  version "4.5.0-dev.20211007"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.5.0-dev.20211007.tgz#da90b5547ff84e3e334e94414f674e3d6a1c5394"
+  integrity sha512-NUEjWBg7fo+w9DC6ffCeaJ+Oc8a99l7vmWDT2wWWPzh4TwZX7ELFmaOKY95ErEEbjDFdgUTEd5QDZwxSjKiq0Q==
 
 universalify@^0.1.0:
   version "0.1.2"
