@@ -3,23 +3,13 @@
 	"compilerOptions": {
 		"removeComments": false,
 		"preserveConstEnums": true,
-		"sourceMap": false,
+		"sourceMap": true,
+		"declaration": true,
+		"declarationMap": true,
 		"outDir": "../out/vs",
 		"target": "es2020",
 		"types": [
-			"keytar",
-			"mocha",
-			"semver",
-			"sinon",
-			"winreg",
-			"trusted-types",
-			"wicg-file-system-access"
-		],
-		"plugins": [
-			{
-				"name": "tsec",
-				"exemptionConfig": "./tsec.exemptions.json"
-			}
+			"electron"
 		]
 	},
 	"include": [

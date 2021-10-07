@@ -6,9 +6,6 @@
 import { Event } from 'vs/base/common/event';
 import { URI } from 'vs/base/common/uri';
 import { LanguageId, LanguageIdentifier } from 'vs/editor/common/modes';
-import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-
-export const IModeService = createDecorator<IModeService>('modeService');
 
 export interface ILanguageExtensionPoint {
 	id: string;

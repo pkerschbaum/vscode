@@ -3,14 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { refineServiceDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { Event } from 'vs/base/common/event';
 import { Color } from 'vs/base/common/color';
-import { IColorTheme, IThemeService, IFileIconTheme } from 'vs/platform/theme/common/themeService';
-import { ConfigurationTarget } from 'vs/platform/configuration/common/configuration';
+import { IFileIconTheme } from 'vs/platform/theme/common/themeService';
 import { isBoolean, isString } from 'vs/base/common/types';
-
-export const IWorkbenchThemeService = refineServiceDecorator<IThemeService, IWorkbenchThemeService>(IThemeService);
 
 export const VS_LIGHT_THEME = 'vs';
 export const VS_DARK_THEME = 'vs-dark';
@@ -47,11 +42,6 @@ export interface IWorkbenchTheme {
 	readonly settingsId: string | null;
 }
 
-export interface IWorkbenchColorTheme extends IWorkbenchTheme, IColorTheme {
-	readonly settingsId: string;
-	readonly tokenColors: ITextMateThemingRule[];
-}
-
 export interface IColorMap {
 	[id: string]: Color;
 }
@@ -61,28 +51,6 @@ export interface IWorkbenchFileIconTheme extends IWorkbenchTheme, IFileIconTheme
 
 export interface IWorkbenchProductIconTheme extends IWorkbenchTheme {
 	readonly settingsId: string;
-}
-
-export type ThemeSettingTarget = ConfigurationTarget | undefined | 'auto' | 'preview';
-
-
-export interface IWorkbenchThemeService extends IThemeService {
-	readonly _serviceBrand: undefined;
-	setColorTheme(themeId: string | undefined, settingsTarget: ThemeSettingTarget): Promise<IWorkbenchColorTheme | null>;
-	getColorTheme(): IWorkbenchColorTheme;
-	getColorThemes(): Promise<IWorkbenchColorTheme[]>;
-	onDidColorThemeChange: Event<IWorkbenchColorTheme>;
-	restoreColorTheme(): void;
-
-	setFileIconTheme(iconThemeId: string | undefined, settingsTarget: ThemeSettingTarget): Promise<IWorkbenchFileIconTheme>;
-	getFileIconTheme(): IWorkbenchFileIconTheme;
-	getFileIconThemes(): Promise<IWorkbenchFileIconTheme[]>;
-	onDidFileIconThemeChange: Event<IWorkbenchFileIconTheme>;
-
-	setProductIconTheme(iconThemeId: string | undefined, settingsTarget: ThemeSettingTarget): Promise<IWorkbenchProductIconTheme>;
-	getProductIconTheme(): IWorkbenchProductIconTheme;
-	getProductIconThemes(): Promise<IWorkbenchProductIconTheme[]>;
-	onDidProductIconThemeChange: Event<IWorkbenchProductIconTheme>;
 }
 
 export interface IThemeScopedColorCustomizations {

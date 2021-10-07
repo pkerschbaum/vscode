@@ -12,7 +12,6 @@ import { ExtensionData, IThemeExtensionPoint, IWorkbenchFileIconTheme } from 'vs
 import { IFileService } from 'vs/platform/files/common/files';
 import { getParseErrorMessage } from 'vs/base/common/jsonErrorMessages';
 import { asCSSUrl } from 'vs/base/browser/dom';
-import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 
 export class FileIconThemeData implements IWorkbenchFileIconTheme {
 
@@ -105,58 +104,6 @@ export class FileIconThemeData implements IWorkbenchFileIconTheme {
 		themeData.extensionData = undefined;
 		themeData.watch = false;
 		return themeData;
-	}
-
-
-	static fromStorageData(storageService: IStorageService): FileIconThemeData | undefined {
-		const input = storageService.get(FileIconThemeData.STORAGE_KEY, StorageScope.GLOBAL);
-		if (!input) {
-			return undefined;
-		}
-		try {
-			let data = JSON.parse(input);
-			const theme = new FileIconThemeData('', '', null);
-			for (let key in data) {
-				switch (key) {
-					case 'id':
-					case 'label':
-					case 'description':
-					case 'settingsId':
-					case 'styleSheetContent':
-					case 'hasFileIcons':
-					case 'hidesExplorerArrows':
-					case 'hasFolderIcons':
-					case 'watch':
-						(theme as any)[key] = data[key];
-						break;
-					case 'location':
-						// ignore, no longer restore
-						break;
-					case 'extensionData':
-						theme.extensionData = ExtensionData.fromJSONObject(data.extensionData);
-						break;
-				}
-			}
-			return theme;
-		} catch (e) {
-			return undefined;
-		}
-	}
-
-	toStorage(storageService: IStorageService) {
-		const data = JSON.stringify({
-			id: this.id,
-			label: this.label,
-			description: this.description,
-			settingsId: this.settingsId,
-			styleSheetContent: this.styleSheetContent,
-			hasFileIcons: this.hasFileIcons,
-			hasFolderIcons: this.hasFolderIcons,
-			hidesExplorerArrows: this.hidesExplorerArrows,
-			extensionData: ExtensionData.toJSONObject(this.extensionData),
-			watch: this.watch
-		});
-		storageService.store(FileIconThemeData.STORAGE_KEY, data, StorageScope.GLOBAL, StorageTarget.MACHINE);
 	}
 }
 

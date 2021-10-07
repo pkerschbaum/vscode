@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"module": "amd",
+		"module": "commonjs",
 		"moduleResolution": "node",
 		"experimentalDecorators": true,
 		"noImplicitReturns": true,
@@ -11,8 +11,6 @@
 		"exactOptionalPropertyTypes": false,
 		"useUnknownInCatchVariables": false,
 		"forceConsistentCasingInFileNames": true,
-		"jsx": "react-jsx",
-		"jsxImportSource": "@emotion/react",
 		"baseUrl": ".",
 		"paths": {
 			"vs/*": [

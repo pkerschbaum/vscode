@@ -13,8 +13,6 @@ import { LanguageId, LanguageIdentifier } from 'vs/editor/common/modes';
 import { ModesRegistry } from 'vs/editor/common/modes/modesRegistry';
 import { NULL_LANGUAGE_IDENTIFIER, NULL_MODE_ID } from 'vs/editor/common/modes/nullMode';
 import { ILanguageExtensionPoint } from 'vs/editor/common/services/modeService';
-import { Extensions, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
-import { Registry } from 'vs/platform/registry/common/platform';
 
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
@@ -96,8 +94,6 @@ export class LanguagesRegistry extends Disposable {
 				this._mimeTypesMap[mimetype] = language.identifier;
 			});
 		});
-
-		Registry.as<IConfigurationRegistry>(Extensions.Configuration).registerOverrideIdentifiers(ModesRegistry.getLanguages().map(language => language.id));
 
 		this._onDidChange.fire();
 	}
