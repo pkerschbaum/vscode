@@ -1,11 +1,25 @@
 {
-  "name": "code-oss-file-icon-theme",
-  "version": "0.0.1",
+  "name": "@pkerschbaum/code-oss-file-icon-theme",
+  "version": "1.61.0",
   "license": "MIT",
+  "keywords": [
+    "code-oss",
+    "file-icon-theme",
+    "file icon theme"
+  ],
+  "author": "Patrick Kerschbaum <patrick.kerschbaum@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pkerschbaum/vscode/tree/code-oss-file-icon-theme"
+  },
+  "bugs": {
+    "url": "https://github.com/pkerschbaum/vscode/issues"
+  },
   "private": false,
   "scripts": {
     "prebuild": "rimraf out",
-    "build": "tsc -p ./src/tsconfig.json && tsc-alias -p ./src/tsconfig.json"
+    "build": "tsc -p ./src/tsconfig.json && tsc-alias -p ./src/tsconfig.json",
+    "prepack": "yarn run build"
   },
   "dependencies": {
     "vscode-nls": "^5.0.0"
