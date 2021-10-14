@@ -27,7 +27,6 @@ import { FileWatcher as UnixWatcherService } from 'vs/platform/files/node/watche
 import { IDiskFileChange, ILogMessage, IWatchRequest, toFileChanges } from 'vs/platform/files/node/watcher/watcher';
 import { FileWatcher as WindowsWatcherService } from 'vs/platform/files/node/watcher/win32/watcherService';
 import { ILogService, LogLevel } from 'vs/platform/log/common/log';
-import product from 'vs/platform/product/common/product';
 
 export interface IWatcherOptions {
 	pollingInterval?: number;
@@ -618,7 +617,7 @@ export class DiskFileSystemProvider extends Disposable implements
 					if (this.options?.enableLegacyRecursiveWatcher) {
 						enableLegacyWatcher = true;
 					} else {
-						enableLegacyWatcher = product.quality === 'stable' && isLinux;
+						enableLegacyWatcher = isLinux;
 					}
 
 					// Legacy Watcher
