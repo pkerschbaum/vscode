@@ -1,11 +1,26 @@
 {
-  "name": "code-oss-file-service",
-  "version": "0.0.1",
+  "name": "@pkerschbaum/code-oss-file-service",
+  "version": "1.61.0",
   "license": "MIT",
+  "keywords": [
+    "code-oss",
+    "file-service",
+    "file service",
+    "file system provider"
+  ],
+  "author": "Patrick Kerschbaum <patrick.kerschbaum@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pkerschbaum/vscode/tree/code-oss-file-service"
+  },
+  "bugs": {
+    "url": "https://github.com/pkerschbaum/vscode/issues"
+  },
   "private": false,
   "scripts": {
     "prebuild": "rimraf out",
-    "build": "tsc -p ./src/tsconfig.json && tsc-alias -p ./src/tsconfig.json"
+    "build": "tsc -p ./src/tsconfig.json && tsc-alias -p ./src/tsconfig.json",
+    "prepack": "yarn run build"
   },
   "dependencies": {
     "chokidar": "3.5.1",
