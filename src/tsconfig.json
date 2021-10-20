@@ -6,7 +6,7 @@
 		"sourceMap": true,
 		"declaration": true,
 		"declarationMap": true,
-		"outDir": "../out/vs",
+		"outDir": "../out",
 		"target": "es2020",
 		"types": [
 			"electron"
@@ -14,6 +14,7 @@
 	},
 	"include": [
 		"./typings",
-		"./vs"
+		"./vs",
+		"./code-oss-file-icon-theme"
 	]
 }

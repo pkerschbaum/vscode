@@ -15,6 +15,9 @@
 		"paths": {
 			"vs/*": [
 				"./vs/*"
+			],
+			"code-oss-file-icon-theme/*": [
+				"./code-oss-file-icon-theme/*"
 			]
 		},
 		"lib": [
