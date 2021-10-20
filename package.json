@@ -24,6 +24,7 @@
     "prepack": "yarn run build"
   },
   "dependencies": {
+    "css.escape": "^1.5.1",
     "vscode-nls": "^5.0.0"
   },
   "devDependencies": {
