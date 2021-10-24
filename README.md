@@ -30,3 +30,11 @@ File icon themes might provide icons not only for file extensions (e.g. ".js"), 
 For any given file/folder, the "File Icon Theme" API will try to detect a language for that file/folder and if a language gets detected, the appropriate language file icon will be used. Out of the box, no language is registered (besides "plaintext" for .txt files, see [microsoft/vscode/src/vs/editor/common/modes/modesRegistry.ts#L61-L70](https://github.com/microsoft/vscode/blob/e35e898ac77744a6d289df4082d23799ff9e1b61/src/vs/editor/common/modes/modesRegistry.ts#L61-L70)]).
 
 `code-oss-file-icon-theme` includes language configurations shipped with VS Code in [./static/language-extensions](./static/language-extensions). You can call `registerLanguagesOfExtensions` with a `URI` object pointing to that directory to load these configurations.
+
+### Example
+
+See
+
+- Initialization logic: [pkerschbaum/file-explorer/src/platform/electron-preload/file-icon-theme.ts#L17-L42](https://github.com/pkerschbaum/file-explorer/blob/8b1a04f1429a0872d532b1ff0ca80cd341f10332/src/platform/electron-preload/file-icon-theme.ts#L17-L42)
+- Putting the CSS rules into `<head>`: [pkerschbaum/file-explorer/src/renderer.ts#L21-L23](https://github.com/pkerschbaum/file-explorer/blob/8b1a04f1429a0872d532b1ff0ca80cd341f10332/src/renderer.ts#L21-L23)
+- `getIconClasses`: [pkerschbaum/file-explorer/src/global-cache/file-icon-classes.ts#L20](https://github.com/pkerschbaum/file-explorer/blob/8b1a04f1429a0872d532b1ff0ca80cd341f10332/src/global-cache/file-icon-classes.ts#L20)
