@@ -1,24 +1,16 @@
 import { URI } from "vs/base/common/uri";
 import * as json from "vs/base/common/json";
-import { ModeServiceImpl } from "vs/editor/common/services/modeServiceImpl";
-import { getIconClasses as getIconClassesOriginal } from "vs/editor/common/services/getIconClasses";
 import { FileIconThemeData } from "vs/workbench/services/themes/browser/fileIconThemeData";
 import {
   IThemeExtensionPoint,
   ExtensionData,
 } from "vs/workbench/services/themes/common/workbenchThemeService";
-import type { FileKind } from "@pkerschbaum/code-oss-file-service/out/vs/platform/files/common/files";
 
 import { getFileService } from "code-oss-file-icon-theme/fileservice-singleton";
 
-export type FileIconTheme = {
-  iconThemeCssRules: string;
-  getIconClasses: (resource: URI | undefined, fileKind?: FileKind) => string[];
-};
-const modeService = new ModeServiceImpl();
-export async function loadFileIconTheme(
+export async function loadFileIconThemeCssRules(
   fileIconThemeUri: URI
-): Promise<FileIconTheme> {
+): Promise<string> {
   const fileService = getFileService();
 
   const packageJsonStat = await fileService.readFile(
@@ -68,12 +60,5 @@ export async function loadFileIconTheme(
     );
   }
 
-  const result: FileIconTheme = {
-    iconThemeCssRules: cssRules,
-    getIconClasses: (resource, fileKind) => {
-      return getIconClassesOriginal(undefined, modeService, resource, fileKind);
-    },
-  };
-
-  return result;
+  return cssRules;
 }

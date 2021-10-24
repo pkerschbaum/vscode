@@ -19,10 +19,10 @@ yarn add @pkerschbaum/code-oss-file-icon-theme @pkerschbaum/code-oss-file-servic
 ### Read file icon theme from disk and create CSS rules and classnames
 
 1. Download a VS Code file icon theme (e.g. <https://marketplace.visualstudio.com/items?itemName=PKief.material-icon-theme>) and put it somewhere in your project.
-2. Call `loadFileIconTheme` with a `URI` object pointing to the directory of the file icon theme. This will return an instance of [`FileIconTheme`](./src/code-oss-file-icon-theme/load-file-icon-theme.ts#L14-L17).
-3. Put the `FileIconTheme.iconThemeCssRules` into the `<head>` of your application, and put the class `show-file-icons` in some common ancestor of the HTML elements which should receive the file icons (e.g., on a root `<div>` element). The css selectors of the theme engine expect that class to be present (this class can be removed/added to "toggle" the presence of file icons).  
+2. Call `loadFileIconThemeCssRules` with a `URI` object pointing to the directory of the file icon theme. This will return the CSS rules for the icon theme.
+3. Put the CSS rule into the `<head>` of your application, and put the class `show-file-icons` in some common ancestor of the HTML elements which should receive the file icons (e.g., on a root `<div>` element). The CSS selectors of the theme engine expect that class to be present (this class can be removed/added to "toggle" the presence of file icons).  
    The icon theme is now "active".
-4. Use `FileIconTheme.getIconClasses` to retrieve classnames which you have to put on the HTML element which should receive the icon.
+4. Use `getIconClasses` to retrieve classnames which you have to put on the HTML element which should receive the icon.
 
 ### (optional) Register languages to get more accurate file icons
 
@@ -30,11 +30,3 @@ File icon themes might provide icons not only for file extensions (e.g. ".js"), 
 For any given file/folder, the "File Icon Theme" API will try to detect a language for that file/folder and if a language gets detected, the appropriate language file icon will be used. Out of the box, no language is registered (besides "plaintext" for .txt files, see [microsoft/vscode/src/vs/editor/common/modes/modesRegistry.ts#L61-L70](https://github.com/microsoft/vscode/blob/e35e898ac77744a6d289df4082d23799ff9e1b61/src/vs/editor/common/modes/modesRegistry.ts#L61-L70)]).
 
 `code-oss-file-icon-theme` includes language configurations shipped with VS Code in [./static/language-extensions](./static/language-extensions). You can call `registerLanguagesOfExtensions` with a `URI` object pointing to that directory to load these configurations.
-
-### Example
-
-See
-
-- Initialization logic: [pkerschbaum/file-explorer/src/platform/file-icon-theme.ts#L14-L34](https://github.com/pkerschbaum/file-explorer/blob/e428a691ad652df139859e406c5fd0d70e5bbcc9/src/platform/file-icon-theme.ts#L14-L34)
-- Putting the CSS rules into `<head>`: [pkerschbaum/file-explorer/src/renderer.ts#L12-L17](https://github.com/pkerschbaum/file-explorer/blob/e428a691ad652df139859e406c5fd0d70e5bbcc9/src/renderer.ts#L12-L17)
-- `FileIconTheme.getIconClasses`: [pkerschbaum/file-explorer/src/ui/hooks/files.hooks.ts#L114](https://github.com/pkerschbaum/file-explorer/blob/e428a691ad652df139859e406c5fd0d70e5bbcc9/src/ui/hooks/files.hooks.ts#L114)
