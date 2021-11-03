@@ -1,15 +1,17 @@
+import { IFileService } from "@pkerschbaum/code-oss-file-service/out/vs/platform/files/common/files";
+
 import { URI } from "vs/base/common/uri";
 import * as json from "vs/base/common/json";
 import { ILanguageExtensionPoint } from "vs/editor/common/services/modeService";
 import { ModesRegistry } from "vs/editor/common/modes/modesRegistry";
 
-import { getFileService } from "code-oss-file-icon-theme/fileservice-singleton";
-
-export async function registerLanguagesOfExtensions(
-  extensionsDirectoryUri: URI
-) {
-  const fileService = getFileService();
-
+export async function registerLanguagesOfExtensions({
+  extensionsDirectoryUri,
+  fileService,
+}: {
+  extensionsDirectoryUri: URI;
+  fileService: IFileService;
+}) {
   const extensionDirStat = await fileService.resolve(extensionsDirectoryUri);
   if (!extensionDirStat.children) {
     return;

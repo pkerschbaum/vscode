@@ -1,3 +1,5 @@
+import { IFileService } from "@pkerschbaum/code-oss-file-service/out/vs/platform/files/common/files";
+
 import { URI } from "vs/base/common/uri";
 import * as json from "vs/base/common/json";
 import { FileIconThemeData } from "vs/workbench/services/themes/browser/fileIconThemeData";
@@ -6,13 +8,13 @@ import {
   ExtensionData,
 } from "vs/workbench/services/themes/common/workbenchThemeService";
 
-import { getFileService } from "code-oss-file-icon-theme/fileservice-singleton";
-
-export async function loadFileIconThemeCssRules(
-  fileIconThemeUri: URI
-): Promise<string> {
-  const fileService = getFileService();
-
+export async function loadFileIconThemeCssRules({
+  fileIconThemeUri,
+  fileService,
+}: {
+  fileIconThemeUri: URI;
+  fileService: IFileService;
+}): Promise<string> {
   const packageJsonStat = await fileService.readFile(
     URI.joinPath(fileIconThemeUri, "package.json")
   );
