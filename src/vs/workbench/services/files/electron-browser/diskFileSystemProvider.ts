@@ -20,6 +20,8 @@ export class DiskFileSystemProvider extends NodeDiskFileSystemProvider {
 		super(logService, options);
 	}
 
+	//#region Enable Trash capability as only extension to the node.js file provider
+
 	override get capabilities(): FileSystemProviderCapabilities {
 		if (!this._capabilities) {
 			this._capabilities = super.capabilities | FileSystemProviderCapabilities.Trash;
@@ -41,4 +43,6 @@ export class DiskFileSystemProvider extends NodeDiskFileSystemProvider {
 			throw new Error(isWindows ? localize('binFailed', "Failed to move '{0}' to the recycle bin", basename(filePath)) : localize('trashFailed', "Failed to move '{0}' to the trash", basename(filePath)));
 		}
 	}
+
+	//#endregion
 }
