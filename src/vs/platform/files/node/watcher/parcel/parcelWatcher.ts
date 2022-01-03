@@ -6,25 +6,24 @@
 import * as parcelWatcher from '@parcel/watcher';
 import { existsSync, unlinkSync } from 'fs';
 import { tmpdir } from 'os';
-import { RunOnceScheduler } from 'vs/base/common/async';
+import { DeferredPromise, RunOnceScheduler } from 'vs/base/common/async';
 import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { Emitter } from 'vs/base/common/event';
-import { isEqualOrParent } from 'vs/base/common/extpath';
+import { isEqualOrParent, randomPath } from 'vs/base/common/extpath';
 import { parse, ParsedPattern } from 'vs/base/common/glob';
-import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
+import { Disposable } from 'vs/base/common/lifecycle';
 import { TernarySearchTree } from 'vs/base/common/map';
 import { normalizeNFC } from 'vs/base/common/normalization';
 import { dirname, isAbsolute, join, normalize, sep } from 'vs/base/common/path';
 import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { rtrim } from 'vs/base/common/strings';
-import { generateUuid } from 'vs/base/common/uuid';
 import { realcaseSync, realpathSync } from 'vs/base/node/extpath';
 import { watchFolder } from 'vs/base/node/watcher';
 import { FileChangeType } from 'vs/platform/files/common/files';
-import { IDiskFileChange, ILogMessage, normalizeFileChanges, IWatchRequest, IWatcherService } from 'vs/platform/files/common/watcher';
+import { IDiskFileChange, ILogMessage, coalesceEvents, IWatchRequest, IRecursiveWatcher } from 'vs/platform/files/common/watcher';
 
-export interface IWatcher extends IDisposable {
+export interface IParcelWatcherInstance {
 
 	/**
 	 * Signals when the watcher is ready to watch.
@@ -48,13 +47,13 @@ export interface IWatcher extends IDisposable {
 	readonly token: CancellationToken;
 
 	/**
-	 * Stops and disposes the watcher. Same as `dispose` but allows to await
-	 * the watcher getting unsubscribed.
+	 * Stops and disposes the watcher. This operation is async to await
+	 * unsubscribe call in Parcel.
 	 */
 	stop(): Promise<void>;
 }
 
-export class ParcelWatcherService extends Disposable implements IWatcherService {
+export class ParcelWatcher extends Disposable implements IRecursiveWatcher {
 
 	private static readonly MAP_PARCEL_WATCHER_ACTION_TO_FILE_CHANGE = new Map<parcelWatcher.EventType, number>(
 		[
@@ -87,7 +86,7 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 	private readonly _onDidError = this._register(new Emitter<string>());
 	readonly onDidError = this._onDidError.event;
 
-	protected readonly watchers = new Map<string, IWatcher>();
+	protected readonly watchers = new Map<string, IParcelWatcherInstance>();
 
 	private verboseLogging = false;
 	private enospcErrorLogged = false;
@@ -127,8 +126,8 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 		}).map(({ request }) => request.path);
 
 		// Logging
-		this.debug(`Request to start watching: ${requestsToStartWatching.map(request => `${request.path} (excludes: ${request.excludes})`).join(',')}`);
-		this.debug(`Request to stop watching: ${pathsToStopWatching.join(',')}`);
+		this.trace(`Request to start watching: ${requestsToStartWatching.map(request => `${request.path} (excludes: ${request.excludes})`).join(',')}`);
+		this.trace(`Request to stop watching: ${pathsToStopWatching.join(',')}`);
 
 		// Stop watching as instructed
 		for (const pathToStopWatching of pathsToStopWatching) {
@@ -145,10 +144,6 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 		}
 	}
 
-	private toExcludePatterns(excludes: string[] | undefined): ParsedPattern[] {
-		return Array.isArray(excludes) ? excludes.map(exclude => parse(exclude)) : [];
-	}
-
 	protected toExcludePaths(path: string, excludes: string[] | undefined): string[] | undefined {
 		if (!Array.isArray(excludes)) {
 			return undefined;
@@ -163,7 +158,7 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 		// level of the file watcher as much as possible.
 		// Refs: https://github.com/parcel-bundler/watcher/issues/64
 		for (const exclude of excludes) {
-			const isGlob = exclude.includes(ParcelWatcherService.GLOB_MARKERS.Star);
+			const isGlob = exclude.includes(ParcelWatcher.GLOB_MARKERS.Star);
 
 			// Glob pattern: check for typical patterns and convert
 			let normalizedExclude: string | undefined = undefined;
@@ -171,9 +166,9 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 
 				// Examples: **, **/**, **\**
 				if (
-					exclude === ParcelWatcherService.GLOB_MARKERS.GlobStar ||
-					exclude === ParcelWatcherService.GLOB_MARKERS.GlobStarPosix ||
-					exclude === ParcelWatcherService.GLOB_MARKERS.GlobStarWindows
+					exclude === ParcelWatcher.GLOB_MARKERS.GlobStar ||
+					exclude === ParcelWatcher.GLOB_MARKERS.GlobStarPosix ||
+					exclude === ParcelWatcher.GLOB_MARKERS.GlobStarWindows
 				) {
 					normalizedExclude = path;
 				}
@@ -184,15 +179,15 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 				// - **/build-folder
 				// - output/**
 				else {
-					const startsWithGlobStar = exclude.startsWith(ParcelWatcherService.GLOB_MARKERS.GlobStarPathStartPosix) || exclude.startsWith(ParcelWatcherService.GLOB_MARKERS.GlobStarPathStartWindows);
-					const endsWithGlobStar = exclude.endsWith(ParcelWatcherService.GLOB_MARKERS.GlobStarPathEndPosix) || exclude.endsWith(ParcelWatcherService.GLOB_MARKERS.GlobStarPathEndWindows);
+					const startsWithGlobStar = exclude.startsWith(ParcelWatcher.GLOB_MARKERS.GlobStarPathStartPosix) || exclude.startsWith(ParcelWatcher.GLOB_MARKERS.GlobStarPathStartWindows);
+					const endsWithGlobStar = exclude.endsWith(ParcelWatcher.GLOB_MARKERS.GlobStarPathEndPosix) || exclude.endsWith(ParcelWatcher.GLOB_MARKERS.GlobStarPathEndWindows);
 					if (startsWithGlobStar || endsWithGlobStar) {
 						if (startsWithGlobStar && endsWithGlobStar) {
-							normalizedExclude = exclude.substring(ParcelWatcherService.GLOB_MARKERS.GlobStarPathStartPosix.length, exclude.length - ParcelWatcherService.GLOB_MARKERS.GlobStarPathEndPosix.length);
+							normalizedExclude = exclude.substring(ParcelWatcher.GLOB_MARKERS.GlobStarPathStartPosix.length, exclude.length - ParcelWatcher.GLOB_MARKERS.GlobStarPathEndPosix.length);
 						} else if (startsWithGlobStar) {
-							normalizedExclude = exclude.substring(ParcelWatcherService.GLOB_MARKERS.GlobStarPathStartPosix.length);
+							normalizedExclude = exclude.substring(ParcelWatcher.GLOB_MARKERS.GlobStarPathStartPosix.length);
 						} else {
-							normalizedExclude = exclude.substring(0, exclude.length - ParcelWatcherService.GLOB_MARKERS.GlobStarPathEndPosix.length);
+							normalizedExclude = exclude.substring(0, exclude.length - ParcelWatcher.GLOB_MARKERS.GlobStarPathEndPosix.length);
 						}
 					}
 
@@ -201,9 +196,9 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 					// Examples:
 					// - node_modules/* (full form: **/node_modules/*/**)
 					if (isLinux && normalizedExclude) {
-						const endsWithStar = normalizedExclude?.endsWith(ParcelWatcherService.GLOB_MARKERS.StarPathEndPosix);
+						const endsWithStar = normalizedExclude?.endsWith(ParcelWatcher.GLOB_MARKERS.StarPathEndPosix);
 						if (endsWithStar) {
-							normalizedExclude = normalizedExclude.substring(0, normalizedExclude.length - ParcelWatcherService.GLOB_MARKERS.StarPathEndPosix.length);
+							normalizedExclude = normalizedExclude.substring(0, normalizedExclude.length - ParcelWatcher.GLOB_MARKERS.StarPathEndPosix.length);
 						}
 					}
 				}
@@ -214,7 +209,7 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 				normalizedExclude = exclude;
 			}
 
-			if (!normalizedExclude || normalizedExclude.includes(ParcelWatcherService.GLOB_MARKERS.Star)) {
+			if (!normalizedExclude || normalizedExclude.includes(ParcelWatcher.GLOB_MARKERS.Star)) {
 				continue; // skip for parcel (will be applied later by our glob matching)
 			}
 
@@ -244,24 +239,20 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 	private startPolling(request: IWatchRequest, pollingInterval: number, restarts = 0): void {
 		const cts = new CancellationTokenSource();
 
-		let parcelWatcherPromiseResolve: () => void;
-		const instance = new Promise<void>(resolve => parcelWatcherPromiseResolve = resolve);
+		const instance = new DeferredPromise<void>();
 
-		const snapshotFile = join(tmpdir(), `vscode-watcher-snapshot-${generateUuid()}`);
+		const snapshotFile = randomPath(tmpdir(), 'vscode-watcher-snapshot');
 
 		// Remember as watcher instance
-		const watcher: IWatcher = {
+		const watcher: IParcelWatcherInstance = {
 			request,
-			ready: instance,
+			ready: instance.p,
 			restarts,
 			token: cts.token,
 			stop: async () => {
 				cts.dispose(true);
 				pollingWatcher.dispose();
 				unlinkSync(snapshotFile);
-			},
-			dispose: () => {
-				watcher.stop();
 			}
 		};
 		this.watchers.set(request.path, watcher);
@@ -270,11 +261,11 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 		const { realPath, realPathDiffers, realPathLength } = this.normalizePath(request);
 
 		// Warm up exclude patterns for usage
-		const excludePatterns = this.toExcludePatterns(request.excludes);
+		const excludePatterns = request.excludes.map(exclude => parse(exclude));
 
 		const ignore = this.toExcludePaths(realPath, watcher.request.excludes);
 
-		this.debug(`Started watching: '${realPath}' with polling interval '${pollingInterval}' and native excludes '${ignore?.join(', ')}'`);
+		this.trace(`Started watching: '${realPath}' with polling interval '${pollingInterval}' and native excludes '${ignore?.join(', ')}'`);
 
 		let counter = 0;
 
@@ -287,7 +278,7 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 
 			// We already ran before, check for events since
 			if (counter > 1) {
-				const parcelEvents = await parcelWatcher.getEventsSince(realPath, snapshotFile, { ignore, backend: ParcelWatcherService.PARCEL_WATCHER_BACKEND });
+				const parcelEvents = await parcelWatcher.getEventsSince(realPath, snapshotFile, { ignore, backend: ParcelWatcher.PARCEL_WATCHER_BACKEND });
 
 				if (cts.token.isCancellationRequested) {
 					return;
@@ -298,11 +289,11 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 			}
 
 			// Store a snapshot of files to the snapshot file
-			await parcelWatcher.writeSnapshot(realPath, snapshotFile, { ignore, backend: ParcelWatcherService.PARCEL_WATCHER_BACKEND });
+			await parcelWatcher.writeSnapshot(realPath, snapshotFile, { ignore, backend: ParcelWatcher.PARCEL_WATCHER_BACKEND });
 
 			// Signal we are ready now when the first snapshot was written
 			if (counter === 1) {
-				parcelWatcherPromiseResolve();
+				instance.complete();
 			}
 
 			if (cts.token.isCancellationRequested) {
@@ -318,23 +309,19 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 	private startWatching(request: IWatchRequest, restarts = 0): void {
 		const cts = new CancellationTokenSource();
 
-		let parcelWatcherPromiseResolve: (watcher: parcelWatcher.AsyncSubscription | undefined) => void;
-		const instance = new Promise<parcelWatcher.AsyncSubscription | undefined>(resolve => parcelWatcherPromiseResolve = resolve);
+		const instance = new DeferredPromise<parcelWatcher.AsyncSubscription | undefined>();
 
 		// Remember as watcher instance
-		const watcher: IWatcher = {
+		const watcher: IParcelWatcherInstance = {
 			request,
-			ready: instance,
+			ready: instance.p,
 			restarts,
 			token: cts.token,
 			stop: async () => {
 				cts.dispose(true);
 
-				const watcherInstance = await instance;
+				const watcherInstance = await instance.p;
 				await watcherInstance?.unsubscribe();
-			},
-			dispose: () => {
-				watcher.stop();
 			}
 		};
 		this.watchers.set(request.path, watcher);
@@ -343,7 +330,7 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 		const { realPath, realPathDiffers, realPathLength } = this.normalizePath(request);
 
 		// Warm up exclude patterns for usage
-		const excludePatterns = this.toExcludePatterns(request.excludes);
+		const excludePatterns = request.excludes.map(exclude => parse(exclude));
 
 		const ignore = this.toExcludePaths(realPath, watcher.request.excludes);
 		parcelWatcher.subscribe(realPath, (error, parcelEvents) => {
@@ -362,20 +349,20 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 			// Handle & emit events
 			this.onParcelEvents(parcelEvents, watcher, excludePatterns, realPathDiffers, realPathLength);
 		}, {
-			backend: ParcelWatcherService.PARCEL_WATCHER_BACKEND,
+			backend: ParcelWatcher.PARCEL_WATCHER_BACKEND,
 			ignore
 		}).then(parcelWatcher => {
-			this.debug(`Started watching: '${realPath}' with backend '${ParcelWatcherService.PARCEL_WATCHER_BACKEND}' and native excludes '${ignore?.join(', ')}'`);
+			this.trace(`Started watching: '${realPath}' with backend '${ParcelWatcher.PARCEL_WATCHER_BACKEND}' and native excludes '${ignore?.join(', ')}'`);
 
-			parcelWatcherPromiseResolve(parcelWatcher);
+			instance.complete(parcelWatcher);
 		}).catch(error => {
 			this.onUnexpectedError(error, watcher);
 
-			parcelWatcherPromiseResolve(undefined);
+			instance.complete(undefined);
 		});
 	}
 
-	private onParcelEvents(parcelEvents: parcelWatcher.Event[], watcher: IWatcher, excludes: ParsedPattern[], realPathDiffers: boolean, realPathLength: number): void {
+	private onParcelEvents(parcelEvents: parcelWatcher.Event[], watcher: IParcelWatcherInstance, excludes: ParsedPattern[], realPathDiffers: boolean, realPathLength: number): void {
 		if (parcelEvents.length === 0) {
 			return;
 		}
@@ -383,14 +370,19 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 		// Check for excludes
 		const rawEvents = this.handleExcludes(parcelEvents, excludes);
 
-		// Normalize and detect root path deletes
+		// Normalize events: handle NFC normalization and symlinks
 		const { events: normalizedEvents, rootDeleted } = this.normalizeEvents(rawEvents, watcher.request, realPathDiffers, realPathLength);
 
-		// Broadcast to clients coalesced
-		const coalescedEvents = normalizeFileChanges(normalizedEvents);
-		this.emitEvents(coalescedEvents);
+		// Coalesce events: merge events of same kind
+		const coalescedEvents = coalesceEvents(normalizedEvents);
 
-		// Handle root path delete if confirmed from coalseced events
+		// Filter events: check for specific events we want to exclude
+		const filteredEvents = this.filterEvents(coalescedEvents, watcher.request, rootDeleted);
+
+		// Broadcast to clients
+		this.emitEvents(filteredEvents);
+
+		// Handle root path delete if confirmed from coalesced events
 		if (rootDeleted && coalescedEvents.some(event => event.path === watcher.request.path && event.type === FileChangeType.DELETED)) {
 			this.onWatchedPathDeleted(watcher);
 		}
@@ -400,16 +392,16 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 		const events: IDiskFileChange[] = [];
 
 		for (const { path, type: parcelEventType } of parcelEvents) {
-			const type = ParcelWatcherService.MAP_PARCEL_WATCHER_ACTION_TO_FILE_CHANGE.get(parcelEventType)!;
+			const type = ParcelWatcher.MAP_PARCEL_WATCHER_ACTION_TO_FILE_CHANGE.get(parcelEventType)!;
 			if (this.verboseLogging) {
-				this.log(`${type === FileChangeType.ADDED ? '[ADDED]' : type === FileChangeType.DELETED ? '[DELETED]' : '[CHANGED]'} ${path}`);
+				this.trace(`${type === FileChangeType.ADDED ? '[ADDED]' : type === FileChangeType.DELETED ? '[DELETED]' : '[CHANGED]'} ${path}`);
 			}
 
 			if (!this.isPathIgnored(path, excludes)) {
 				events.push({ type, path });
 			} else {
 				if (this.verboseLogging) {
-					this.log(` >> ignored ${path}`);
+					this.trace(` >> ignored ${path}`);
 				}
 			}
 		}
@@ -425,7 +417,7 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 		// Logging
 		if (this.verboseLogging) {
 			for (const event of events) {
-				this.log(` >> normalized ${event.type === FileChangeType.ADDED ? '[ADDED]' : event.type === FileChangeType.DELETED ? '[DELETED]' : '[CHANGED]'} ${event.path}`);
+				this.trace(` >> normalized ${event.type === FileChangeType.ADDED ? '[ADDED]' : event.type === FileChangeType.DELETED ? '[DELETED]' : '[CHANGED]'} ${event.path}`);
 			}
 		}
 	}
@@ -441,6 +433,7 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 			realPath = realpathSync(request.path);
 
 			// Second check for casing difference
+			// Note: this will be a no-op on Linux platforms
 			if (request.path === realPath) {
 				realPath = realcaseSync(request.path) ?? request.path;
 			}
@@ -450,7 +443,7 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 				realPathLength = realPath.length;
 				realPathDiffers = true;
 
-				this.warn(`correcting a path to watch that seems to be a symbolic link (original: ${request.path}, real: ${realPath})`);
+				this.warn(`correcting a path to watch that seems to be a symbolic link or wrong casing (original: ${request.path}, real: ${realPath})`);
 			}
 		} catch (error) {
 			// ignore
@@ -491,7 +484,26 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 		return { events, rootDeleted };
 	}
 
-	private onWatchedPathDeleted(watcher: IWatcher): void {
+	private filterEvents(events: IDiskFileChange[], request: IWatchRequest, rootDeleted: boolean): IDiskFileChange[] {
+		if (!rootDeleted) {
+			return events;
+		}
+
+		return events.filter(event => {
+			if (event.path === request.path && event.type === FileChangeType.DELETED) {
+				// Explicitly exclude changes to root if we have any
+				// to avoid VS Code closing all opened editors which
+				// can happen e.g. in case of network connectivity
+				// issues
+				// (https://github.com/microsoft/vscode/issues/136673)
+				return false;
+			}
+
+			return true;
+		});
+	}
+
+	private onWatchedPathDeleted(watcher: IParcelWatcherInstance): void {
 		this.warn('Watcher shutdown because watched path got deleted', watcher);
 
 		const parentPath = dirname(watcher.request.path);
@@ -508,9 +520,6 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 					// Stop watching that parent folder
 					disposable.dispose();
 
-					// Send a manual event given we know the root got added again
-					this.emitEvents([{ path: watcher.request.path, type: FileChangeType.ADDED }]);
-
 					// Restart the file watching
 					this.restartWatching(watcher);
 				}
@@ -523,7 +532,7 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 		}
 	}
 
-	private onUnexpectedError(error: unknown, watcher?: IWatcher): void {
+	private onUnexpectedError(error: unknown, watcher?: IParcelWatcherInstance): void {
 		const msg = toErrorMessage(error);
 
 		// Specially handle ENOSPC errors that can happen when
@@ -557,7 +566,7 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 		this.watchers.clear();
 	}
 
-	protected restartWatching(watcher: IWatcher, delay = 800): void {
+	protected restartWatching(watcher: IParcelWatcherInstance, delay = 800): void {
 
 		// Restart watcher delayed to accomodate for
 		// changes on disk that have triggered the
@@ -639,23 +648,21 @@ export class ParcelWatcherService extends Disposable implements IWatcherService 
 		this.verboseLogging = enabled;
 	}
 
-	private log(message: string) {
-		this._onDidLogMessage.fire({ type: 'trace', message: this.toMessage(message) });
+	private trace(message: string) {
+		if (this.verboseLogging) {
+			this._onDidLogMessage.fire({ type: 'trace', message: this.toMessage(message) });
+		}
 	}
 
-	private warn(message: string, watcher?: IWatcher) {
+	private warn(message: string, watcher?: IParcelWatcherInstance) {
 		this._onDidLogMessage.fire({ type: 'warn', message: this.toMessage(message, watcher) });
 	}
 
-	private error(message: string, watcher: IWatcher | undefined) {
+	private error(message: string, watcher: IParcelWatcherInstance | undefined) {
 		this._onDidLogMessage.fire({ type: 'error', message: this.toMessage(message, watcher) });
 	}
 
-	private debug(message: string): void {
-		this._onDidLogMessage.fire({ type: 'debug', message: this.toMessage(message) });
-	}
-
-	private toMessage(message: string, watcher?: IWatcher): string {
+	private toMessage(message: string, watcher?: IParcelWatcherInstance): string {
 		return watcher ? `[File Watcher (parcel)] ${message} (path: ${watcher.request.path})` : `[File Watcher (parcel)] ${message}`;
 	}
 }

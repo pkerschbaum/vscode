@@ -4,22 +4,26 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ThrottledDelayer } from 'vs/base/common/async';
+import { parse, ParsedPattern } from 'vs/base/common/glob';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { basename, join } from 'vs/base/common/path';
 import { realpath } from 'vs/base/node/extpath';
 import { SymlinkSupport } from 'vs/base/node/pfs';
 import { CHANGE_BUFFER_DELAY, watchFile, watchFolder } from 'vs/base/node/watcher';
 import { FileChangeType } from 'vs/platform/files/common/files';
-import { IDiskFileChange, ILogMessage, normalizeFileChanges } from 'vs/platform/files/common/watcher';
+import { IDiskFileChange, ILogMessage, coalesceEvents } from 'vs/platform/files/common/watcher';
 
-export class FileWatcher extends Disposable {
-	private isDisposed: boolean | undefined;
+export class NodeJSFileWatcher extends Disposable {
 
 	private readonly fileChangesDelayer: ThrottledDelayer<void> = this._register(new ThrottledDelayer<void>(CHANGE_BUFFER_DELAY * 2 /* sync on delay from underlying library */));
 	private fileChangesBuffer: IDiskFileChange[] = [];
 
+	private isDisposed: boolean | undefined;
+	private readonly excludePatterns = this.excludes.map(exclude => parse(exclude));
+
 	constructor(
 		private path: string,
+		private excludes: string[],
 		private onDidFilesChange: (changes: IDiskFileChange[]) => void,
 		private onLogMessage: (msg: ILogMessage) => void,
 		private verboseLogging: boolean
@@ -46,13 +50,15 @@ export class FileWatcher extends Disposable {
 				try {
 					pathToWatch = await realpath(pathToWatch);
 				} catch (error) {
-					this.onError(error);
+					this.error(error);
 
 					if (symbolicLink.dangling) {
 						return; // give up if symbolic link is dangling
 					}
 				}
 			}
+
+			this.trace(`Request to start watching: ${pathToWatch} (excludes: ${this.excludes}))}`);
 
 			// Watch Folder
 			if (stat.isDirectory()) {
@@ -61,7 +67,7 @@ export class FileWatcher extends Disposable {
 						type: eventType === 'changed' ? FileChangeType.UPDATED : eventType === 'added' ? FileChangeType.ADDED : FileChangeType.DELETED,
 						path: join(this.path, basename(path)) // ensure path is identical with what was passed in
 					});
-				}, error => this.onError(error)));
+				}, error => this.error(error)));
 			}
 
 			// Watch File
@@ -71,23 +77,29 @@ export class FileWatcher extends Disposable {
 						type: eventType === 'changed' ? FileChangeType.UPDATED : FileChangeType.DELETED,
 						path: this.path // ensure path is identical with what was passed in
 					});
-				}, error => this.onError(error)));
+				}, error => this.error(error)));
 			}
 		} catch (error) {
 			if (error.code !== 'ENOENT') {
-				this.onError(error);
+				this.error(error);
 			}
 		}
 	}
 
 	private onFileChange(event: IDiskFileChange): void {
 
-		// Add to buffer
-		this.fileChangesBuffer.push(event);
-
 		// Logging
 		if (this.verboseLogging) {
-			this.onVerbose(`${event.type === FileChangeType.ADDED ? '[ADDED]' : event.type === FileChangeType.DELETED ? '[DELETED]' : '[CHANGED]'} ${event.path}`);
+			this.trace(`${event.type === FileChangeType.ADDED ? '[ADDED]' : event.type === FileChangeType.DELETED ? '[DELETED]' : '[CHANGED]'} ${event.path}`);
+		}
+
+		// Add to buffer unless ignored
+		if (!this.isPathIgnored(event.path, this.excludePatterns)) {
+			this.fileChangesBuffer.push(event);
+		} else {
+			if (this.verboseLogging) {
+				this.trace(` >> ignored ${event.path}`);
+			}
 		}
 
 		// Handle emit through delayer to accommodate for bulk changes and thus reduce spam
@@ -95,31 +107,35 @@ export class FileWatcher extends Disposable {
 			const fileChanges = this.fileChangesBuffer;
 			this.fileChangesBuffer = [];
 
-			// Event normalization
-			const normalizedFileChanges = normalizeFileChanges(fileChanges);
+			// Event coalsecer
+			const coalescedFileChanges = coalesceEvents(fileChanges);
 
 			// Logging
 			if (this.verboseLogging) {
-				for (const event of normalizedFileChanges) {
-					this.onVerbose(`>> normalized ${event.type === FileChangeType.ADDED ? '[ADDED]' : event.type === FileChangeType.DELETED ? '[DELETED]' : '[CHANGED]'} ${event.path}`);
+				for (const event of coalescedFileChanges) {
+					this.trace(`>> normalized ${event.type === FileChangeType.ADDED ? '[ADDED]' : event.type === FileChangeType.DELETED ? '[DELETED]' : '[CHANGED]'} ${event.path}`);
 				}
 			}
 
 			// Fire
-			if (normalizedFileChanges.length > 0) {
-				this.onDidFilesChange(normalizedFileChanges);
+			if (coalescedFileChanges.length > 0) {
+				this.onDidFilesChange(coalescedFileChanges);
 			}
 		});
 	}
 
-	private onError(error: string): void {
+	private isPathIgnored(absolutePath: string, ignored: ParsedPattern[]): boolean {
+		return ignored.some(ignore => ignore(absolutePath));
+	}
+
+	private error(error: string): void {
 		if (!this.isDisposed) {
 			this.onLogMessage({ type: 'error', message: `[File Watcher (node.js)] ${error}` });
 		}
 	}
 
-	private onVerbose(message: string): void {
-		if (!this.isDisposed) {
+	private trace(message: string): void {
+		if (!this.isDisposed && this.verboseLogging) {
 			this.onLogMessage({ type: 'trace', message: `[File Watcher (node.js)] ${message}` });
 		}
 	}
