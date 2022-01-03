@@ -529,7 +529,7 @@ export class DiskFileSystemProvider extends AbstractDiskFileSystemProvider imple
 			const filePath = this.toFilePath(resource);
 
 			if (opts.recursive) {
-				await Promises.rm(filePath, RimRafMode.MOVE);
+				await Promises.rm(filePath, RimRafMode.UNLINK);
 			} else {
 				await Promises.unlink(filePath);
 			}
