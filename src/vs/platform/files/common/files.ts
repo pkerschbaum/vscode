@@ -151,7 +151,6 @@ export interface IFileService {
 	 *
 	 * The optional parameter overwrite can be set to replace an existing file at the location.
 	 */
-	move(source: URI, target: URI, overwrite?: boolean): Promise<IFileStatWithMetadata>;
 	move(source: URI, target: URI, overwrite?: boolean, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<IFileStatWithMetadata>;
 
 	/**
@@ -165,7 +164,6 @@ export interface IFileService {
 	 *
 	 * The optional parameter overwrite can be set to replace an existing file at the location.
 	 */
-	copy(source: URI, target: URI, overwrite?: boolean): Promise<IFileStatWithMetadata>;
 	copy(source: URI, target: URI, overwrite?: boolean, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<IFileStatWithMetadata>;
 
 	/**

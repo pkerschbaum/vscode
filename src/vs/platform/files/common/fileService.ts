@@ -792,6 +792,15 @@ export class FileService extends Disposable implements IFileService {
 			return this.doPipeBuffered(sourceProvider, source, targetProvider, target, additionalArgs);
 		}
 
+
+		/*
+		 * (modification for file-explorer https://github.com/pkerschbaum/file-explorer):
+		 * if we get here, at least "one side" of the file copy operation will be unbuffered, so no progress will be available
+		 */
+		if (additionalArgs?.progressCb) {
+			additionalArgs.progressCb({ forSource: source, progressIsIndeterminate: true });
+		}
+
 		// copy: source (buffered) => target (unbuffered)
 		if (hasOpenReadWriteCloseCapability(sourceProvider) && hasReadWriteCapability(targetProvider)) {
 			return this.doPipeBufferedToUnbuffered(sourceProvider, source, targetProvider, target);

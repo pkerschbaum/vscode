@@ -606,7 +606,7 @@ const COPY_FILE_HIGHWATERMARK = 1024 * 1024; // 1 MB
 async function doCopyFile(source: string, target: string, mode: number, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
 
 	/*
-	 * Nex-App: two modifications:
+	 * (modification for file-explorer https://github.com/pkerschbaum/file-explorer) two modifications:
 	 * - instead of using fs.promises.copyFile, copy the file manually in order to be able to track 
 	 *   the progress on byte level
 	 * - if cancellation token got cancelled, abort
@@ -665,7 +665,7 @@ async function doCopyFile(source: string, target: string, mode: number, addition
 		reader.pipe(progressWatcher).pipe(writer);
 	});
 
-	// Nex-App: original code of vscode is here:
+	// (modification for file-explorer https://github.com/pkerschbaum/file-explorer) original code of vscode is here:
 	// Copy file
 	// await Promises.copyFile(source, target);
 
