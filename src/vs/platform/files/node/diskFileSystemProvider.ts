@@ -529,7 +529,7 @@ export class DiskFileSystemProvider extends AbstractDiskFileSystemProvider imple
 			const filePath = this.toFilePath(resource);
 
 			if (opts.recursive) {
-				await Promises.rm(filePath, RimRafMode.UNLINK);
+				await Promises.rm(filePath, RimRafMode.MOVE);
 			} else {
 				await Promises.unlink(filePath);
 			}
@@ -538,7 +538,7 @@ export class DiskFileSystemProvider extends AbstractDiskFileSystemProvider imple
 		}
 	}
 
-	async rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
+	async rename(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
 		const fromFilePath = this.toFilePath(from);
 		const toFilePath = this.toFilePath(to);
 
@@ -552,7 +552,7 @@ export class DiskFileSystemProvider extends AbstractDiskFileSystemProvider imple
 			await this.validateTargetDeleted(from, to, 'move', opts.overwrite);
 
 			// Move
-			await Promises.move(fromFilePath, toFilePath);
+			await Promises.move(fromFilePath, toFilePath, additionalArgs);
 		} catch (error) {
 
 			// rewrite some typical errors that can happen especially around symlinks

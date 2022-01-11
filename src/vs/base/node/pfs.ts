@@ -46,6 +46,11 @@ async function rimraf(path: string, mode = RimRafMode.UNLINK): Promise<void> {
 		throw new Error('rimraf - will refuse to recursively delete root');
 	}
 
+	/*
+	 * (modification for file-explorer https://github.com/pkerschbaum/file-explorer):
+	 * always use rimrafUnlink (since rimrafMove causes problems with some devices on windows, e.g. external drives, network drives)
+	 * 
+	 * original code is here:
 	// delete: via rmDir
 	if (mode === RimRafMode.UNLINK) {
 		return rimrafUnlink(path);
@@ -53,6 +58,8 @@ async function rimraf(path: string, mode = RimRafMode.UNLINK): Promise<void> {
 
 	// delete: via move
 	return rimrafMove(path);
+	 */
+	return rimrafUnlink(path);
 }
 
 async function rimrafMove(path: string): Promise<void> {
@@ -517,6 +524,13 @@ async function move(source: string, target: string, additionalArgs?: { token?: C
 		// 2.) The user tries to rename a file/folder that ends with a dot. This is not
 		// really possible to move then, at least on UNC devices.
 		if (source.toLowerCase() !== target.toLowerCase() && error.code === 'EXDEV' || source.endsWith('.')) {
+			/*
+			 * (modification for file-explorer https://github.com/pkerschbaum/file-explorer):
+			 * report that the progress for this source is determinate now
+			 */
+			if (additionalArgs?.progressCb) {
+				additionalArgs.progressCb({ forSource: URI.file(source), progressDeterminateType: 'DETERMINATE' });
+			}
 			await copy(source, target, { preserveSymlinks: false /* copying to another device */ }, additionalArgs);
 			await rimraf(source, RimRafMode.MOVE);
 			await updateMtime(target);

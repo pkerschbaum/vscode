@@ -474,7 +474,7 @@ export interface IFileSystemProvider {
 	readdir(resource: URI): Promise<[string, FileType][]>;
 	delete(resource: URI, opts: FileDeleteOptions): Promise<void>;
 
-	rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void>;
+	rename(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void>;
 	copy?(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void>;
 	copy?(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void>;
 

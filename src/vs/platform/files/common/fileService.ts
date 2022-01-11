@@ -766,7 +766,7 @@ export class FileService extends Disposable implements IFileService {
 			// same provider: leverage rename() functionality
 			if (sourceProvider === targetProvider) {
 				if (additionalArgs?.progressCb) {
-					additionalArgs.progressCb({ forSource: source, progressIsIndeterminate: true });
+					additionalArgs.progressCb({ forSource: source, progressDeterminateType: 'INDETERMINATE' });
 				}
 
 				await sourceProvider.rename(source, target, { overwrite });
@@ -798,7 +798,7 @@ export class FileService extends Disposable implements IFileService {
 		 * if we get here, at least "one side" of the file copy operation will be unbuffered, so no progress will be available
 		 */
 		if (additionalArgs?.progressCb) {
-			additionalArgs.progressCb({ forSource: source, progressIsIndeterminate: true });
+			additionalArgs.progressCb({ forSource: source, progressDeterminateType: 'INDETERMINATE' });
 		}
 
 		// copy: source (buffered) => target (unbuffered)

@@ -13,7 +13,7 @@ import { URI, uriToFsPath } from 'vs/base/common/uri';
 
 export type ProgressCbArgs = {
 	forSource: URI;
-} & ({ newBytesRead: number; } | { progressIsIndeterminate: true; });
+} & ({ newBytesRead: number; } | { progressDeterminateType: 'DETERMINATE' | 'INDETERMINATE'; });
 
 export function originalFSPath(uri: URI): string {
 	return uriToFsPath(uri, true);
