@@ -14,7 +14,7 @@ import { isEqual } from 'vs/base/common/extpath';
 import { IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { basename, dirname } from 'vs/base/common/path';
 import { isLinux, isWindows } from 'vs/base/common/platform';
-import { extUriBiasedIgnorePathCase, joinPath, ProgressCbArgs } from 'vs/base/common/resources';
+import { CoordinationArgs, extUriBiasedIgnorePathCase, joinPath } from 'vs/base/common/resources';
 import { newWriteableStream, ReadableStreamEvents } from 'vs/base/common/stream';
 import { URI } from 'vs/base/common/uri';
 import { IDirent, Promises, RimRafMode, SymlinkSupport } from 'vs/base/node/pfs';
@@ -538,7 +538,7 @@ export class DiskFileSystemProvider extends AbstractDiskFileSystemProvider imple
 		}
 	}
 
-	async rename(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
+	async rename(from: URI, to: URI, opts: FileOverwriteOptions, coordinationArgs?: CoordinationArgs): Promise<void> {
 		const fromFilePath = this.toFilePath(from);
 		const toFilePath = this.toFilePath(to);
 
@@ -552,7 +552,7 @@ export class DiskFileSystemProvider extends AbstractDiskFileSystemProvider imple
 			await this.validateTargetDeleted(from, to, 'move', opts.overwrite);
 
 			// Move
-			await Promises.move(fromFilePath, toFilePath, additionalArgs);
+			await Promises.move(fromFilePath, toFilePath, coordinationArgs);
 		} catch (error) {
 
 			// rewrite some typical errors that can happen especially around symlinks
@@ -565,7 +565,7 @@ export class DiskFileSystemProvider extends AbstractDiskFileSystemProvider imple
 		}
 	}
 
-	async copy(from: URI, to: URI, opts: FileOverwriteOptions, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
+	async copy(from: URI, to: URI, opts: FileOverwriteOptions, coordinationArgs?: CoordinationArgs): Promise<void> {
 		const fromFilePath = this.toFilePath(from);
 		const toFilePath = this.toFilePath(to);
 
@@ -579,7 +579,7 @@ export class DiskFileSystemProvider extends AbstractDiskFileSystemProvider imple
 			await this.validateTargetDeleted(from, to, 'copy', opts.overwrite);
 
 			// Copy
-			await Promises.copy(fromFilePath, toFilePath, { preserveSymlinks: true }, additionalArgs);
+			await Promises.copy(fromFilePath, toFilePath, { preserveSymlinks: true }, coordinationArgs);
 		} catch (error) {
 
 			// rewrite some typical errors that can happen especially around symlinks

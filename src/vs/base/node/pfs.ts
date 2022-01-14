@@ -13,9 +13,8 @@ import { normalizeNFC } from 'vs/base/common/normalization';
 import { join } from 'vs/base/common/path';
 import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { extUriBiasedIgnorePathCase } from 'vs/base/common/resources';
-import type { ProgressCbArgs } from 'vs/base/common/resources';
+import type { CoordinationArgs } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
-import { CancellationToken } from 'vs/base/common/cancellation';
 
 //#region rimraf
 
@@ -484,9 +483,17 @@ function ensureWriteOptions(options?: IWriteFileOptions): IEnsuredWriteFileOptio
  * - updates the `mtime` of the `source` after the operation
  * - allows to move across multiple disks
  */
-async function move(source: string, target: string, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
+async function move(source: string, target: string, coordinationArgs?: CoordinationArgs): Promise<void> {
 	if (source === target) {
 		return;  // simulate node.js behaviour here and do a no-op if paths match
+	}
+
+	/*
+	 * (modification for file-explorer https://github.com/pkerschbaum/file-explorer):
+	 * report that the progress for this source is indeterminate (`Promises.rename` does not allow to track progress)
+	 */
+	if (coordinationArgs?.reportProgress) {
+		coordinationArgs.reportProgress({ forSource: URI.file(source), progressDeterminateType: 'INDETERMINATE' });
 	}
 
 	// We have been updating `mtime` for move operations for files since the
@@ -524,14 +531,7 @@ async function move(source: string, target: string, additionalArgs?: { token?: C
 		// 2.) The user tries to rename a file/folder that ends with a dot. This is not
 		// really possible to move then, at least on UNC devices.
 		if (source.toLowerCase() !== target.toLowerCase() && error.code === 'EXDEV' || source.endsWith('.')) {
-			/*
-			 * (modification for file-explorer https://github.com/pkerschbaum/file-explorer):
-			 * report that the progress for this source is determinate now
-			 */
-			if (additionalArgs?.progressCb) {
-				additionalArgs.progressCb({ forSource: URI.file(source), progressDeterminateType: 'DETERMINATE' });
-			}
-			await copy(source, target, { preserveSymlinks: false /* copying to another device */ }, additionalArgs);
+			await copy(source, target, { preserveSymlinks: false /* copying to another device */ }, coordinationArgs);
 			await rimraf(source, RimRafMode.MOVE);
 			await updateMtime(target);
 		} else {
@@ -553,8 +553,8 @@ interface ICopyPayload {
  * links should be handled when encountered. Set to
  * `false` to not preserve them and `true` otherwise.
  */
-async function copy(source: string, target: string, options: { preserveSymlinks: boolean }, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
-	return doCopy(source, target, { root: { source, target }, options, handledSourcePaths: new Set<string>() }, additionalArgs);
+async function copy(source: string, target: string, options: { preserveSymlinks: boolean }, coordinationArgs?: CoordinationArgs): Promise<void> {
+	return doCopy(source, target, { root: { source, target }, options, handledSourcePaths: new Set<string>() }, coordinationArgs);
 }
 
 // When copying a file or folder, we want to preserve the mode
@@ -563,7 +563,7 @@ async function copy(source: string, target: string, options: { preserveSymlinks:
 // (https://github.com/nodejs/node-v0.x-archive/issues/3045#issuecomment-4862588)
 const COPY_MODE_MASK = 0o777;
 
-async function doCopy(source: string, target: string, payload: ICopyPayload, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
+async function doCopy(source: string, target: string, payload: ICopyPayload, coordinationArgs?: CoordinationArgs): Promise<void> {
 
 	// Keep track of paths already copied to prevent
 	// cycles from symbolic links to cause issues
@@ -595,16 +595,16 @@ async function doCopy(source: string, target: string, payload: ICopyPayload, add
 
 	// Folder
 	if (stat.isDirectory()) {
-		return doCopyDirectory(source, target, stat.mode & COPY_MODE_MASK, payload, additionalArgs);
+		return doCopyDirectory(source, target, stat.mode & COPY_MODE_MASK, payload, coordinationArgs);
 	}
 
 	// File or file-like
 	else {
-		return doCopyFile(source, target, stat.mode & COPY_MODE_MASK, additionalArgs);
+		return doCopyFile(source, target, stat.mode & COPY_MODE_MASK, coordinationArgs);
 	}
 }
 
-async function doCopyDirectory(source: string, target: string, mode: number, payload: ICopyPayload, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
+async function doCopyDirectory(source: string, target: string, mode: number, payload: ICopyPayload, coordinationArgs?: CoordinationArgs): Promise<void> {
 
 	// Create folder
 	await Promises.mkdir(target, { recursive: true, mode });
@@ -612,21 +612,24 @@ async function doCopyDirectory(source: string, target: string, mode: number, pay
 	// Copy each file recursively
 	const files = await readdir(source);
 	for (const file of files) {
-		await doCopy(join(source, file), join(target, file), payload, additionalArgs);
+		await doCopy(join(source, file), join(target, file), payload, coordinationArgs);
 	}
 }
 
 const COPY_FILE_HIGHWATERMARK = 1024 * 1024; // 1 MB
-async function doCopyFile(source: string, target: string, mode: number, additionalArgs?: { token?: CancellationToken, progressCb?: (args: ProgressCbArgs) => void }): Promise<void> {
+async function doCopyFile(source: string, target: string, mode: number, coordinationArgs?: CoordinationArgs): Promise<void> {
 
 	/*
-	 * (modification for file-explorer https://github.com/pkerschbaum/file-explorer) two modifications:
+	 * (modification for file-explorer https://github.com/pkerschbaum/file-explorer):
+	 * - report that the progress for this source is determinate now
+	 * - if cancellation token got cancelled, abort
 	 * - instead of using fs.promises.copyFile, copy the file manually in order to be able to track 
 	 *   the progress on byte level
-	 * - if cancellation token got cancelled, abort
 	 */
-
-	if (!!additionalArgs?.token?.isCancellationRequested) {
+	if (coordinationArgs?.reportProgress) {
+		coordinationArgs.reportProgress({ forSource: URI.file(source), progressDeterminateType: 'DETERMINATE' });
+	}
+	if (!!coordinationArgs?.token?.isCancellationRequested) {
 		return;
 	}
 
@@ -636,10 +639,10 @@ async function doCopyFile(source: string, target: string, mode: number, addition
 		const progressWatcher = new stream.Transform({
 			highWaterMark: COPY_FILE_HIGHWATERMARK,
 			transform(chunk: Buffer, _, callback) {
-				if (additionalArgs?.progressCb) {
-					additionalArgs.progressCb({ newBytesRead: chunk.byteLength, forSource: sourceUri });
+				if (coordinationArgs?.reportProgress) {
+					coordinationArgs.reportProgress({ forSource: sourceUri, newBytesRead: chunk.byteLength });
 				}
-				if (!!additionalArgs?.token?.isCancellationRequested) {
+				if (!!coordinationArgs?.token?.isCancellationRequested) {
 					callback(new Error(`aborted doCopyFile due to cancellation`));
 				} else {
 					callback(undefined, chunk);

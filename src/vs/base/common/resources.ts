@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { CancellationToken } from 'vs/base/common/cancellation';
 import { CharCode } from 'vs/base/common/charCode';
 import * as extpath from 'vs/base/common/extpath';
 import { Schemas } from 'vs/base/common/network';
@@ -11,7 +12,8 @@ import { isLinux, isWindows } from 'vs/base/common/platform';
 import { compare as strCompare, equalsIgnoreCase } from 'vs/base/common/strings';
 import { URI, uriToFsPath } from 'vs/base/common/uri';
 
-export type ProgressCbArgs = {
+export type CoordinationArgs = { token?: CancellationToken, reportProgress?: (args: ReportProgressArgs) => void }
+export type ReportProgressArgs = {
 	forSource: URI;
 } & ({ newBytesRead: number; } | { progressDeterminateType: 'DETERMINATE' | 'INDETERMINATE'; });
 
