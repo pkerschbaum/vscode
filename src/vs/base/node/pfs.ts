@@ -80,7 +80,7 @@ async function rimrafMove(path: string): Promise<void> {
 }
 
 async function rimrafUnlink(path: string): Promise<void> {
-	return Promises.rmdir(path, { recursive: true, maxRetries: 3 });
+	return Promises.rm(path, { recursive: true, maxRetries: 3 });
 }
 
 export function rimrafSync(path: string): void {
@@ -762,6 +762,7 @@ export const Promises = new class {
 
 	get unlink() { return promisify(fs.unlink); }
 	get rmdir() { return promisify(fs.rmdir); }
+	get rm() { return promisify(fs.rm); }
 
 	get realpath() { return promisify(fs.realpath); }
 
@@ -784,7 +785,7 @@ export const Promises = new class {
 
 	get writeFile() { return writeFile; }
 
-	get rm() { return rimraf; }
+	get rimraf() { return rimraf; }
 
 	get move() { return move; }
 	get copy() { return copy; }
