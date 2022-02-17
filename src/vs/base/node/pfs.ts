@@ -15,6 +15,7 @@ import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { extUriBiasedIgnorePathCase } from 'vs/base/common/resources';
 import type { CoordinationArgs } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
+import { deleteRecursiveUsingChildProcess } from 'vs/base/node/delete-recursive-using-child-process';
 
 //#region rimraf
 
@@ -80,7 +81,7 @@ async function rimrafMove(path: string): Promise<void> {
 }
 
 async function rimrafUnlink(path: string): Promise<void> {
-	return Promises.rm(path, { recursive: true, maxRetries: 3 });
+	return deleteRecursiveUsingChildProcess(path);
 }
 
 export function rimrafSync(path: string): void {
